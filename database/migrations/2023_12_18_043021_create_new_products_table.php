@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('new_price_product', 15, 2); 
             $table->date('new_date_in_product');
             $table->enum('new_status_product', ['display', 'expired', 'promo', 'bundle', 'palet']);
+            $table->enum('new_quality', ['lolos', 'damaged', 'abnormal']);
             $table->string('new_category_product');
             $table->string('new_tag_product');
 
