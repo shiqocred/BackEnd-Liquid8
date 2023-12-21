@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
+use App\Http\Controllers\NewProductController;
 use App\Http\Controllers\ProductOldController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,8 +28,14 @@ Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
 Route::resource('product_olds', ProductOldController::class);
+Route::resource('new_products', NewProductController::class);
+Route::resource('categories', CategoryController::class);
 
 Route::get('/documents', [DocumentController::class, 'index']);
 Route::get('/documents/{document}', [DocumentController::class, 'show']);
 
 Route::get('product_olds-search', [ProductOldController::class, 'productOld_byDoc']);
+Route::get('barcode', [ProductOldController::class, 'searchByBarcode']);
+
+Route::resource('color_tags', ColorTagController::class);
+Route::resource('categories', CategoryController::class);

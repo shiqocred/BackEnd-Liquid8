@@ -17,13 +17,13 @@ return new class extends Migration
             $table->string('old_barcode_product');
             $table->string('new_barcode_product')->unique();
             $table->string('new_name_product');
-            $table->bigInteger('new_quantity_product');
+            $table->integer('new_quantity_product');
             $table->decimal('new_price_product', 15, 2); 
             $table->date('new_date_in_product');
             $table->enum('new_status_product', ['display', 'expired', 'promo', 'bundle', 'palet']);
-            $table->enum('new_quality', ['lolos', 'damaged', 'abnormal']);
-            $table->string('new_category_product');
-            $table->string('new_tag_product');
+            $table->json('new_quality');
+            $table->string('new_category_product')->nullable();
+            $table->string('new_tag_product')->nullable();
 
             $table->timestamps();
         });

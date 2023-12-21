@@ -6,16 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
+    /** 
      * Run the migrations.
      */
+
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name_category');
-            $table->string('discount_category');
-            $table->decimal('max_price_category', 8,2);
+            $table->integer('discount_category');
+            $table->decimal('max_price_category', 12,2);
             $table->timestamps();
         });
     }

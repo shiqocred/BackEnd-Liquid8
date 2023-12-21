@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('color_tags', function (Blueprint $table) {
-            $table->id(); // bigInteger auto-increment primary key
+            $table->id(); 
             $table->string('hexa_code_color');
             $table->string('name_color');
-            $table->decimal('min_price_color', 15, 2); // Angka desimal dengan 15 digit dan 2 desimal
-            $table->decimal('max_price_color', 15, 2); // Angka desimal dengan 15 digit dan 2 desimal
-            $table->decimal('fixed_price_color', 15, 2); // Angka desimal dengan 15 digit dan 2 desimal
+            $table->decimal('min_price_color', 15, 2); 
+            $table->decimal('max_price_color', 15, 2); 
+            $table->decimal('fixed_price_color', 15, 2); 
 
-            $table->timestamps(); // Menambahkan kolom created_at dan updated_at
+            $table->timestamps(); 
         });
     }
 
