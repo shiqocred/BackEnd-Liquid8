@@ -6,6 +6,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\NewProductController;
 use App\Http\Controllers\ProductOldController;
+use App\Http\Controllers\RiwayatCheckController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -39,3 +40,4 @@ Route::get('barcode', [ProductOldController::class, 'searchByBarcode']);
 
 Route::resource('color_tags', ColorTagController::class);
 Route::resource('categories', CategoryController::class);
+Route::resource('historys', RiwayatCheckController::class);
