@@ -22,7 +22,7 @@ jobs:
         port: 65002
         script: |
           cd public_html/apiliquid8.digitalindustryagency.com/BackEnd-Liquid8
-          git pull origin master
+          git pull origin main
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
           php -r "file_exists('.env') || copy('.env.example', '.env');"
           php artisan key:generate
