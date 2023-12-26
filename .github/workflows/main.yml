@@ -18,6 +18,7 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         password: ${{ secrets.PASSWORD }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 65002
         script: |
           cd public_html/apiliquid8.digitalindustryagency.com/BackEnd-Liquid8
