@@ -25,8 +25,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+//generates file excel
 Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+
 
 Route::resource('product_olds', ProductOldController::class);
 Route::resource('new_products', NewProductController::class);
@@ -35,7 +37,8 @@ Route::resource('categories', CategoryController::class);
 Route::get('/documents', [DocumentController::class, 'index']);
 Route::get('/documents/{document}', [DocumentController::class, 'show']);
 
-Route::get('product_olds-search', [ProductOldController::class, 'productOld_byDoc']);
+Route::get('product_olds-search', [ProductOldController::class, 'serachByDocument']);
+
 Route::get('barcode', [ProductOldController::class, 'searchByBarcode']);
 
 Route::resource('color_tags', ColorTagController::class);

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ResponseResource;
 use App\Models\Color_tag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ColorTagController extends Controller
 {
@@ -12,7 +14,8 @@ class ColorTagController extends Controller
      */
     public function index()
     {
-        //
+        $tag = Color_tag::latest()->paginate(30);
+        return new ResponseResource(true, "list tag warna", $tag);
     }
 
     /**
@@ -28,7 +31,29 @@ class ColorTagController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+          
+            'hexa_code_color' => 'required|unique:color_tags,hexa_code_color',
+            'name_color' => 'required|unique:color_tags,name_color',
+            'min_price_color' => 'required',
+            'max_price_color' => 'required',
+            'fixed_price_color' => 'required'
+        ]);
+
+        if($validator->fails()){
+            return response()->json(['errors' => $validator->errors()], 422);
+        };
+
+        $colorTag = Color_tag::create($request->all(), [
+            'hexa_code_color' => $request->hexa_code_color,
+            'name_color' => $request->name_color,
+            'min_price_color' => $request->min_price_color,
+            'max_price_color' => $request->max_price_color,
+            'fixed_price_color' => $request->fixed_price_color
+
+        ]);
+
+        return new ResponseResource(true, "berhasil menambah tag warna", $colorTag);
     }
 
     /**
@@ -36,7 +61,7 @@ class ColorTagController extends Controller
      */
     public function show(Color_tag $color_tag)
     {
-        //
+        return new ResponseResource(true, "data tag warna", $color_tag);
     }
 
     /**
@@ -52,7 +77,19 @@ class ColorTagController extends Controller
      */
     public function update(Request $request, Color_tag $color_tag)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'hexa_code_color' => 'required',
+            'name_color' => 'required',
+            'min_price_color' => 'required',
+            'max_price_color' => 'required',
+            'fixed_price_color' => 'required'
+        ]);
+
+        if($validator->fails()){
+            return response()->json(['errors' => $validator->errors()], 422);
+        };
+        $color_tag->update($request->all());
+        return new ResponseResource(true, "berhasil mengedit tag warna", $color_tag);
     }
 
     /**
@@ -60,6 +97,8 @@ class ColorTagController extends Controller
      */
     public function destroy(Color_tag $color_tag)
     {
-        //
+        $color_tag->delete();
+        return new ResponseResource(true, "berhasil menghapus tag warna", $color_tag);
+
     }
 }

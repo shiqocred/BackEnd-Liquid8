@@ -22,7 +22,7 @@ class GenerateController extends Controller
         ]);
 
         $file = $request->file('file');
-
+        
         $headers = [];
         $templateHeaders = ["no_resi", "nama", "qty", "harga"];
         $fileDetails = [];

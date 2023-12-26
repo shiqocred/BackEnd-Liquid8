@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
@@ -30,7 +31,25 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validation = Validator::make($request->all(), [
+            'name_category' => 'required',
+            'discount_category' => 'required',
+            'max_price_category' => 'required',
+        ]);
+
+        if($validation->fails()){
+            return response()->json(['error' => $validation->errors()], 422);
+        }
+
+        $category = Category::create([
+            'name_category' => $request['name_category'],
+            'discount_category' => $request['discount_category'],
+            'max_price_category' => $request['max_price_category']
+        ]);
+        
+        return new ResponseResource(true, "berhasil menambahkan category", $category);
+
+        
     }
 
     /**
@@ -38,7 +57,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        //
+        return new ResponseResource(true, "data category", $category);
     }
 
     /**
@@ -54,7 +73,19 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        //
+        $validation = Validator::make($request->all(), [
+            'name_category' => 'required',
+            'discount_category' => 'required',
+            'max_price_category' => 'required',
+        ]);
+
+        if($validation->fails()){
+            return response()->json(['error' => $validation->errors(), 422]);
+        }
+        $category->update($request->all());
+        
+        return new ResponseResource(true, "berhasil edit category", $category);
+
     }
 
     /**
@@ -62,6 +93,7 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        //
+        $category->delete();
+        return new ResponseResource(true, "berhasil di hapus", $category);
     }
 }
