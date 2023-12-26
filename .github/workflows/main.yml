@@ -1,0 +1,29 @@
+name: Laravel
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  laravel-tests:
+
+    runs-on: ubuntu-latest
+
+    steps:       
+    - name: Deploy using ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 65002
+        script: |
+          cd /www/wwwroot/erp-demo.digitalindustryagency.com/erp_surya_kencana_v2/
+          git pull origin master
+          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+          php -r "file_exists('.env') || copy('.env.example', '.env');"
+          php artisan key:generate
+          php artisan migrate:fresh --seed
+
