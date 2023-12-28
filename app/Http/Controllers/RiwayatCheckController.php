@@ -68,6 +68,10 @@ class RiwayatCheckController extends Controller
             'percentage_abnormal' => ($request['total_data_abnormal'] / $document->total_column_in_document) * 100,
             'percentage_discrepancy' => ($request['total_discrepancy'] / $document->total_column_in_document) * 100,
         ]);
+
+        //update status document
+        $code_document = Document::where('code_document', $request['code_document'])->first();
+        $code_document->update(['status_document' => 'done']);
     
         return new ResponseResource(true, "Data berhasil ditambah", $riwayat_check);
     }

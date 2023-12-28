@@ -30,7 +30,7 @@ Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
 
-Route::resource('product_olds', ProductOldController::class);
+Route::resource('product_olds', ProductOldController::class); 
 Route::resource('new_products', NewProductController::class);
 Route::resource('categories', CategoryController::class);
 
