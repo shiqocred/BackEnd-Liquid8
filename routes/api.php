@@ -39,7 +39,7 @@ Route::get('/documents/{document}', [DocumentController::class, 'show']);
 
 Route::get('product_olds-search', [ProductOldController::class, 'serachByDocument']);
 
-Route::get('barcode', [ProductOldController::class, 'searchByBarcode']);
+Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
 Route::resource('color_tags', ColorTagController::class);
 Route::resource('categories', CategoryController::class);

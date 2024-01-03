@@ -8,22 +8,31 @@ use Illuminate\Http\Request;
 
 class ProductOldController extends Controller
 {
-    public function searchByBarcode(Request $request)
+    public function searchByBarcode(Request $request) 
     {
-        $barcode = $request->input('barcode');
+        $codeDocument = $request->input('code_document');
+        
+        if (!$codeDocument) {
+            return new ResponseResource(false, "Code document tidak boleh kosong.", null);
+        }
+    
+        $barcode = $request->input('old_barcode_product');
         
         if (!$barcode) {
             return new ResponseResource(false, "Barcode tidak boleh kosong.", null);
         }
-        $product = Product_old::where('old_barcode_product', $barcode)->first();
-
+    
+        $product = Product_old::where('code_document', $codeDocument)
+                              ->where('old_barcode_product', $barcode)
+                              ->first();
+    
         if ($product) {
             return new ResponseResource(true, "Produk Ditemukan", $product);
         } else {
             return new ResponseResource(false, "Produk tidak ditemukan", null);
         }
     }
-
+    
     public function serachByDocument(Request $request)
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->get();
