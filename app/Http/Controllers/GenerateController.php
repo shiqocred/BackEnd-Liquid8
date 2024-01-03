@@ -16,7 +16,8 @@ use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
-    {
+    { 
+
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls'
         ]);
@@ -167,6 +168,9 @@ class GenerateController extends Controller
             $resultEntry->save();
         }
 
+        //update status document
+        $code_document = Document::where('code_document', $request['code_document'])->first();
+        $code_document->update(['status_document' => 'in progress']);
 
         //view
         // return response()->json(['message' => 'Data has been merged and saved successfully.']);

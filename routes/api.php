@@ -30,7 +30,7 @@ Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
 
-Route::resource('product_olds', ProductOldController::class);
+Route::resource('product_olds', ProductOldController::class); 
 Route::resource('new_products', NewProductController::class);
 Route::resource('categories', CategoryController::class);
 
@@ -39,7 +39,7 @@ Route::get('/documents/{document}', [DocumentController::class, 'show']);
 
 Route::get('product_olds-search', [ProductOldController::class, 'serachByDocument']);
 
-Route::get('barcode', [ProductOldController::class, 'searchByBarcode']);
+Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
 Route::resource('color_tags', ColorTagController::class);
 Route::resource('categories', CategoryController::class);
