@@ -3,36 +3,56 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
+use App\Models\Color_tag;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
 
 class ProductOldController extends Controller
 {
-    public function searchByBarcode(Request $request) 
+    public function searchByBarcode(Request $request)
     {
         $codeDocument = $request->input('code_document');
-        
+
         if (!$codeDocument) {
             return new ResponseResource(false, "Code document tidak boleh kosong.", null);
         }
-    
+
         $barcode = $request->input('old_barcode_product');
-        
+
         if (!$barcode) {
             return new ResponseResource(false, "Barcode tidak boleh kosong.", null);
         }
-    
+
         $product = Product_old::where('code_document', $codeDocument)
-                              ->where('old_barcode_product', $barcode)
-                              ->first();
-    
+            ->where('old_barcode_product', $barcode)
+            ->first();
+
+        $price_old_product = $product->old_price_product;
+
         if ($product) {
-            return new ResponseResource(true, "Produk Ditemukan", $product);
+
+            if ($price_old_product < 100000) {
+                $colorTags = Color_tag::all();
+
+                //mendeteksi range harga
+                $filterPriceColors = collect($colorTags)->filter(function ($color) use ($price_old_product) {
+                    $minPrice = $color['min_price_color'];
+                    $maxPrice = $color['max_price_color'];
+
+                    return ($price_old_product >= $minPrice) && ($price_old_product <= $maxPrice);
+                });
+                
+                return new ResponseResource(true, "Produk Ditemukan", [$product, $filterPriceColors->values()]);
+            }else {
+
+                return new ResponseResource(true, "Produk Ditemukan", $product);
+            }
+
         } else {
             return new ResponseResource(false, "Produk tidak ditemukan", null);
         }
     }
-    
+
     public function serachByDocument(Request $request)
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->get();

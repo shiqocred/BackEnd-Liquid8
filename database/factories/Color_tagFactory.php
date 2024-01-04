@@ -37,7 +37,7 @@ class Color_tagFactory extends Factory
             return [
                 'hexa_code_color' => '#0000FF',
                 'name_color' => 'biru',
-                'min_price_color' => 0,
+                'min_price_color' => 49999,
                 'max_price_color' => 99000,
                 'fixed_price_color' => 50000
             ];
