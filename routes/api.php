@@ -31,12 +31,14 @@ Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeH
 
 
 Route::resource('product_olds', ProductOldController::class); 
+Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']); 
 Route::resource('new_products', NewProductController::class);
+Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
 Route::resource('categories', CategoryController::class);
 
-Route::get('/documents', [DocumentController::class, 'index']);
-Route::get('/documents/{document}', [DocumentController::class, 'show']);
-Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
+Route::resource('/documents', DocumentController::class);
+Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
+
 
 Route::get('product_olds-search', [ProductOldController::class, 'serachByDocument']);
 

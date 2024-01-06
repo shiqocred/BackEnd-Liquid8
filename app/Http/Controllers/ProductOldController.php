@@ -41,13 +41,12 @@ class ProductOldController extends Controller
 
                     return ($price_old_product >= $minPrice) && ($price_old_product <= $maxPrice);
                 });
-                
+
                 return new ResponseResource(true, "Produk Ditemukan", [$product, $filterPriceColors->values()]);
-            }else {
+            } else {
 
                 return new ResponseResource(true, "Produk Ditemukan", $product);
             }
-
         } else {
             return new ResponseResource(false, "Produk tidak ditemukan", null);
         }
@@ -56,7 +55,7 @@ class ProductOldController extends Controller
     public function serachByDocument(Request $request)
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
-        
+
         if ($code_documents->isNotEmpty()) {
             return new ResponseResource(true, "list product_old", $code_documents);
         } else {
@@ -105,5 +104,15 @@ class ProductOldController extends Controller
     {
         $product_old->delete();
         return new ResponseResource(true, "berhasil di hapus", $product_old);
+    }
+    public function deleteAll()
+    {
+        try {
+            Product_old::truncate();
+
+            return new ResponseResource(true, "Semua data berhasil dihapus", null);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Terjadi kesalahan saat menghapus data", null);
+        }
     }
 }
