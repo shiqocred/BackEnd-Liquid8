@@ -173,4 +173,13 @@ class NewProductController extends Controller
         $new_product->delete();
         return new ResponseResource(true, "data berhasil di hapus", $new_product);
     }
+
+    public function deleteAll(){
+        try {
+            New_product::truncate();
+            return new ResponseResource(true, "data berhasil dihapus", null);
+        }catch (\Exception $e){
+            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
+        }
+    }
 }

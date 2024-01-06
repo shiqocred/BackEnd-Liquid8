@@ -58,4 +58,12 @@ class DocumentController extends Controller
             return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
         }
     }
+    public function deleteAll(){
+        try {
+            Document::truncate();
+            return new ResponseResource(true, "data berhasil dihapus", null);
+        }catch (\Exception $e){
+            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
+        }
+    }
 }
