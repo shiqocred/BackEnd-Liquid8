@@ -36,6 +36,7 @@ Route::resource('categories', CategoryController::class);
 
 Route::get('/documents', [DocumentController::class, 'index']);
 Route::get('/documents/{document}', [DocumentController::class, 'show']);
+Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
 
 Route::get('product_olds-search', [ProductOldController::class, 'serachByDocument']);
 
