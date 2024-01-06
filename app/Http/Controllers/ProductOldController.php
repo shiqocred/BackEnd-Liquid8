@@ -55,7 +55,8 @@ class ProductOldController extends Controller
 
     public function serachByDocument(Request $request)
     {
-        $code_documents = Product_old::where('code_document', $request->input('search'))->get();
+        $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
+        
         if ($code_documents->isNotEmpty()) {
             return new ResponseResource(true, "list product_old", $code_documents);
         } else {
