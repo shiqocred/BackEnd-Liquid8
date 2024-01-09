@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id(); 
             $table->string('code_document'); 
             $table->string('old_barcode_product');
-            $table->string('new_barcode_product')->unique();
-            $table->string('new_name_product');
+            $table->string('new_barcode_product')->unique()->nullable();
+            $table->string('new_name_product')->nullable();
             $table->integer('new_quantity_product');
             $table->decimal('new_price_product', 15, 2); 
             $table->date('new_date_in_product');

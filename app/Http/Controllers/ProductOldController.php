@@ -52,7 +52,7 @@ class ProductOldController extends Controller
         }
     }
 
-    public function serachByDocument(Request $request)
+    public function searchByDocument(Request $request)
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
 

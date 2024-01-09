@@ -168,9 +168,7 @@ class GenerateController extends Controller
             $resultEntry->save();
         }
 
-        //update status document
-        $code_document = Document::where('code_document', $request['code_document'])->first();
-        $code_document->update(['status_document' => 'in progress']);
+      
 
         //view
         // return response()->json(['message' => 'Data has been merged and saved successfully.']);

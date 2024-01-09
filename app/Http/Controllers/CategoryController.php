@@ -12,6 +12,7 @@ class CategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
+
     public function index()
     {
         $categories = Category::all();
@@ -21,6 +22,7 @@ class CategoryController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    
     public function create()
     {
         //

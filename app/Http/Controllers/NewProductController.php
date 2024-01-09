@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
 use App\Models\Category;
+use App\Models\Document;
 use App\Models\Color_tag;
 use App\Models\New_product;
 use Illuminate\Http\Request;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 
 class NewProductController extends Controller
@@ -70,15 +71,22 @@ class NewProductController extends Controller
             $inputData['new_status_product'] = 'display';
             $inputData['new_quantity_product'] = 0;
             $inputData['new_price_product'] = 0;
-            $inputData['new_category_product'] = '';
-            $inputData['new_tag_product'] = '';
-            $inputData['new_name_product'] = '';
-            $inputData['new_barcode_product'] = '';
+            $inputData['new_category_product'] = null;
+            $inputData['new_tag_product'] = null;
+            $inputData['new_name_product'] = null;
+            $inputData['new_barcode_product'] = null;
         }
     
         $inputData['new_quality'] = json_encode($qualityData);
     
         $newProduct = New_product::create($inputData);
+
+          //update status document
+          $code_document = Document::where('code_document', $request['code_document'])->first();
+          
+          if($code_document->status_document == 'pending') {
+              $code_document->update(['status_document' => 'in progress']);
+          }
     
         return new ResponseResource(true, "New Produk Berhasil ditambah", $newProduct);
     }
@@ -179,7 +187,7 @@ class NewProductController extends Controller
             New_product::truncate();
             return new ResponseResource(true, "data berhasil dihapus", null);
         }catch (\Exception $e){
-            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
+            return response()->json(["error" => $e], 402);
         }
     }
 }
