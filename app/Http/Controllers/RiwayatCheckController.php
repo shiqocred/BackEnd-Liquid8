@@ -110,9 +110,9 @@ class RiwayatCheckController extends Controller
 
 
 
-    public function show(RiwayatCheck $riwayatCheck)
+    public function show(RiwayatCheck $history)
     {
-        return new ResponseResource(true, "Riwayat Check", $riwayatCheck);
+        return new ResponseResource(true, "Riwayat Check", $history);
     }
 
     public function getByDocument(Request $request)
