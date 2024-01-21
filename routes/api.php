@@ -32,24 +32,29 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
-
+//product old
 Route::resource('product_olds', ProductOldController::class); 
 Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']); 
+Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
+Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
+
+//new product (hasil scan)
 Route::resource('new_products', NewProductController::class);
 Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
+Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
+Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
+Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
 
+//categories discount
 Route::resource('categories', CategoryController::class);
 
+//document
 Route::resource('/documents', DocumentController::class);
 Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
 
-
-Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
-
-Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
-
+//colortags diskon
 Route::resource('color_tags', ColorTagController::class);
-Route::resource('categories', CategoryController::class);
 
+//riwayat
 Route::resource('historys', RiwayatCheckController::class);
 Route::get('riwayat-document', [RiwayatCheckController::class, 'getByDocument']);
