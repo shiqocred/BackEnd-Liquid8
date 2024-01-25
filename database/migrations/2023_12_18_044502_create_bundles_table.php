@@ -6,16 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
+    /** 
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('bundles', function (Blueprint $table) {
             $table->id();
-            $table->string('name_bundles')->unique();
-            $table->integer('total_price_bundle');
+            $table->string('name_bundle')->unique();
+            $table->decimal('total_price_bundle', 12, 2);
+            $table->decimal('total_price_custom_bundle', 12, 2);
             $table->integer('total_product_bundle');
+            $table->string('barcode_bundle')->unique(); 
             $table->timestamps();
         });
     }

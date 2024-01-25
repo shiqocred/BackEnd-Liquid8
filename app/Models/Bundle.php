@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Bundle extends Model
 {
     use HasFactory;
+
+    protected $guarded = ['id'];
+
+    public function product_bundles(){
+        return $this->hasMany(Product_Bundle::class);
+    }
 }

@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Palet extends Model
+class Product_Bundle extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
 
-    public function paletProducts(){
-        return $this->hasMany(PaletProduct::class);
+    public function bundle(){
+        return $this->belongsTo(Bundle::class);
     }
 }
