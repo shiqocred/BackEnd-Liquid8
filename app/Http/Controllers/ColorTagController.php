@@ -44,7 +44,7 @@ class ColorTagController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         };
 
-        $colorTag = Color_tag::create($request->all(), [
+        $colorTag = Color_tag::create([
             'hexa_code_color' => $request->hexa_code_color,
             'name_color' => $request->name_color,
             'min_price_color' => $request->min_price_color,

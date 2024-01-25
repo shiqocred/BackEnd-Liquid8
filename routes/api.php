@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\BundleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\NewProductController;
+use App\Http\Controllers\PaletController;
+use App\Http\Controllers\ProductBundleController;
+use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatCheckController;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
@@ -35,7 +40,7 @@ Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeH
 //product old
 Route::resource('product_olds', ProductOldController::class); 
 Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']); 
-Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
+Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']); 
 Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
 //new product (hasil scan)
@@ -58,3 +63,26 @@ Route::resource('color_tags', ColorTagController::class);
 //riwayat
 Route::resource('historys', RiwayatCheckController::class);
 Route::get('riwayat-document', [RiwayatCheckController::class, 'getByDocument']);
+
+//slow moving products
+//filters product bundle
+Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
+Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
+Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+
+//bundle
+Route::get('bundle', [BundleController::class, 'index']);
+Route::get('bundle/{bundle}', [BundleController::class, 'show']);
+Route::post('bundle', [ProductBundleController::class, 'store']);
+Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+
+Route::get('bundle/product', [ProductBundleController::class, 'index']);
+Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+
+//promo
+Route::get('promo', [PromoController::class, 'index']);
+Route::post('promo', [PromoController::class, 'store']);
+Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
+
+//pallet
+Route::get('palet/display', [PaletController::class, 'display']);

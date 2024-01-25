@@ -2,23 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
-use App\Models\New_product;
-use App\Models\Palet;
+use App\Models\PaletProduct;
 use Illuminate\Http\Request;
+use App\Http\Resources\ResponseResource;
 
-class PaletController extends Controller
+class PaletProductController extends Controller
 {
-
-    public function display(){
-        $new_products = New_product::where('new_status_product', 'display')->get();
-        return new ResponseResource(true, "data produk display", $new_products);
-    }
-
+    /**
+     * Display a listing of the resource.
+     */
     public function index()
     {
-        $palets = Palet::latest()->paginate(100);
-        return new ResponseResource(true, "list palet", $palets);
+        $product_palets = PaletProduct::latest()->paginate(100);
+        return new ResponseResource(true, "list product palet", $product_palets);
     }
 
     /**
@@ -34,13 +30,13 @@ class PaletController extends Controller
      */
     public function store(Request $request)
     {
-        
+        //
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Palet $palet)
+    public function show(PaletProduct $paletProduct)
     {
         //
     }
@@ -48,7 +44,7 @@ class PaletController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Palet $palet)
+    public function edit(PaletProduct $paletProduct)
     {
         //
     }
@@ -56,7 +52,7 @@ class PaletController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Palet $palet)
+    public function update(Request $request, PaletProduct $paletProduct)
     {
         //
     }
@@ -64,7 +60,7 @@ class PaletController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Palet $palet)
+    public function destroy(PaletProduct $paletProduct)
     {
         //
     }
