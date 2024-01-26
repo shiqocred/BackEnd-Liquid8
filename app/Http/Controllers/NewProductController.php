@@ -205,16 +205,14 @@ class NewProductController extends Controller
     {
         $fourWeeksAgo = now()->subWeeks(4)->toDateString();
 
-        $products = New_product::paginate(50)->where('new_date_in_product', '>', $fourWeeksAgo)
-            ->where('new_status_product', 'display');
-
-        $products = $products->get();
-
+        $products = New_product::where('new_date_in_product', '<=', $fourWeeksAgo)
+            ->where('new_status_product', 'display')
+            ->get();
+    
         foreach ($products as $product) {
             $product->update(['new_status_product' => 'expired']);
         }
-
-        
+    
 
         return new ResponseResource(true, "Products expired successfully", $products);
     }
