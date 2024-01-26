@@ -126,7 +126,6 @@ class NewProductController extends Controller
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
-            'new_date_in_product' => 'required|date',
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
@@ -206,7 +205,7 @@ class NewProductController extends Controller
     {
         $fourWeeksAgo = now()->subWeeks(4)->toDateString();
 
-        $products = New_product::where('new_date_in_product', '>', $fourWeeksAgo)
+        $products = New_product::paginate(50)->where('new_date_in_product', '>', $fourWeeksAgo)
             ->where('new_status_product', 'display');
 
         $products = $products->get();
@@ -214,6 +213,8 @@ class NewProductController extends Controller
         foreach ($products as $product) {
             $product->update(['new_status_product' => 'expired']);
         }
+
+        
 
         return new ResponseResource(true, "Products expired successfully", $products);
     }
