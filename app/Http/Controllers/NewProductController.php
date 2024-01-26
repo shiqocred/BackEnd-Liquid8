@@ -222,7 +222,7 @@ class NewProductController extends Controller
     public function listProductExp()
     {
         try {
-            $productExpired = New_product::where('new_status_product', 'expired')->get();
+            $productExpired = New_product::where('new_status_product', 'expired')->paginate(50);
             return new ResponseResource(true, "list product expired", $productExpired);
         } catch (\Exception $e) {
             return response()->json(["error" => $e]);
