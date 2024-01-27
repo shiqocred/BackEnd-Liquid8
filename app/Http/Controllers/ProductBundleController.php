@@ -36,6 +36,11 @@ class ProductBundleController extends Controller
     {
         DB::beginTransaction();
         try {
+            $product_filters = Product_Filter::all();
+            if ($product_filters->isEmpty()) {
+                return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
+            }
+
             $bundle = Bundle::create([
                 'name_bundle' => $request->name_bundle,
                 'total_price_bundle' => $request->total_price_bundle,
@@ -43,9 +48,7 @@ class ProductBundleController extends Controller
                 'total_product_bundle' => $request->total_product_bundle,
                 'barcode_bundle' => $request->barcode_bundle,
             ]);
-    
-            $product_filters = Product_Filter::all();
-    
+
             $insertData = $product_filters->map(function ($product) use ($bundle) {
                 return [
                     'bundle_id' => $bundle->id,
@@ -56,26 +59,26 @@ class ProductBundleController extends Controller
                     'new_quantity_product' => $product->new_quantity_product,
                     'new_price_product' => $product->new_price_product,
                     'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' => $product->new_status_product,
+                    'new_status_product' => 'bundle',
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product
                 ];
             })->toArray();
-    
+
             Product_Bundle::insert($insertData);
-    
+
             Product_Filter::query()->delete();
-             
+
             DB::commit();
             return new ResponseResource(true, "Bundle berhasil dibuat", $bundle);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal membuat bundle: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke bundle', 'error' => $e->getMessage()], 500);
         }
     }
-    
+
 
     /**
      * Display the specified resource.
@@ -109,13 +112,13 @@ class ProductBundleController extends Controller
         DB::beginTransaction();
         try {
             Product_Bundle::where('bundle_id', $id)->delete();
-    
+
             // $bundle = Bundle::findOrFail($id);
             // $bundle->delete();
-    
+
             DB::commit();
             return new ResponseResource(true, "produk bundle  berhasil dihapus", null);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal menghapus bundle: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
