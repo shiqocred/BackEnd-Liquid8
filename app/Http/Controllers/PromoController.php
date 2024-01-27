@@ -15,7 +15,7 @@ class PromoController extends Controller
      */
     public function index()
     {
-        $promos = Promo::latest()->paginate(100);
+        $promos = Promo::latest()->with('new_product')->paginate(100);
         return new ResponseResource(true, "list promo", $promos);
     }
 
@@ -33,45 +33,51 @@ class PromoController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'new_product_id' => 'required',
             'name_promo' => 'required',
             'discount_promo' => 'required',
             'price_promo' => 'required'
         ]);
 
-    
+
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-    
+
         $new_product = New_product::where('id', $request->new_product_id)->first();
-    
+
         if (!$new_product) {
             return response()->json(['error' => 'Product not found'], 404);
         }
-    
+
         $new_product->update([
             'new_status_product' => 'promo'
         ]);
-    
+
         $promo = Promo::create([
             'new_product_id' => $request->new_product_id,
             'name_promo' => $request->name_promo,
             'discount_promo' => $request->discount_promo,
             'price_promo' => $request->price_promo
         ]);
-    
+
         return new ResponseResource(true, "berhasil ditambah", $promo);
     }
-    
+
 
     /**
      * Display the specified resource.
      */
-    public function show(Promo $promo)
+    public function show($id)
     {
-        //
+        $promo = Promo::with('new_product')->find($id);
+
+        if (!$promo) {
+            return new ResponseResource(false, "Promo not found", null);
+        }
+
+        return new ResponseResource(true, "Detail promo", $promo);
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -86,8 +92,28 @@ class PromoController extends Controller
      */
     public function update(Request $request, Promo $promo)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name_promo' => 'required',
+            'discount_promo' => 'required',
+            'price_promo' => 'required'
+        ]);
+
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // $new_product = New_product::where('id', $request->new_product_id)->first();
+
+        // if (!$new_product) {
+        //     return response()->json(['error' => 'Product not found'], 404);
+        // }
+
+        $promo->update($request->all());
+
+        return new ResponseResource(true, "berhasil di edit", $promo);
     }
+
 
     /**
      * Remove the specified resource from storage.

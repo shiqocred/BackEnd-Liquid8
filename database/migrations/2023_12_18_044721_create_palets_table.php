@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('name_palet');
             $table->string('category_palet');
-            $table->decimal('total_price_palet', 8, 2);
+            $table->decimal('total_price_palet', 15, 2);
             $table->integer('total_product_palet');
+            $table->string('palet_barcode');
             $table->timestamps();
         });
     }

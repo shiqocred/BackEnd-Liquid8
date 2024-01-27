@@ -7,6 +7,8 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\NewProductController;
 use App\Http\Controllers\PaletController;
+use App\Http\Controllers\PaletFilterController;
+use App\Http\Controllers\PaletProductController;
 use App\Http\Controllers\ProductBundleController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
@@ -81,8 +83,20 @@ Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']
 
 //promo
 Route::get('promo', [PromoController::class, 'index']);
+Route::get('promo/{id}', [PromoController::class, 'show']);
 Route::post('promo', [PromoController::class, 'store']);
+Route::put('promo/{promo}', [PromoController::class, 'update']);
 Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
 
-//pallet
+
+//palet filter
+Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
+Route::post('palet/filter_product/{id}/add', [PaletFilterController::class, 'store']);
+Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
+
+//palet
 Route::get('palet/display', [PaletController::class, 'display']);
+Route::get('palet', [PaletController::class, 'index']);
+Route::post('palet', [PaletProductController::class, 'store']);
+Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
+
