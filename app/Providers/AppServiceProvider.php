@@ -21,9 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-           // Mengambil semua produk dengan status 'display'
-           DB::listen(function ($new_products) {
-            Log::info($new_products->sql, $new_products->bindings, $new_products->time);
+        DB::listen(function($query) {
+            Log::info($query->sql, $query->bindings);
         });
+        
     }
 }

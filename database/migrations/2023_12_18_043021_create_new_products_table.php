@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('new_name_product')->nullable();
             $table->integer('new_quantity_product')->nullable();
             $table->decimal('new_price_product', 15, 2)->nullable(); 
+            $table->decimal('old_price_product', 15, 2)->nullable(); 
             $table->date('new_date_in_product')->nullable();
             $table->enum('new_status_product', ['display', 'expired', 'promo', 'bundle', 'palet']);
             $table->json('new_quality')->nullable();
