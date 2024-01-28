@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 //generates file excel
 Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
+Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
 //product old
 Route::resource('product_olds', ProductOldController::class); 
@@ -51,6 +53,7 @@ Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteA
 Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
 Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
 Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
+
 
 //categories discount
 Route::resource('categories', CategoryController::class);
