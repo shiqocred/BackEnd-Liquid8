@@ -291,22 +291,25 @@ class NewProductController extends Controller
                 'total_column_in_document' => $rowCount,
             ]);
     
+
+            $mergeResponse = $this->mapAndMergeHeaders(); 
             // Return response
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => $code_document,
                 'file_name' => $fileName,
                 'total_column_count' => count($header),
-                'total_row_count' => $rowCount
+                'total_row_count' => $rowCount,
+                'merged' => $mergeResponse
             ]);
     
         } catch (ReaderException $e) {
             return back()->with('error', 'Error processing file: ' . $e->getMessage());
         }
+
+        
     }
-    
 
-
-    public function mapAndMergeHeaders()
+    protected function mapAndMergeHeaders()
     {
         $headerMappings = [
             'old_barcode_product' => ['Barcode'],
