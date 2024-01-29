@@ -38,6 +38,7 @@ class NewProductController extends Controller
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
             // 'new_date_in_product' => 'required|date',
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
             'condition' => 'required|in:lolos,damaged,abnormal',
@@ -65,6 +66,7 @@ class NewProductController extends Controller
             'new_name_product',
             'new_quantity_product',
             'new_price_product',
+            'old_price_product',
             'new_date_in_product',
             'new_status_product',
             'new_category_product',
@@ -74,15 +76,10 @@ class NewProductController extends Controller
         // Set zona waktu ke Indonesia/Jakarta
         $indonesiaTime = Carbon::now('Asia/Jakarta');
         $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
-        
+
         if ($status !== 'lolos') {
-            $inputData['new_status_product'] = 'display';
-            $inputData['new_quantity_product'] = 0;
-            $inputData['new_price_product'] = 0;
             $inputData['new_category_product'] = null;
-            $inputData['new_tag_product'] = null;
-            $inputData['new_name_product'] = null;
-            $inputData['new_barcode_product'] = null;
+            $inputData['new_price_product'] = null;
         }
 
         $inputData['new_quality'] = json_encode($qualityData);
@@ -167,14 +164,9 @@ class NewProductController extends Controller
 
         if ($status !== 'lolos') {
             // Set nilai-nilai default jika status bukan 'lolos'
-            $inputData['new_status_product'] = 'display';
-            $inputData['new_quantity_product'] = 0;
-            $inputData['new_price_product'] = 0;
-            $inputData['old_price_product'] = $request['old_price_product'];
+            $inputData['new_price_product'] = null;
             $inputData['new_category_product'] = null;
-            $inputData['new_tag_product'] = null;
-            $inputData['new_name_product'] = null;
-            $inputData['new_barcode_product'] = null;
+
         }
 
         $inputData['new_quality'] = json_encode($qualityData);
@@ -236,38 +228,38 @@ class NewProductController extends Controller
 
 
     public function processExcelFiles(Request $request)
-    { 
+    {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls'
         ]);
-    
+
         $file = $request->file('file');
-        
+
         $filePath = $file->getPathname();
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $fileName);
-    
+
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
-    
+
             // Mengambil header dari baris pertama
             $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
-    
+
             // Inisialisasi rowCount dan array untuk menyimpan data yang akan diinsert
             $rowCount = 0;
             $dataToInsert = [];
-    
+
             // Mulai iterasi dari baris kedua
             foreach ($sheet->getRowIterator(2) as $row) {
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(FALSE);
-    
+
                 $rowData = [];
                 foreach ($cellIterator as $cell) {
                     $rowData[] = $cell->getValue();
                 }
-    
+
                 // Pastikan jumlah header sama dengan jumlah data di rowData
                 if (count($header) === count($rowData)) {
                     $jsonRowData = json_encode(array_combine($header, $rowData));
@@ -275,24 +267,24 @@ class NewProductController extends Controller
                     $rowCount++;
                 }
             }
-    
+
             // Buat dokumen baru
             $latestDocument = Document::latest()->first();
             $newId = $latestDocument ? $latestDocument->id + 1 : 1;
             $id_document = str_pad($newId, 4, '0', STR_PAD_LEFT);
-            $month = date('m'); 
+            $month = date('m');
             $year = date('Y');
             $code_document = $id_document . '/' . $month . '/' . $year;
-    
+
             Document::create([
                 'code_document' => $code_document,
                 'base_document' => $fileName,
                 'total_column_document' => count($header),
                 'total_column_in_document' => $rowCount,
             ]);
-    
 
-            $mergeResponse = $this->mapAndMergeHeaders(); 
+
+            $mergeResponse = $this->mapAndMergeHeaders();
             // Return response
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => $code_document,
@@ -301,12 +293,9 @@ class NewProductController extends Controller
                 'total_row_count' => $rowCount,
                 'merged' => $mergeResponse
             ]);
-    
         } catch (ReaderException $e) {
             return back()->with('error', 'Error processing file: ' . $e->getMessage());
         }
-
-        
     }
 
     protected function mapAndMergeHeaders()
@@ -321,19 +310,19 @@ class NewProductController extends Controller
             'old_price_product' => ['Unit Price'],
             'new_date_in_product' => ['Date'], // Asumsikan 'Date' adalah nama kolom yang sesuai dalam Excel Anda
         ];
-    
+
         // Mengambil kode dokumen terakhir
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
         }
         $code_document = $latestDocument->code_document;
-    
+
         // Mengambil semua data dari model ExcelOld dan mengubahnya menjadi array
         $ekspedisiData = ExcelOld::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-    
+
         // Inisialisasi array untuk menyimpan data yang akan digabungkan
         $mergedData = [
             'old_barcode_product' => [],
@@ -346,7 +335,7 @@ class NewProductController extends Controller
             'new_date_in_product' => [],
             'new_quality' => [],
         ];
-    
+
         // Memetakan dan menggabungkan data berdasarkan headerMappings
         foreach ($ekspedisiData as $dataItem) {
             foreach ($headerMappings as $templateHeader => $selectedHeaders) {
@@ -356,20 +345,20 @@ class NewProductController extends Controller
                     }
                 }
             }
-    
+
             // Misalkan kita menambahkan 'new_quality' berdasarkan kondisi tertentu dari $dataItem
             $status = $dataItem['Status'] ?? 'unknown'; // Ganti 'Status' dengan nama kolom yang sesuai
             $description = $dataItem['Description'] ?? ''; // Gunakan deskripsi atau kolom lain yang relevan
-    
+
             $qualityData = [
                 'lolos' => $status === 'lolos' ? true : null,
                 'damaged' => $status === 'damaged' ? $description : null,
                 'abnormal' => $status === 'abnormal' ? $description : null,
             ];
-    
+
             $mergedData['new_quality'][] = json_encode($qualityData);
         }
-    
+
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
             $newProductData = [
@@ -384,13 +373,110 @@ class NewProductController extends Controller
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
                 'new_quality' => $mergedData['new_quality'][$index] ?? null, // Pastikan ini adalah JSON yang valid
             ];
-    
+
             New_product::create($newProductData);
         }
-    
+
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
+
+    public function showRepair()
+    {
+        $products = New_product::query()
+            ->where(function ($query) {
+                $query->whereRaw('json_extract(new_quality, "$.damaged") is not null and json_extract(new_quality, "$.damaged") != "null"')
+                    ->orWhereRaw('json_extract(new_quality, "$.abnormal") is not null and json_extract(new_quality, "$.abnormal") != "null"');
+            })
+            ->get();
+
+        if ($products->isEmpty()) {
+            return new ResponseResource(false, "Tidak ada data", null);
+        }
+
+        return new ResponseResource(true, "List damaged dan abnormal", $products);
+    }
+
+    public function updateRepair($id)
+    {
+
+        $product = New_product::find($id);
+        if (!$product) {
+            return new ResponseResource(false, "product tidak di temukan", null);
+        }
+        $quality = json_decode($product->new_quality, true);
+
+        if (isset($quality['lolos']) && $quality['lolos'] === 'lolos') {
+            return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
+        }
+        if ($quality['damaged']) {
+            $quality['damaged'] = null;
+        }
+        if ($quality['abnormal']) {
+            $quality['abnormal'] = null;
+        }
+
+        $quality['lolos'] = 'lolos';
+        $product->new_quality = json_encode($quality);
+        $product->save();
+
+        return new ResponseResource(true, "Berhasil di repair", $product);
+    }
+
+    public function MultipleUpdateRepair(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:new_products,id'
+        ]);
+
+        $ids = $request->input('ids');
+        $updatedProducts = [];
+
+        foreach ($ids as $id) {
+            $product = New_product::find($id);
+
+            if (!$product) {
+                continue;
+            }
+
+            $quality = json_decode($product->new_quality, true);
+
+            if (isset($quality['lolos']) && $quality['lolos'] === 'lolos') {
+                continue;
+            }
+
+            $quality = array_merge($quality, ['damaged' => null, 'abnormal' => null, 'lolos' => 'lolos']); // Reset 'damaged' dan 'abnormal', set 'lolos'
+
+            $product->new_quality = json_encode($quality);
+            $product->save();
+
+            $updatedProducts[] = $product;
+        }
+
+        if (empty($updatedProducts)) {
+            return response()->json(['message' => "Tidak ada produk yang berhasil di-update"], 404);
+        }
+
+        return response()->json(['message' => "Produk berhasil di-update", 'data' => $updatedProducts]);
+    }
+
+    public function updateAllDamagedOrAbnormal()
+    {
+        $products = New_product::all()->filter(function ($product) {
+            $quality = json_decode($product->new_quality, true);
+            return isset($quality['damaged']) || isset($quality['abnormal']);
+        });
     
+        foreach ($products as $product) {
+            $quality = json_decode($product->new_quality, true);
     
+            unset($quality['damaged'], $quality['abnormal']);
+            $quality['lolos'] = 'lolos';
     
+            $product->new_quality = json_encode($quality);
+            $product->save();
+        }
+    
+        return new ResponseResource(true, "Semua produk damaged dan abnormal sudah berhasil di update menjadi lolos", $products);
+    }
 }

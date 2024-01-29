@@ -35,6 +35,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+//=========================================== inbound ==========================================================
+
 //generates file excel
 Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
 Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
@@ -69,7 +71,10 @@ Route::resource('color_tags', ColorTagController::class);
 Route::resource('historys', RiwayatCheckController::class);
 Route::get('riwayat-document', [RiwayatCheckController::class, 'getByDocument']);
 
-//slow moving products
+
+//=========================================== storage ==========================================================
+
+//slow moving products 
 //filters product bundle
 Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
 Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
@@ -103,3 +108,9 @@ Route::get('palet', [PaletController::class, 'index']);
 Route::post('palet', [PaletProductController::class, 'store']);
 Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
 
+
+// =========================================== repair station ==========================================================
+Route::get('repair', [NewProductController::class, 'showRepair']);
+Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
+Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
+Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
