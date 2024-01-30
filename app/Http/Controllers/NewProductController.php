@@ -376,7 +376,7 @@ class NewProductController extends Controller
             New_product::create($newProductData);
         }
 
-        ExcelOld::query()->delete();
+            ExcelOld::query()->delete();
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
