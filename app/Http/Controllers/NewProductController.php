@@ -166,7 +166,6 @@ class NewProductController extends Controller
             // Set nilai-nilai default jika status bukan 'lolos'
             $inputData['new_price_product'] = null;
             $inputData['new_category_product'] = null;
-
         }
 
         $inputData['new_quality'] = json_encode($qualityData);
@@ -377,50 +376,110 @@ class NewProductController extends Controller
             New_product::create($newProductData);
         }
 
+        ExcelOld::query()->delete();
+
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
 
-    public function showRepair()
+    public function showRepair(Request $request)
     {
-        $products = New_product::query()
-            ->where(function ($query) {
-                $query->whereRaw('json_extract(new_quality, "$.damaged") is not null and json_extract(new_quality, "$.damaged") != "null"')
-                    ->orWhereRaw('json_extract(new_quality, "$.abnormal") is not null and json_extract(new_quality, "$.abnormal") != "null"');
-            })
-            ->get();
-
-        if ($products->isEmpty()) {
-            return new ResponseResource(false, "Tidak ada data", null);
+        try {
+            $query = $request->get('q');
+    
+            $products = New_product::query()
+                ->where(function ($queryBuilder) use ($query) {
+                    $queryBuilder
+                        ->whereRaw('json_extract(new_quality, "$.damaged") is not null and json_extract(new_quality, "$.damaged") != "null"')
+                        ->orWhereRaw('json_extract(new_quality, "$.abnormal") is not null and json_extract(new_quality, "$.abnormal") != "null"');
+    
+                    if ($query) {
+                        $queryBuilder
+                            ->where('old_barcode_product', 'like', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'like', '%' . $query . '%');
+                    }
+                })
+                ->paginate(50);
+    
+            if ($products->isEmpty()) {
+                return new ResponseResource(false, "Tidak ada data", null);
+            }
+    
+            return new ResponseResource(true, "List damaged dan abnormal", $products);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Terjadi kesalahan: " . $e->getMessage(), null);
         }
+    }
+    
 
-        return new ResponseResource(true, "List damaged dan abnormal", $products);
+    public function updateRepair(Request $request, $id)
+    {
+        try {
+            $product = New_product::find($id);
+
+            if (!$product) {
+                return new ResponseResource(false, "Produk tidak ditemukan", null);
+            }
+
+            $quality = json_decode($product->new_quality, true);
+
+
+            if (isset($quality['lolos']) ) {
+                return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
+            }
+
+            if ($quality['damaged']) {
+                $quality['damaged'] = null;
+            }
+
+            if ($quality['abnormal']) {
+                $quality['abnormal'] = null;
+            }
+
+            $validator = Validator::make($request->all(), [
+                'old_barcode_product' => 'required',
+                'new_barcode_product' => 'required',
+                'new_name_product' => 'required',
+                'new_quantity_product' => 'required|integer',
+                'new_price_product' => 'required|numeric',
+                'old_price_product' => 'required|numeric',
+                'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
+                'new_category_product' => 'nullable|exists:categories,name_category',
+                'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $inputData = $request->only([
+                'old_barcode_product',
+                'new_barcode_product',
+                'new_name_product',
+                'new_quantity_product',
+                'new_price_product',
+                'old_price_product',
+                'new_date_in_product',
+                'new_status_product',
+                'new_category_product',
+                'new_tag_product'
+            ]);
+
+
+            $indonesiaTime = Carbon::now('Asia/Jakarta');
+            $inputData['new_date_in_product'] = $indonesiaTime;
+
+            $quality['lolos'] = 'lolos';
+            $inputData['new_quality'] = json_encode($quality);
+
+            $product->update($inputData);
+
+            return new ResponseResource(true, "Berhasil di repair", $inputData);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Terjadi kesalahan: " . $e->getMessage(), null);
+        }
     }
 
-    public function updateRepair($id)
-    {
-
-        $product = New_product::find($id);
-        if (!$product) {
-            return new ResponseResource(false, "product tidak di temukan", null);
-        }
-        $quality = json_decode($product->new_quality, true);
-
-        if (isset($quality['lolos']) && $quality['lolos'] === 'lolos') {
-            return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
-        }
-        if ($quality['damaged']) {
-            $quality['damaged'] = null;
-        }
-        if ($quality['abnormal']) {
-            $quality['abnormal'] = null;
-        }
-
-        $quality['lolos'] = 'lolos';
-        $product->new_quality = json_encode($quality);
-        $product->save();
-
-        return new ResponseResource(true, "Berhasil di repair", $product);
-    }
 
     public function MultipleUpdateRepair(Request $request)
     {
@@ -466,17 +525,17 @@ class NewProductController extends Controller
             $quality = json_decode($product->new_quality, true);
             return isset($quality['damaged']) || isset($quality['abnormal']);
         });
-    
+
         foreach ($products as $product) {
             $quality = json_decode($product->new_quality, true);
-    
+
             unset($quality['damaged'], $quality['abnormal']);
             $quality['lolos'] = 'lolos';
-    
+
             $product->new_quality = json_encode($quality);
             $product->save();
         }
-    
+
         return new ResponseResource(true, "Semua produk damaged dan abnormal sudah berhasil di update menjadi lolos", $products);
     }
 }
