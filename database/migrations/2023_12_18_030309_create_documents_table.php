@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('base_document');
             $table->integer('total_column_document');
             $table->integer('total_column_in_document');
-            $table->timestamp('date_document');
+            $table->date('date_document');
             $table->enum('status_document', ['pending', 'in progress', 'done'])->default('pending');
 
             $table->timestamps();

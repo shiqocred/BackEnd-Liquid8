@@ -246,14 +246,11 @@ class NewProductController extends Controller
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
 
-            // Mengambil header dari baris pertama
             $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
 
-            // Inisialisasi rowCount dan array untuk menyimpan data yang akan diinsert
             $rowCount = 0;
             $dataToInsert = [];
 
-            // Mulai iterasi dari baris kedua
             foreach ($sheet->getRowIterator(2) as $row) {
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(FALSE);
@@ -263,7 +260,6 @@ class NewProductController extends Controller
                     $rowData[] = $cell->getValue();
                 }
 
-                // Pastikan jumlah header sama dengan jumlah data di rowData
                 if (count($header) === count($rowData)) {
                     $jsonRowData = json_encode(array_combine($header, $rowData));
                     ExcelOld::create(['data' => $jsonRowData]);
@@ -284,6 +280,7 @@ class NewProductController extends Controller
                 'base_document' => $fileName,
                 'total_column_document' => count($header),
                 'total_column_in_document' => $rowCount,
+                'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
 
