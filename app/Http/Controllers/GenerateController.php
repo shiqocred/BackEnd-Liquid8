@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use App\Models\Document;
 use App\Models\Generate;
+use App\Models\Product_old;
 use App\Models\ResultMerge;
 use App\Models\ResultFilter;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\Document;
-use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
@@ -100,6 +101,7 @@ class GenerateController extends Controller
             'base_document' => $fileName,
             'total_column_document' => $columnCount,
             'total_column_in_document' => $rowCount,
+            'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
         ]);
 
         // return response()->view('excelData', [
