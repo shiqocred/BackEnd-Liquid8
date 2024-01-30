@@ -34,9 +34,11 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'name_category' => 'required',
+            'name_category' => 'required:unique:categories, name_category',
             'discount_category' => 'required',
             'max_price_category' => 'required',
+        ], [
+            'name_category.unique' => "nama category sudah ada"
         ]);
 
         if($validation->fails()){
