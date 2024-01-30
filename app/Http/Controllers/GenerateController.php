@@ -20,6 +20,8 @@ class GenerateController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls'
+        ], [
+            'file.unique' => 'Nama file sudah ada di database.',
         ]);
 
         $file = $request->file('file');
@@ -167,6 +169,8 @@ class GenerateController extends Controller
             ]);
             $resultEntry->save();
         }
+
+        Generate::query()->delete();
 
       
 

@@ -44,6 +44,8 @@ class NewProductController extends Controller
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
+        ],  [
+            'new_barcode_product.unique' => 'barcode sudah ada',
         ]);
 
         if ($validator->fails()) {
@@ -230,6 +232,8 @@ class NewProductController extends Controller
     {
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls'
+        ], [
+            'file.unique' => 'Nama file sudah ada di database.',
         ]);
 
         $file = $request->file('file');
@@ -370,7 +374,7 @@ class NewProductController extends Controller
                 'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
                 'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => $mergedData['new_quality'][$index] ?? null, // Pastikan ini adalah JSON yang valid
+                'new_quality' => $mergedData['new_quality'][$index] ?? null, 
             ];
 
             New_product::create($newProductData);
