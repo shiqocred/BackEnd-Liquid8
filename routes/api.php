@@ -114,3 +114,4 @@ Route::get('repair', [NewProductController::class, 'showRepair']);
 Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
 Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
 Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
+Route::get('/excelolds', [NewProductController::class, 'excelolds']);

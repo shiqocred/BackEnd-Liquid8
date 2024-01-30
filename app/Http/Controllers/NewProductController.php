@@ -307,7 +307,7 @@ class NewProductController extends Controller
             'new_quantity_product' => ['Qty'],
             'new_price_product' => ['Price After Discount'],
             'old_price_product' => ['Unit Price'],
-            'new_date_in_product' => ['Date'], // Asumsikan 'Date' adalah nama kolom yang sesuai dalam Excel Anda
+            'new_date_in_product' => ['Date'], 
         ];
 
         // Mengambil kode dokumen terakhir
@@ -345,9 +345,9 @@ class NewProductController extends Controller
                 }
             }
 
-            // Misalkan kita menambahkan 'new_quality' berdasarkan kondisi tertentu dari $dataItem
-            $status = $dataItem['Status'] ?? 'unknown'; // Ganti 'Status' dengan nama kolom yang sesuai
-            $description = $dataItem['Description'] ?? ''; // Gunakan deskripsi atau kolom lain yang relevan
+            
+            $status = $dataItem['Status'] ?? 'unknown'; 
+            $description = $dataItem['Description'] ?? ''; 
 
             $qualityData = [
                 'lolos' => $status === 'lolos' ? true : null,
@@ -537,5 +537,10 @@ class NewProductController extends Controller
         }
 
         return new ResponseResource(true, "Semua produk damaged dan abnormal sudah berhasil di update menjadi lolos", $products);
+    }
+
+    public function excelolds(){
+        $datas = ExcelOld::latest()->paginate(100);
+        return new ResponseResource(true, "list product olds", $datas);
     }
 }
