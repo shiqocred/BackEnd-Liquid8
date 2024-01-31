@@ -17,13 +17,18 @@ use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 class NewProductController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $newProducts = New_product::latest()->paginate(50);
-
+        $query = $request->input('q');
+        $newProducts = New_product::latest()->where(function ($queryBuilder) use ($query){
+            $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%' )
+                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+        })->paginate(100);
+    
         return new ResponseResource(true, "list new product", $newProducts);
     }
-
+    
 
     public function create()
     {
@@ -544,4 +549,45 @@ class NewProductController extends Controller
         $datas = ExcelOld::latest()->paginate(100);
         return new ResponseResource(true, "list product olds", $datas);
     }
+
+    public function updateDump($id){
+        $product = New_product::find($id);
+
+        if($product->new_status_product == 'dump'){
+            return new ResponseResource(false, "status product sudah dump", $product);
+        }
+
+        if (!$product) {
+            return new ResponseResource(false, "Produk tidak ditemukan", null);
+        }
+
+        $quality = json_decode($product->new_quality, true);
+
+
+        if (isset($quality['lolos']) ) {
+            return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
+        }
+
+        $product->update(['new_status_product' => 'dump']);
+
+        return new ResponseResource(true, "data product sudah di update", $product);
+    }
+
+    public function listDump(Request $request)
+    {
+        $query = $request->get('q');
+    
+        $products = New_product::where('new_status_product', 'dump')
+            ->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
+                    ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
+                    ->orWhere('new_name_product', 'like', '%' . $query . '%');
+            })
+            ->paginate(50);
+    
+        return new ResponseResource(true, "List dump", $products);
+    }
+    
+        
+    
 }

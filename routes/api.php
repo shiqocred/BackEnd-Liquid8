@@ -115,3 +115,7 @@ Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
 Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
 Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
 Route::get('/excelolds', [NewProductController::class, 'excelolds']);
+
+//list dump
+Route::put('/dumps', [NewProductController::class, 'listDump']);
+Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
