@@ -11,16 +11,20 @@ use App\Http\Resources\ResponseResource;
 
 class PaletController extends Controller
 {
-
     public function display()
     {
-       
-
-        $new_products = New_product::where('new_status_product', 'display')->paginate(50);
+        $new_products = New_product::query()
+            ->where(function ($queryBuilder) {
+                $queryBuilder->where('new_status_product', 'display')
+                    ->whereRaw('json_extract(new_quality, "$.lolos") is not null')
+                    ->whereRaw('json_extract(new_quality, "$.lolos") = "lolos"');
+            })
+            ->paginate(50);
+    
         return new ResponseResource(true, "Data produk dengan status display.", $new_products);
     }
-
-
+    
+    
     public function index()
     {
         $palets = Palet::latest()->with('paletProducts')->paginate(100);
