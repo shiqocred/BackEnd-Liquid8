@@ -14,6 +14,7 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatCheckController;
+use App\Models\New_product;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +56,7 @@ Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteA
 Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
 Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
 Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
+Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
 
 
 //categories discount
