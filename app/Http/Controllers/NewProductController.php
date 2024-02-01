@@ -29,6 +29,20 @@ class NewProductController extends Controller
         return new ResponseResource(true, "list new product", $newProducts);
     }
     
+    public function byDocument(Request $request)
+    {
+        $query = $request->input('code_document');
+    
+        $newProducts = New_product::where('code_document', $query)->paginate(100);
+    
+        if ($newProducts->isEmpty()) {
+            return new ResponseResource(false, "No data found", null);
+        }
+    
+        return new ResponseResource(true, "List new products", $newProducts);
+    }
+    
+    
 
     public function create()
     {
