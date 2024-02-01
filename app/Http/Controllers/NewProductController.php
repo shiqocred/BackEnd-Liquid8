@@ -20,29 +20,29 @@ class NewProductController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $newProducts = New_product::latest()->where(function ($queryBuilder) use ($query){
-            $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%' )
+        $newProducts = New_product::latest()->where(function ($queryBuilder) use ($query) {
+            $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
         })->paginate(100);
-    
+
         return new ResponseResource(true, "list new product", $newProducts);
     }
-    
+
     public function byDocument(Request $request)
     {
         $query = $request->input('code_document');
-    
+
         $newProducts = New_product::where('code_document', $query)->paginate(100);
-    
+
         if ($newProducts->isEmpty()) {
             return new ResponseResource(false, "No data found", null);
         }
-    
+
         return new ResponseResource(true, "List new products", $newProducts);
     }
-    
-    
+
+
 
     public function create()
     {
@@ -327,7 +327,7 @@ class NewProductController extends Controller
             'new_quantity_product' => ['Qty'],
             'new_price_product' => ['Price After Discount'],
             'old_price_product' => ['Unit Price'],
-            'new_date_in_product' => ['Date'], 
+            'new_date_in_product' => ['Date'],
         ];
 
         // Mengambil kode dokumen terakhir
@@ -365,9 +365,9 @@ class NewProductController extends Controller
                 }
             }
 
-            
-            $status = $dataItem['Status'] ?? 'unknown'; 
-            $description = $dataItem['Description'] ?? ''; 
+
+            $status = $dataItem['Status'] ?? 'unknown';
+            $description = $dataItem['Description'] ?? '';
 
             $qualityData = [
                 'lolos' => $status === 'lolos' ? true : null,
@@ -390,13 +390,13 @@ class NewProductController extends Controller
                 'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
                 'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => $mergedData['new_quality'][$index] ?? null, 
+                'new_quality' => $mergedData['new_quality'][$index] ?? null,
             ];
 
             New_product::create($newProductData);
         }
 
-            ExcelOld::query()->delete();
+        ExcelOld::query()->delete();
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
@@ -405,32 +405,34 @@ class NewProductController extends Controller
     {
         try {
             $query = $request->get('q');
-    
-            $products = New_product::query()
-                ->where(function ($queryBuilder) use ($query) {
-                    $queryBuilder
-                        ->whereRaw('json_extract(new_quality, "$.damaged") is not null and json_extract(new_quality, "$.damaged") != "null"')
-                        ->orWhereRaw('json_extract(new_quality, "$.abnormal") is not null and json_extract(new_quality, "$.abnormal") != "null"');
-    
-                    if ($query) {
-                        $queryBuilder
-                            ->where('old_barcode_product', 'like', '%' . $query . '%')
+
+            $products = New_product::where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('new_status_product', '!=', "dump")
+                    ->where(function ($q) {
+                        $q->whereRaw('json_extract(new_quality, "$.damaged") is not null and json_extract(new_quality, "$.damaged") != "null"')
+                            ->orWhereRaw('json_extract(new_quality, "$.abnormal") is not null and json_extract(new_quality, "$.abnormal") != "null"');
+                    });
+
+                if ($query) {
+                    $queryBuilder->where(function ($q) use ($query) {
+                        $q->where('old_barcode_product', 'like', '%' . $query . '%')
                             ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
                             ->orWhere('new_name_product', 'like', '%' . $query . '%');
-                    }
-                })
+                    });
+                }
+            })
                 ->paginate(50);
-    
+
             if ($products->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada data", null);
             }
-    
+
             return new ResponseResource(true, "List damaged dan abnormal", $products);
         } catch (\Exception $e) {
             return new ResponseResource(false, "Terjadi kesalahan: " . $e->getMessage(), null);
         }
     }
-    
+
 
     public function updateRepair(Request $request, $id)
     {
@@ -444,7 +446,7 @@ class NewProductController extends Controller
             $quality = json_decode($product->new_quality, true);
 
 
-            if (isset($quality['lolos']) ) {
+            if (isset($quality['lolos'])) {
                 return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
             }
 
@@ -559,15 +561,17 @@ class NewProductController extends Controller
         return new ResponseResource(true, "Semua produk damaged dan abnormal sudah berhasil di update menjadi lolos", $products);
     }
 
-    public function excelolds(){
+    public function excelolds()
+    {
         $datas = ExcelOld::latest()->paginate(100);
         return new ResponseResource(true, "list product olds", $datas);
     }
 
-    public function updateDump($id){
+    public function updateDump($id)
+    {
         $product = New_product::find($id);
 
-        if($product->new_status_product == 'dump'){
+        if ($product->new_status_product == 'dump') {
             return new ResponseResource(false, "status product sudah dump", $product);
         }
 
@@ -578,7 +582,7 @@ class NewProductController extends Controller
         $quality = json_decode($product->new_quality, true);
 
 
-        if (isset($quality['lolos']) ) {
+        if (isset($quality['lolos'])) {
             return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
         }
 
@@ -590,7 +594,7 @@ class NewProductController extends Controller
     public function listDump(Request $request)
     {
         $query = $request->get('q');
-    
+
         $products = New_product::where('new_status_product', 'dump')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
@@ -598,10 +602,7 @@ class NewProductController extends Controller
                     ->orWhere('new_name_product', 'like', '%' . $query . '%');
             })
             ->paginate(50);
-    
+
         return new ResponseResource(true, "List dump", $products);
     }
-    
-        
-    
 }
