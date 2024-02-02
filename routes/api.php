@@ -5,6 +5,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
+use App\Http\Controllers\MigrateController;
+use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\NewProductController;
 use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
@@ -36,6 +38,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+//=========================================== Handler if route not found ======================================
+
+Route::fallback(function () {
+    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
+});
+
 //=========================================== inbound ==========================================================
 
 //generates file excel
@@ -45,9 +53,9 @@ Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
 Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
 //product old
-Route::resource('product_olds', ProductOldController::class); 
-Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']); 
-Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']); 
+Route::resource('product_olds', ProductOldController::class);
+Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
+Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
 Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
 //new product (hasil scan)
@@ -111,7 +119,7 @@ Route::post('palet', [PaletProductController::class, 'store']);
 Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
 
 
-// =========================================== repair station ==========================================================
+// =========================================== repair station ==================================================
 Route::get('repair', [NewProductController::class, 'showRepair']);
 Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
 Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
@@ -121,3 +129,10 @@ Route::get('/excelolds', [NewProductController::class, 'excelolds']);
 //list dump
 Route::get('/dumps', [NewProductController::class, 'listDump']);
 Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+
+
+//=========================================== inbound ==========================================================
+
+//migrate
+Route::resource('migrates', MigrateController::class);
+Route::resource('migrate-documents', MigrateDocumentController::class);
