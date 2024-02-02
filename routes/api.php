@@ -14,6 +14,8 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatCheckController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 use App\Models\New_product;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
@@ -111,6 +113,7 @@ Route::post('palet', [PaletProductController::class, 'store']);
 Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
 
 
+//unutk crew
 // =========================================== repair station ==========================================================
 Route::get('repair', [NewProductController::class, 'showRepair']);
 Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
@@ -121,3 +124,9 @@ Route::get('/excelolds', [NewProductController::class, 'excelolds']);
 //list dump
 Route::get('/dumps', [NewProductController::class, 'listDump']);
 Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+
+
+
+//Akun
+Route::resource('users', UserController::class);
+Route::resource('roles', RoleController::class);
