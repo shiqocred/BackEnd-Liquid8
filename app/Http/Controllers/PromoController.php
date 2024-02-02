@@ -13,9 +13,13 @@ class PromoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $promos = Promo::latest()->with('new_product')->paginate(100);
+        $query = $request->input('q');
+        $promos = Promo::latest()->where(function($queryBuilder) use ($query){
+            $queryBuilder->where('name_promo', 'LIKE', '%' . $query . '%');
+        })->with('new_product')->paginate(100);
+
         return new ResponseResource(true, "list promo", $promos);
     }
 

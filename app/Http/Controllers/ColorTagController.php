@@ -6,16 +6,19 @@ use App\Http\Resources\ResponseResource;
 use App\Models\Color_tag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+ 
 class ColorTagController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tag = Color_tag::latest()->paginate(30);
-        return new ResponseResource(true, "list tag warna", $tag);
+        $query = $request->input('q');
+        $tags = Color_tag::latest()->where(function($queryBuilder) use ($query) {
+            $queryBuilder->where('name_color', 'LIKE', '%' . $query . '%');
+        })->paginate(50);
+        return new ResponseResource(true, "list tag warna", $tags);
     }
 
     /**

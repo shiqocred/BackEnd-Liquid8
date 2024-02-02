@@ -45,7 +45,7 @@ class NewProductController extends Controller
 
 
     public function create()
-    {
+    { 
     }
 
     public function store(Request $request)
@@ -236,10 +236,16 @@ class NewProductController extends Controller
 
 
 
-    public function listProductExp()
+    public function listProductExp(Request $request)
     {
         try {
-            $productExpired = New_product::where('new_status_product', 'expired')->paginate(50);
+            $query = $request->input('q');
+            $productExpired = New_product::where(function ($queryBuilder) use ($query){
+                $queryBuilder->where('new_status_product', 'expired')
+                ->where('new_name_product', 'LIKE', '%' . $query  . '%');
+
+            })->paginate(50);
+            
             return new ResponseResource(true, "list product expired", $productExpired);
         } catch (\Exception $e) {
             return response()->json(["error" => $e]);
