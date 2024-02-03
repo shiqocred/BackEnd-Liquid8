@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ResponseResource;
 use App\Models\Migrate;
 use App\Models\MigrateDocument;
+use App\Models\New_product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +18,13 @@ class MigrateController extends Controller
      */
     public function index()
     {
-        $migrate = Migrate::latest()->paginate(10);
-        $resource = new ResponseResource(true, "list migrate", $migrate);
+        // $migrate = Migrate::latest()->paginate(10);
+        $newProduct = New_product::where('new_status_product', 'display')
+            ->orWhere('new_status_product', 'bundle')
+            ->orWhere('new_status_product', 'promo')
+            ->get();
+        $newProduct[] = ['code_document_migrate' => codeDocumentMigrate()];
+        $resource = new ResponseResource(true, "list migrate", $newProduct);
         return $resource->response();
     }
 
@@ -40,7 +46,6 @@ class MigrateController extends Controller
         $validator = Validator::make(
             $data,
             [
-                '*.code_document_migrate' => 'required',
                 '*.new_barcode_product' => 'required|unique:migrates',
                 '*.new_name_product' => 'required',
                 '*.new_qty_product' => 'required|numeric',
@@ -68,6 +73,8 @@ class MigrateController extends Controller
 
             //automatic include craeted_at & updated_at for bacth insert
             foreach ($data as &$val) {
+                $newProduct = New_product::where('new_barcode_product', $val['new_barcode_product'])->first();
+                $newProduct->update(['new_status_product' => 'migrate']);
                 $val['code_document_migrate'] = $requestDocumentMigrate['code_document_migrate'];
                 $val['created_at'] = now();
                 $val['updated_at'] = now();

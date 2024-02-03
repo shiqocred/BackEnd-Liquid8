@@ -17,7 +17,8 @@ return new class extends Migration
             $table->decimal('total_price_bundle', 12, 2);
             $table->decimal('total_price_custom_bundle', 12, 2);
             $table->integer('total_product_bundle');
-            $table->string('barcode_bundle')->unique(); 
+            $table->enum('status_product_bundle', ['not sale', 'sale']);
+            $table->string('barcode_bundle')->unique();
             $table->timestamps();
         });
     }
