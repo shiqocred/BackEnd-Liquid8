@@ -16,6 +16,8 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatCheckController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleDocumentController;
 use App\Models\New_product;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
@@ -136,3 +138,7 @@ Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
 //migrate
 Route::resource('migrates', MigrateController::class);
 Route::resource('migrate-documents', MigrateDocumentController::class);
+
+//sale
+Route::resource('sales', SaleController::class);
+Route::resource('sale-documents', SaleDocumentController::class);
