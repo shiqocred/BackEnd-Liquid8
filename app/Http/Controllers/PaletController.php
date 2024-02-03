@@ -25,9 +25,12 @@ class PaletController extends Controller
     }
     
     
-    public function index()
+    public function index(Request $request)
     {
-        $palets = Palet::latest()->with('paletProducts')->paginate(100);
+        $query = $request->input('q');
+        $palets = Palet::latest()->where(function ($queryBuilder) use ($query){
+            $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%');
+        })->with('paletProducts')->paginate(100);
         return new ResponseResource(true, "list palet", $palets);
     }
 

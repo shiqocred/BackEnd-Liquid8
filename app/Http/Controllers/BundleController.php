@@ -15,9 +15,13 @@ class BundleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $bundles = Bundle::latest()->with('product_bundles')->paginate(50);
+        $query = $request->input('q');
+        $bundles = Bundle::latest()->where(function ($queryBuilder) use ($query){
+            $queryBuilder->where('name_bundle', 'LIKE', '%' . $query . '%');
+        })->with('product_bundles')->paginate(50);
+        
         return new ResponseResource(true, "list bundle", $bundles);
     }
 
