@@ -12,10 +12,14 @@ use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class DocumentController extends Controller
 {
-    
-    public function index()
+     
+    public function index(Request $request)
     {
-        $documents = Document::latest()->paginate(50);
+        $query = $request->input('q');
+        $documents = Document::latest()->where(function($queryBuilder) use ($query){
+            $queryBuilder->where('code_document', 'LIKE', '%' . $query . '%')
+            ->orWhere('base_document', 'LIKE', '%' . $query . '%' );
+        })->paginate(50);
         return new ResponseResource(true, "List Documents", $documents);
     }
 

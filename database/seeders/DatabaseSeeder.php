@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use App\Models\Category;
 use App\Models\Color_tag;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -34,6 +36,18 @@ class DatabaseSeeder extends Seeder
         Category::factory()->electronic_hv()->create();
         Color_tag::factory()->merah()->create();
         Color_tag::factory()->biru()->create();
+        
+      
+        $users = Role::factory();
+        foreach (range(0, 5) as $index) {
+            $users->role($index)->create();
+        };
+
+        $users = User::factory();
+        foreach (range(0, 5) as $index) {
+            $users->account($index)->create();
+        };
+        
 
 
     }
