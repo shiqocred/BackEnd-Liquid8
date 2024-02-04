@@ -17,6 +17,8 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatCheckController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleDocumentController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Models\New_product;

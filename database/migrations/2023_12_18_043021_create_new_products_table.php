@@ -8,20 +8,20 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     */ 
+     */
     public function up(): void
     {
         Schema::create('new_products', function (Blueprint $table) {
-            $table->id(); 
-            $table->string('code_document')->nullable(); 
+            $table->id();
+            $table->string('code_document')->nullable();
             $table->string('old_barcode_product')->nullable();
             $table->string('new_barcode_product')->unique()->nullable();
             $table->string('new_name_product')->nullable();
             $table->integer('new_quantity_product')->nullable();
-            $table->decimal('new_price_product', 15, 2)->nullable(); 
-            $table->decimal('old_price_product', 15, 2)->nullable(); 
+            $table->decimal('new_price_product', 15, 2)->nullable();
+            $table->decimal('old_price_product', 15, 2)->nullable();
             $table->date('new_date_in_product')->nullable();
-            $table->enum('new_status_product', ['display', 'expired', 'promo', 'bundle', 'palet', 'dump']);
+            $table->enum('new_status_product', ['display', 'expired', 'promo', 'bundle', 'palet', 'dump', 'sale', 'migrate']);
             $table->json('new_quality')->nullable();
             $table->string('new_category_product')->nullable();
             $table->string('new_tag_product')->nullable();
