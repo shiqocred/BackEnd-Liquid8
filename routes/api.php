@@ -42,29 +42,49 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::middleware(['auth:sanctum', 'check.role:Reparasi, Spv, Admin'])->group(function () {
-    // =========================================== repair station ==================================================
-    Route::get('repair', [NewProductController::class, 'showRepair']);
-    Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
-    Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
-    Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
-    Route::get('/excelolds', [NewProductController::class, 'excelolds']);
-
-    //list dump
-    Route::get('/dumps', [NewProductController::class, 'listDump']);
-    Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+   
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin kasir'])->group(function () {
-    //=========================================== outbound ==========================================================
-
-    //migrate
-    Route::resource('migrates', MigrateController::class);
-    Route::resource('migrate-documents', MigrateDocumentController::class);
+  
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Spv, Team leader, Admin'])->group(function () {
 
-    //=========================================== storage ==========================================================
+   
+});
+
+
+
+Route::middleware(['auth:sanctum', 'check.role:crew, Team leader, Spv, Admin'])->group(function () {
+   
+
+});
+
+
+Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
+  
+
+});
+
+ // =========================================== repair station ==================================================
+ Route::get('repair', [NewProductController::class, 'showRepair']);
+ Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
+ Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
+ Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
+ Route::get('/excelolds', [NewProductController::class, 'excelolds']);
+
+ //list dump
+ Route::get('/dumps', [NewProductController::class, 'listDump']);
+ Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+
+  //=========================================== outbound ==========================================================
+
+    //migrate
+    Route::resource('migrates', MigrateController::class);
+    Route::resource('migrate-documents', MigrateDocumentController::class);
+
+ //=========================================== storage ==========================================================
 
     //slow moving products 
     //filters product bundle
@@ -104,12 +124,8 @@ Route::middleware(['auth:sanctum', 'check.role:Spv, Team leader, Admin'])->group
 
      //colortags diskon
      Route::resource('color_tags', ColorTagController::class);
-});
 
-
-
-Route::middleware(['auth:sanctum', 'check.role:crew, Team leader, Spv, Admin'])->group(function () {
-    //=========================================== inbound ==========================================================
+ //=========================================== inbound ==========================================================
 
     //generates file excel -> input data ekspedisi 
     Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
@@ -147,15 +163,8 @@ Route::middleware(['auth:sanctum', 'check.role:crew, Team leader, Spv, Admin'])-
 
     Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
 
-});
-
-
-Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
-    Route::resource('users', UserController::class)->except(['store']);
-    Route::resource('roles', RoleController::class);
-
-});
+Route::resource('users', UserController::class)->except(['store']);
+Route::resource('roles', RoleController::class);
 
 Route::post('login', [AuthController::class, 'login']);
-Route::post('login/2', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
