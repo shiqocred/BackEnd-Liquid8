@@ -106,7 +106,7 @@ class RiwayatCheckController extends Controller
             'status' => 'pending'
         ]);
 
-        $adminUser = User::where('email', 'laluisari@gmail.com')->first();
+        $adminUser = User::where('email', 'sugeng@gmail.com')->first();
 
         if ($adminUser) {
             Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));

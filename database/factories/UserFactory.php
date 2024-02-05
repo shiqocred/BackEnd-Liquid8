@@ -33,7 +33,7 @@ class UserFactory extends Factory
     {
 
         $name = [
-            'michael',
+            'sugeng',
             'anas',
             'firdy',
             'freddy',
@@ -42,7 +42,7 @@ class UserFactory extends Factory
         ];
 
         $username = [
-            'michael1',
+            'sugeng',
             'anas1',
             'firdy1',
             'freddy1',
@@ -50,7 +50,7 @@ class UserFactory extends Factory
             'hayyi1'
         ];
         $email = [
-            'laluisari@gmail.com',
+            'sugeng@gmail.com',
             'anas@gmail.com',
             'firdy@gmail.com',
             'freddy@gmail.com',
