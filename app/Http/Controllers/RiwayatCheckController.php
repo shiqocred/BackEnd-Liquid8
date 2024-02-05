@@ -31,12 +31,12 @@ class RiwayatCheckController extends Controller
 
     public function store(Request $request)
     {
-        $user = User::find(auth()->id());
+        // $user = User::find(auth()->id());
 
-        if (!$user) {
-            $resource = new ResponseResource(false, "User tidak dikenali", null);
-            return $resource->response()->setStatusCode(422);
-        }
+        // if (!$user) {
+        //     $resource = new ResponseResource(false, "User tidak dikenali", null);
+        //     return $resource->response()->setStatusCode(422);
+        // }
 
         $validator = Validator::make($request->all(), [
             'code_document' => 'required|unique:riwayat_checks,code_document',
@@ -77,7 +77,8 @@ class RiwayatCheckController extends Controller
 
 
         $riwayat_check = RiwayatCheck::create([
-            'user_id' => $user->id,
+            // 'user_id' => $user->id,
+            'user_id' => 4,
             'code_document' => $request['code_document'],
             'total_data' => $document->total_column_in_document,
             'total_data_in' => $totalData,
@@ -101,7 +102,8 @@ class RiwayatCheckController extends Controller
 
         //keterangan transaksi
         $keterangan = SpecialTransaction::create([
-            'user_id' => $user->id,
+            // 'user_id' => $user->id,
+            'user_id' => 4,
             'transaction_name' => 'list product document sudah di check',
             'status' => 'pending'
         ]);

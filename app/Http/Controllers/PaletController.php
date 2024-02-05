@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 
 class PaletController extends Controller
-{
+{ 
     public function display()
     {
         $new_products = New_product::query()
