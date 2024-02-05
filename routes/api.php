@@ -20,9 +20,11 @@ use App\Http\Controllers\RiwayatCheckController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SaleDocumentController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
 use App\Models\New_product;
 use App\Models\RiwayatCheck;
+use App\Models\SpecialTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -142,6 +144,9 @@ Route::middleware(['auth:sanctum', 'check.role:crew, Team leader, Spv, Admin'])-
     //riwayat
     Route::resource('historys', RiwayatCheckController::class);
     Route::get('riwayat-document', [RiwayatCheckController::class, 'getByDocument']);
+
+    Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
+
 });
 
 

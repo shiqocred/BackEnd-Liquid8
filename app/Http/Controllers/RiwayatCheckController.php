@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
+use App\Models\User;
 use App\Models\Document;
 use App\Models\New_product;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
+use App\Models\SpecialTransaction;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Resources\ResponseResource;
+use App\Mail\AdminNotification;
 use Illuminate\Support\Facades\Validator;
 
 class RiwayatCheckController extends Controller
@@ -27,6 +31,13 @@ class RiwayatCheckController extends Controller
 
     public function store(Request $request)
     {
+        $user = User::find(auth()->id());
+
+        if (!$user) {
+            $resource = new ResponseResource(false, "User tidak dikenali", null);
+            return $resource->response()->setStatusCode(422);
+        }
+
         $validator = Validator::make($request->all(), [
             'code_document' => 'required|unique:riwayat_checks,code_document',
         ]);
@@ -51,39 +62,22 @@ class RiwayatCheckController extends Controller
         $totalLolos = 0;
         $totalDamaged = 0;
         $totalAbnormal = 0;
-        // $newQualityData = $newProducts->pluck('new_quality')->map(function ($item) {
-        //     dd($item);
-        //     return json_decode($item, true);
-        // });
-        
-        // foreach ($newProducts->new_quality as $item) {
-        //     if (is_array($item)) {
-        //         $totalLolos += !empty($item['lolos']) ? 1 : 0;
-        //         $totalDamaged += !empty($item['damaged']) ? 1 : 0;
-        //         $totalAbnormal += !empty($item['abnormal']) ? 1 : 0;
-        //     }
-        // }
-        
+
+
         foreach ($newProducts as $product) {
             $newQualityData = json_decode($product->new_quality, true);
 
-                  if (is_array($newQualityData)) {
+            if (is_array($newQualityData)) {
                 $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
                 $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
                 $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
             }
         }
-        
-        // dd(
-        //     $totalLolos,
-        //     $totalDamaged,
-        //     $totalAbnormal,
-        //     $totalData,
-        //     $newProducts
-        // );
-        
+
+
 
         $riwayat_check = RiwayatCheck::create([
+            'user_id' => $user->id,
             'code_document' => $request['code_document'],
             'total_data' => $document->total_column_in_document,
             'total_data_in' => $totalData,
@@ -105,7 +99,24 @@ class RiwayatCheckController extends Controller
         $code_document = Document::where('code_document', $request['code_document'])->first();
         $code_document->update(['status_document' => 'done']);
 
-        return new ResponseResource(true, "Data berhasil ditambah", $riwayat_check);
+        //keterangan transaksi
+        $keterangan = SpecialTransaction::create([
+            'user_id' => $user->id,
+            'transaction_name' => 'list product document sudah di check',
+            'status' => 'pending'
+        ]);
+
+        $adminUser = User::where('email', 'laluisari@gmail.com')->first();
+
+        if ($adminUser) {
+            Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+        } else {
+           $resource= new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
+           return $resource->response()->setStatusCode(403);
+        }
+        
+
+        return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
     }
 
 

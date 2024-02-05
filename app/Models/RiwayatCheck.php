@@ -9,5 +9,4 @@ class RiwayatCheck extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
-    
 }
