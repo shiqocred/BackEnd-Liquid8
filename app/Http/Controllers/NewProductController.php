@@ -45,7 +45,7 @@ class NewProductController extends Controller
 
 
     public function create()
-    { 
+    {
     }
 
     public function store(Request $request)
@@ -240,12 +240,11 @@ class NewProductController extends Controller
     {
         try {
             $query = $request->input('q');
-            $productExpired = New_product::where(function ($queryBuilder) use ($query){
+            $productExpired = New_product::where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_status_product', 'expired')
-                ->where('new_name_product', 'LIKE', '%' . $query  . '%');
-
+                    ->where('new_name_product', 'LIKE', '%' . $query  . '%');
             })->paginate(50);
-            
+
             return new ResponseResource(true, "list product expired", $productExpired);
         } catch (\Exception $e) {
             return response()->json(["error" => $e]);
@@ -381,7 +380,7 @@ class NewProductController extends Controller
                 'abnormal' => $status === 'abnormal' ? $description : null,
             ];
 
-            $mergedData['new_quality'][] = json_encode($qualityData);
+            $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
 
         // Menyimpan data yang digabungkan ke dalam model New_product
@@ -396,7 +395,7 @@ class NewProductController extends Controller
                 'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
                 'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => $mergedData['new_quality'][$index] ?? null,
+                'new_quality' => $mergedData['new_quality'][$index],
             ];
 
             New_product::create($newProductData);

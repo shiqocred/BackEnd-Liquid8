@@ -174,8 +174,6 @@ class GenerateController extends Controller
 
         Generate::query()->delete();
 
-      
-
         //view
         // return response()->json(['message' => 'Data has been merged and saved successfully.']);
 
