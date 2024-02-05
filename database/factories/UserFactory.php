@@ -55,7 +55,6 @@ class UserFactory extends Factory
             'hayyi@gmail.com',
             'freddy@gmail.com',
             'gebus@gmail.com',
-            'hayyi@gmail.com'
         ];
         $role_id = [1, 2, 3, 4, 5, 6];
 
