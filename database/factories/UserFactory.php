@@ -42,7 +42,7 @@ class UserFactory extends Factory
         ];
 
         $username = [
-            'sugeng',
+            'sugeng1',
             'anas1',
             'firdy1',
             'freddy1',
@@ -55,6 +55,7 @@ class UserFactory extends Factory
             'hayyi@gmail.com',
             'freddy@gmail.com',
             'gebus@gmail.com',
+            'cok@gmail.com'
         ];
         $role_id = [1, 2, 3, 4, 5, 6];
 
