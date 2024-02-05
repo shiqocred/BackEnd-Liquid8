@@ -157,4 +157,5 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
 });
 
 Route::post('login', [AuthController::class, 'login']);
+Route::post('login/2', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
