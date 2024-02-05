@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('riwayat_checks', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users');
             $table->string('code_document');
             $table->integer('total_data');
             $table->integer('total_data_in');
@@ -29,10 +30,11 @@ return new class extends Migration
             $table->decimal('percentage_damaged', 5, 2)->nullable(); // Menyimpan persentase data damaged
             $table->decimal('percentage_abnormal', 5, 2)->nullable(); // Menyimpan persentase data abnormal
             $table->decimal('percentage_discrepancy', 5, 2)->nullable(); // Menyimpan persentase discrepancy
-           
+
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.

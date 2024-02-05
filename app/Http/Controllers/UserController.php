@@ -67,4 +67,6 @@ class UserController extends Controller
 
         return new ResponseResource(true, "User deleted successfully", null);
     }
+
+
 }

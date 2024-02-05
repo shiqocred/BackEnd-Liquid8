@@ -50,7 +50,7 @@ class UserFactory extends Factory
             'hayyi1'
         ];
         $email = [
-            'michale@gmail.com',
+            'laluisari@gmail.com',
             'anas@gmail.com',
             'firdy@gmail.com',
             'freddy@gmail.com',
