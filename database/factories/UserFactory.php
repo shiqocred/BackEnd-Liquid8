@@ -52,9 +52,9 @@ class UserFactory extends Factory
         $email = [
             'sugeng@gmail.com',
             'anas@gmail.com',
-            'firdy@gmail.com',
+            'hayyi@gmail.com',
             'freddy@gmail.com',
-            'safrudin@gmail.com',
+            'anas@gmail.com',
             'hayyi@gmail.com'
         ];
         $role_id = [1, 2, 3, 4, 5, 6];
