@@ -251,79 +251,89 @@ class NewProductController extends Controller
         }
     }
 
-
     public function processExcelFiles(Request $request)
     {
+        set_time_limit(300); // Extend max execution time
+        ini_set('memory_limit', '512M'); // Increase memory limit
+    
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls'
-        ], [
+            'file' => 'required|file|mimes:xlsx,xls',
             'file.unique' => 'Nama file sudah ada di database.',
         ]);
-
+    
         $file = $request->file('file');
-
         $filePath = $file->getPathname();
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $fileName);
-
+    
+        DB::beginTransaction();
+    
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
-
             $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
-
-            $rowCount = 0;
             $dataToInsert = [];
-
+            $rowCount = 0;
+    
             foreach ($sheet->getRowIterator(2) as $row) {
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(FALSE);
-
+    
                 $rowData = [];
                 foreach ($cellIterator as $cell) {
-                    $rowData[] = $cell->getValue();
+                    $rowData[] = $cell->getValue() ?? ''; // Use default value for empty cells
                 }
-
+    
                 if (count($header) === count($rowData)) {
-                    $jsonRowData = json_encode(array_combine($header, $rowData));
-                    ExcelOld::create(['data' => $jsonRowData]);
+                    $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
                     $rowCount++;
                 }
             }
-
-            // Buat dokumen baru
-            $latestDocument = Document::latest()->first();
-            $newId = $latestDocument ? $latestDocument->id + 1 : 1;
-            $id_document = str_pad($newId, 4, '0', STR_PAD_LEFT);
-            $month = date('m');
-            $year = date('Y');
-            $code_document = $id_document . '/' . $month . '/' . $year;
-
+    
+            $chunks = array_chunk($dataToInsert, 500);
+            foreach ($chunks as $chunk) {
+                ExcelOld::insert($chunk);
+            }
+    
+            // Create a new document with the rowCount
             Document::create([
-                'code_document' => $code_document,
+                'code_document' => $this->generateDocumentCode(),
                 'base_document' => $fileName,
                 'total_column_document' => count($header),
                 'total_column_in_document' => $rowCount,
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
-
-
+    
+            // Call mapAndMergeHeaders function here
             $mergeResponse = $this->mapAndMergeHeaders();
-            // Return response
+    
+            DB::commit();
+    
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'code_document' => $code_document,
-                'file_name' => $fileName,
-                'total_column_count' => count($header),
-                'total_row_count' => $rowCount,
-                'merged' => $mergeResponse
+                'mergeResponse' => $mergeResponse
             ]);
-        } catch (ReaderException $e) {
-            return back()->with('error', 'Error processing file: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
+    
+    protected function generateDocumentCode() {
+        $latestDocument = Document::latest()->first();
+        $newId = $latestDocument ? $latestDocument->id + 1 : 1;
+        $id_document = str_pad($newId, 4, '0', STR_PAD_LEFT);
+        $month = date('m');
+        $year = date('Y');
+        return $id_document . '/' . $month . '/' . $year;
+    }
+    
+    
+    
+    
 
     protected function mapAndMergeHeaders()
     {
+        set_time_limit(300);
         $headerMappings = [
             'old_barcode_product' => ['Barcode'],
             'new_barcode_product' => ['Barcode'],
@@ -335,17 +345,17 @@ class NewProductController extends Controller
             'new_date_in_product' => ['Date'],
         ];
 
-        // Mengambil kode dokumen terakhir
+
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
         }
         $code_document = $latestDocument->code_document;
-
-        // Mengambil semua data dari model ExcelOld dan mengubahnya menjadi array
+    
         $ekspedisiData = ExcelOld::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
+    
 
         // Inisialisasi array untuk menyimpan data yang akan digabungkan
         $mergedData = [
@@ -360,7 +370,6 @@ class NewProductController extends Controller
             'new_quality' => [],
         ];
 
-        // Memetakan dan menggabungkan data berdasarkan headerMappings
         foreach ($ekspedisiData as $dataItem) {
             foreach ($headerMappings as $templateHeader => $selectedHeaders) {
                 foreach ($selectedHeaders as $userSelectedHeader) {
@@ -369,6 +378,7 @@ class NewProductController extends Controller
                     }
                 }
             }
+    
 
 
             $status = $dataItem['Status'] ?? 'unknown';
@@ -382,16 +392,18 @@ class NewProductController extends Controller
 
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
-
+        
+        
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
             $newProductData = [
                 'code_document' => $code_document,
                 'old_barcode_product' => $barcode,
                 'new_barcode_product' => $mergedData['new_barcode_product'][$index] ?? null,
                 'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
                 'new_category_product' => $mergedData['new_category_product'][$index] ?? null,
-                'new_quantity_product' => $mergedData['new_quantity_product'][$index] ?? null,
+                'new_quantity_product' => $quantity,
                 'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
                 'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
