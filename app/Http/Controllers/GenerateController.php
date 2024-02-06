@@ -13,110 +13,128 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
-    { 
-
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls'
-        ], [
-            'file.unique' => 'Nama file sudah ada di database.',
-        ]);
-
-        $file = $request->file('file');
-        
-        $headers = [];
-        $templateHeaders = ["no_resi", "nama", "qty", "harga"];
-        $fileDetails = [];
-
-        $filePath = $file->getPathname();
-        $fileName = $file->getClientOriginalName();
-        $file->storeAs('public/ekspedisis', $file->hashName());
-
-        $header = [];
+    {
+        // Mulai transaksi
+        DB::beginTransaction();
 
         try {
-            $spreadsheet = IOFactory::load($filePath);
-            $sheet = $spreadsheet->getActiveSheet();
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls'
+            ], [
+                'file.unique' => 'Nama file sudah ada di database.',
+            ]);
 
-            foreach ($sheet->getRowIterator(1, 1) as $row) {
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(false);
+            $file = $request->file('file');
+            $filePath = $file->getPathname();
+            $fileName = $file->getClientOriginalName();
 
-                foreach ($cellIterator as $cell) {
-                    $value = $cell->getValue();
-                    if (!is_null($value) && $value !== '') {
-                        $header[] = $value;
+            // Simpan file yang diunggah
+            $file->storeAs('public/ekspedisis', $file->hashName());
+
+            // Mempersiapkan variabel
+            $headers = [];
+            $fileDetails = [];
+            $templateHeaders = ["no_resi", "nama", "qty", "harga"];
+
+
+            try {
+                // Membuka file Excel
+                $spreadsheet = IOFactory::load($filePath);
+                $sheet = $spreadsheet->getActiveSheet();
+                $header = [];
+                $rowCount = 0;
+
+                // Membaca header
+                foreach ($sheet->getRowIterator(1, 1) as $row) {
+                    $cellIterator = $row->getCellIterator();
+                    $cellIterator->setIterateOnlyExistingCells(false);
+
+                    foreach ($cellIterator as $cell) {
+                        $value = $cell->getValue();
+                        if (!is_null($value) && $value !== '') {
+                            $header[] = $value;
+                        }
                     }
                 }
-            }
 
-            $headers[$fileName] = $header;
-            $rowCount = 0;
-            $columnCount = count($header);
+                $headers[$fileName] = $header;
+                $columnCount = count($header);
 
-            foreach ($sheet->getRowIterator(2) as $row) {
-                $rowData = [];
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(false);
-
-                foreach ($cellIterator as $cell) {
-                    $value = $cell->getValue();
-                    if (!is_null($value)) {
+                // Membaca baris data
+                foreach ($sheet->getRowIterator(2) as $row) {
+                    $rowData = [];
+                    $cellIterator = $row->getCellIterator();
+                    $cellIterator->setIterateOnlyExistingCells(false); // Pastikan untuk mengatur ini
+                
+                    foreach ($cellIterator as $cell) {
+                        $value = $cell->getValue() ?? ''; // Gunakan nilai default jika sel kosong
                         $rowData[] = $value;
                     }
+                
+                    if (count($header) == count($rowData)) {
+                        $jsonRowData = json_encode(array_combine($header, $rowData));
+                        Generate::create(['data' => $jsonRowData]);
+                        $rowCount++; // Pindahkan increment rowCount ke sini
+                    } else {
+                        Log::warning('Row data does not match header count', [
+                            'HeaderCount' => count($header),
+                            'RowDataCount' => count($rowData),
+                            'RowData' => $rowData
+                        ]);
+                    }
                 }
+                
+                // Memperbarui detail file
+                $fileDetails = [
+                    'total_column_count' => $columnCount,
+                    'total_row_count' => $rowCount
+                ];
 
-                if (count($header) == count($rowData)) {
-                    $jsonRowData = json_encode(array_combine($header, $rowData));
-                    Generate::create(['data' => $jsonRowData]);
-                }
-                $rowCount++;
+                // Membuat dokumen baru
+                $latestDocument = Document::latest()->first();
+                $newId = $latestDocument ? $latestDocument->id + 1 : 1;
+                $id_document = str_pad($newId, 4, '0', STR_PAD_LEFT);
+                $month = date('m');
+                $year = date('Y');
+                $code_document = $id_document . '/' . $month . '/' . $year;
+
+                Document::create([
+                    'code_document' => $code_document,
+                    'base_document' => $fileName,
+                    'total_column_document' => $columnCount,
+                    'total_column_in_document' => $rowCount,
+                    'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
+                ]);
+
+                // Commit transaksi
+                DB::commit();
+
+                // Mengembalikan response berhasil
+                return new ResponseResource(true, "berhasil", [
+                    'code_document' => $code_document,
+                    'headers' => $headers,
+                    'file_name' => $fileName,
+                    'templateHeaders' => $templateHeaders,
+                    'fileDetails' => $fileDetails
+                ]);
+            } catch (ReaderException $e) {
+                // Melakukan rollback dan mencatat kesalahan
+                DB::rollback();
+                Log::error('Error processing file: ' . $e->getMessage());
+                return response()->json(['error' => 'Error processing file: ' . $e->getMessage()], 500);
             }
-
-            $fileDetails = [
-                'total_column_count' => $columnCount,
-                'total_row_count' => $rowCount
-            ];
-        } catch (ReaderException $e) {
-            return back()->with('error', 'Error processing file: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            // Melakukan rollback dan mencatat kesalahan yang tidak terduga
+            DB::rollback();
+            Log::error('Unexpected error: ' . $e->getMessage());
+            return response()->json(['error' => 'Unexpected error occurred.'], 500);
         }
-
-       
-        $latestDocument = Document::latest()->first();
-        $newId = $latestDocument ? $latestDocument->id + 1 : 1;
-
-        $id_document = str_pad($newId, 4, '0', STR_PAD_LEFT);
-
-        $month = date('m'); 
-        $year = date('Y');
-
-        $code_cocument = $id_document . '/' . $month . '/' . $year;
-        
-
-        Document::create([
-            'code_document' => $code_cocument,
-            'base_document' => $fileName,
-            'total_column_document' => $columnCount,
-            'total_column_in_document' => $rowCount,
-            'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
-        ]);
-
-        // return response()->view('excelData', [
-        //     'headers' => $headers,
-        //     'templateHeaders' => $templateHeaders,
-        //     'fileDetails' => $fileDetails
-        // ]);
-
-        return new ResponseResource(true, "berhasil", [
-            'code_document' => $code_cocument,
-            'headers' => $headers,
-            'file_name' => $fileName,
-            'templateHeaders' => $templateHeaders,
-            'fileDetails' => $fileDetails
-        ]);
     }
 
     public function mapAndMergeHeaders(Request $request)
@@ -157,6 +175,8 @@ class GenerateController extends Controller
 
 
 
+        $savedProducts = []; // Tambahkan array untuk menyimpan produk yang berhasil disimpan
+
         foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
             $nama = $mergedData['old_name_product'][$index] ?? null;
             $qty = $mergedData['old_quantity_product'][$index] ?? null;
@@ -170,14 +190,13 @@ class GenerateController extends Controller
                 'old_price_product' => $harga
             ]);
             $resultEntry->save();
+
+            $savedProducts[] = $resultEntry; // Menambahkan produk yang berhasil disimpan ke array
         }
 
         Generate::query()->delete();
 
-        //view
-        // return response()->json(['message' => 'Data has been merged and saved successfully.']);
-
-        //api
-        return new ResponseResource(true, "berhasil menggabungkan data", $resultEntry);
+        // Kembali dengan semua produk yang berhasil disimpan
+        return new ResponseResource(true, "Berhasil menggabungkan data", $savedProducts);
     }
 }
