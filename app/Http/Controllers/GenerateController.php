@@ -20,6 +20,8 @@ class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
     {
+        set_time_limit(300); // Extend max execution time
+        ini_set('memory_limit', '512M'); // Increase memory limit
         // Mulai transaksi
         DB::beginTransaction();
 
@@ -71,12 +73,12 @@ class GenerateController extends Controller
                     $rowData = [];
                     $cellIterator = $row->getCellIterator();
                     $cellIterator->setIterateOnlyExistingCells(false); // Pastikan untuk mengatur ini
-                
+
                     foreach ($cellIterator as $cell) {
                         $value = $cell->getValue() ?? ''; // Gunakan nilai default jika sel kosong
                         $rowData[] = $value;
                     }
-                
+
                     if (count($header) == count($rowData)) {
                         $jsonRowData = json_encode(array_combine($header, $rowData));
                         Generate::create(['data' => $jsonRowData]);
@@ -89,7 +91,7 @@ class GenerateController extends Controller
                         ]);
                     }
                 }
-                
+
                 // Memperbarui detail file
                 $fileDetails = [
                     'total_column_count' => $columnCount,
@@ -139,64 +141,75 @@ class GenerateController extends Controller
 
     public function mapAndMergeHeaders(Request $request)
     {
-        // Validasi input request
-        $validator = Validator::make($request->all(), [
-            'headerMappings' => 'required|array',
-            'code_document' => 'required'
-        ]);
+        set_time_limit(300); // Extend max execution time
+        ini_set('memory_limit', '512M'); // Increase memory limit
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+        try {
 
-        $headerMappings = $request->input('headerMappings');
-
-        $mergedData = [
-            'old_barcode_product' => [],
-            'old_name_product' => [],
-            'old_quantity_product' => [],
-            'old_price_product' => []
-        ];
-
-        $ekspedisiData = Generate::all()->map(function ($item) {
-            return json_decode($item->data, true);
-        });
-
-
-        foreach ($headerMappings as $templateHeader => $selectedHeaders) {
-            foreach ($selectedHeaders as $userSelectedHeader) {
-                $ekspedisiData->each(function ($dataItem) use ($userSelectedHeader, &$mergedData, $templateHeader) {
-                    if (isset($dataItem[$userSelectedHeader])) {
-                        array_push($mergedData[$templateHeader], $dataItem[$userSelectedHeader]);
-                    }
-                });
-            }
-        }
-
-
-
-        $savedProducts = []; // Tambahkan array untuk menyimpan produk yang berhasil disimpan
-
-        foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
-            $nama = $mergedData['old_name_product'][$index] ?? null;
-            $qty = $mergedData['old_quantity_product'][$index] ?? null;
-            $harga = $mergedData['old_price_product'][$index] ?? null;
-
-            $resultEntry = new Product_old([
-                'code_document' => $request['code_document'],
-                'old_barcode_product' => $noResi,
-                'old_name_product' => $nama,
-                'old_quantity_product' => $qty,
-                'old_price_product' => $harga
+            // Validasi input request
+            $validator = Validator::make($request->all(), [
+                'headerMappings' => 'required|array',
+                'code_document' => 'required'
             ]);
-            $resultEntry->save();
 
-            $savedProducts[] = $resultEntry; // Menambahkan produk yang berhasil disimpan ke array
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            $headerMappings = $request->input('headerMappings');
+
+            $mergedData = [
+                'old_barcode_product' => [],
+                'old_name_product' => [],
+                'old_quantity_product' => [],
+                'old_price_product' => []
+            ];
+
+            $ekspedisiData = Generate::all()->map(function ($item) {
+                return json_decode($item->data, true);
+            });
+
+            foreach ($headerMappings as $templateHeader => $selectedHeaders) {
+                foreach ($selectedHeaders as $userSelectedHeader) {
+                    $ekspedisiData->each(function ($dataItem) use ($userSelectedHeader, &$mergedData, $templateHeader) {
+                        if (isset($dataItem[$userSelectedHeader])) {
+                            array_push($mergedData[$templateHeader], $dataItem[$userSelectedHeader]);
+                        }
+                    });
+                }
+            }
+
+            $dataToInsert = [];
+            foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
+                $nama = $mergedData['old_name_product'][$index] ?? null;
+                $qty = $mergedData['old_quantity_product'][$index] === '' ? null : (int)$mergedData['old_quantity_product'][$index];
+                $harga = $mergedData['old_price_product'][$index] ?? null;
+
+                $dataToInsert[] = [
+                    'code_document' => $request['code_document'],
+                    'old_barcode_product' => $noResi,
+                    'old_name_product' => $nama,
+                    'old_quantity_product' => $qty,
+                    'old_price_product' => $harga,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+            }
+
+            $chunkSize = 500; // Adjust based on your server capacity
+            foreach (array_chunk($dataToInsert, $chunkSize) as $chunkIndex => $chunk) {
+                Product_old::insert($chunk);
+                Log::info("Inserted chunk {$chunkIndex} into product_olds", ['rows' => count($chunk)]);
+            }
+
+            Generate::query()->delete();
+            Log::info('Deleted all records from generates table after merge.');
+
+            // Return success response
+            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => count($dataToInsert)]);
+        } catch (\Exception $e) {
+            Log::error('Error in mapAndMergeHeaders: ' . $e->getMessage());
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
-
-        Generate::query()->delete();
-
-        // Kembali dengan semua produk yang berhasil disimpan
-        return new ResponseResource(true, "Berhasil menggabungkan data", $savedProducts);
     }
 }
