@@ -65,9 +65,29 @@ class SaleDocumentController extends Controller
      */
     public function update(Request $request, SaleDocument $saleDocument)
     {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(SaleDocument $saleDocument)
+    {
         try {
-            if ($saleDocument->status_document_sale == 'selesai') {
-                throw new Exception("tidak ada data yang di ubah!");
+            $saleDocument->delete();
+            $resource = new ResponseResource(true, "data berhasil di hapus!", $saleDocument);
+        } catch (\Exception $e) {
+            $resource = new ResponseResource(false, "data gagal di hapus!", $e->getMessage());
+        }
+        return $resource->response();
+    }
+
+    public function saleFinish()
+    {
+        try {
+            $saleDocument = SaleDocument::where('status_document_sale', 'proses')->first();
+            if ($saleDocument == null) {
+                throw new Exception("data sale belum dibuat!");
             }
             $sale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
 
@@ -85,25 +105,11 @@ class SaleDocumentController extends Controller
                 ]
             );
 
-            $resource = new ResponseResource(true, "data berhasil di ubah!", $saleDocument);
+            $resource = new ResponseResource(true, "data berhasil di simpan!", $saleDocument);
         } catch (\Exception $e) {
-            $resource = new ResponseResource(false, "data gagal di ubah!", $e->getMessage());
+            $resource = new ResponseResource(false, "data gagal di simpan!", $e->getMessage());
         }
 
-        return $resource->response();
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(SaleDocument $saleDocument)
-    {
-        try {
-            $saleDocument->delete();
-            $resource = new ResponseResource(true, "data berhasil di hapus!", $saleDocument);
-        } catch (\Exception $e) {
-            $resource = new ResponseResource(false, "data gagal di hapus!", $e->getMessage());
-        }
         return $resource->response();
     }
 }
