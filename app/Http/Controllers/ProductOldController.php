@@ -4,53 +4,63 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
 use App\Models\Color_tag;
+use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
 
 class ProductOldController extends Controller
 {
+    
     public function searchByBarcode(Request $request)
     {
         $codeDocument = $request->input('code_document');
-
         if (!$codeDocument) {
             return new ResponseResource(false, "Code document tidak boleh kosong.", null);
         }
-
-        $barcode = $request->input('old_barcode_product');
-
-        if (!$barcode) {
+    
+        $oldBarcode = $request->input('old_barcode_product');
+        if (!$oldBarcode) {
             return new ResponseResource(false, "Barcode tidak boleh kosong.", null);
         }
-
+    
         $product = Product_old::where('code_document', $codeDocument)
-            ->where('old_barcode_product', $barcode)
+            ->where('old_barcode_product', $oldBarcode)
             ->first();
-
-        $price_old_product = $product->old_price_product;
-
-        if ($product) {
-
-            if ($price_old_product < 100000) {
-                $colorTags = Color_tag::all();
-
-                //mendeteksi range harga
-                $filterPriceColors = collect($colorTags)->filter(function ($color) use ($price_old_product) {
-                    $minPrice = $color['min_price_color'];
-                    $maxPrice = $color['max_price_color'];
-
-                    return ($price_old_product >= $minPrice) && ($price_old_product <= $maxPrice);
-                });
-
-                return new ResponseResource(true, "Produk Ditemukan", [$product, $filterPriceColors->values()]);
-            } else {
-
-                return new ResponseResource(true, "Produk Ditemukan", $product);
-            }
-        } else {
+    
+        if (!$product) {
             return new ResponseResource(false, "Produk tidak ditemukan", null);
         }
+    
+        $newBarcode = $this->generateUniqueBarcode();
+    
+        $price_old_product = $product->old_price_product;
+        $response = ['product' => $product, 'new_barcode' => $newBarcode];
+    
+        if ($price_old_product < 100000) {
+            $colorTags = Color_tag::all();
+    
+            // Mendeteksi range harga
+            $filterPriceColors = $colorTags->filter(function ($color) use ($price_old_product) {
+                return ($price_old_product >= $color['min_price_color']) && ($price_old_product <= $color['max_price_color']);
+            });
+    
+            $response['color_tags'] = $filterPriceColors->values();
+        }
+    
+        return new ResponseResource(true, "Produk Ditemukan", $response);
     }
+    
+    private function generateUniqueBarcode()
+    {
+        $prefix = 'LQD';
+        do {
+            $randomNumber = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            $barcode = $prefix . $randomNumber;
+        } while (New_product::where('new_barcode_product', $barcode)->exists());
+    
+        return $barcode;
+    }
+    
 
     public function searchByDocument(Request $request)
     {
