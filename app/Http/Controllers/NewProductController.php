@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Document;
+use App\Models\ExcelOld;
 use App\Models\New_product;
 use Illuminate\Http\Request;
 use App\Models\ListProductBP;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\ExcelOld;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
@@ -294,6 +295,7 @@ class NewProductController extends Controller
             foreach ($chunks as $chunk) {
                 ExcelOld::insert($chunk);
             }
+
     
             // Create a new document with the rowCount
             Document::create([
@@ -303,6 +305,7 @@ class NewProductController extends Controller
                 'total_column_in_document' => $rowCount,
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
+        
     
             // Call mapAndMergeHeaders function here
             $mergeResponse = $this->mapAndMergeHeaders();
@@ -310,7 +313,11 @@ class NewProductController extends Controller
             DB::commit();
     
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'mergeResponse' => $mergeResponse
+                'code_document' => $this->generateDocumentCode(),
+                'file_name' => $fileName,
+                'total_column_count' => count($header),
+                'total_row_count' => $rowCount,
+                'merged' => $mergeResponse
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -327,10 +334,6 @@ class NewProductController extends Controller
         return $id_document . '/' . $month . '/' . $year;
     }
     
-    
-    
-    
-
     protected function mapAndMergeHeaders()
     {
         set_time_limit(300);
@@ -355,7 +358,8 @@ class NewProductController extends Controller
         $ekspedisiData = ExcelOld::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-    
+        
+        Log::info('Data from ExcelOld:', ['data' => $ekspedisiData]);
 
         // Inisialisasi array untuk menyimpan data yang akan digabungkan
         $mergedData = [
@@ -414,6 +418,8 @@ class NewProductController extends Controller
         }
 
         ExcelOld::query()->delete();
+
+        Log::info('Merged data prepared for response', ['mergedData' => $mergedData]);
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
