@@ -99,7 +99,6 @@ class RiwayatCheckController extends Controller
                 'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
             ]);
 
-            dd($riwayat_check);
     
             //update status document
             $code_document = Document::where('code_document', $request['code_document'])->first();
