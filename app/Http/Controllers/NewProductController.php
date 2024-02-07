@@ -17,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class NewProductController extends Controller
 {
-
+  
     public function index(Request $request)
     {
         $query = $request->input('q');
@@ -25,11 +25,11 @@ class NewProductController extends Controller
             $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-        })->paginate(100);
-
+        })->where('new_status_product', '!=', 'dump')->paginate(100);
+    
         return new ResponseResource(true, "list new product", $newProducts);
     }
-
+    
     public function byDocument(Request $request)
     {
         $query = $request->input('code_document');
@@ -60,7 +60,7 @@ class NewProductController extends Controller
             'new_price_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
             // 'new_date_in_product' => 'required|date',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
@@ -148,7 +148,7 @@ class NewProductController extends Controller
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
