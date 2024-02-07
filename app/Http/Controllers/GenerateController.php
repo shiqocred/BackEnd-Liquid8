@@ -141,13 +141,9 @@ class GenerateController extends Controller
 
     public function mapAndMergeHeaders(Request $request)
     {
-        set_time_limit(300); 
-        ini_set('memory_limit', '512M'); 
+        set_time_limit(300); // Extend max execution time
+        ini_set('memory_limit', '512M'); // Increase memory limit
 
-        DB::beginTransaction();
-        DB::listen(function ($query) {
-            Log::debug($query->sql, $query->bindings);
-        });
         try {
 
             // Validasi input request
@@ -186,45 +182,35 @@ class GenerateController extends Controller
             $dataToInsert = [];
             foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
                 $nama = $mergedData['old_name_product'][$index] ?? null;
-                $qty = is_numeric($mergedData['old_quantity_product'][$index]) ? (int)$mergedData['old_quantity_product'][$index] : 0;
+                $qty = $mergedData['old_quantity_product'][$index] === '' ? null : (int)$mergedData['old_quantity_product'][$index];
                 $harga = $mergedData['old_price_product'][$index] ?? null;
-            
+
                 $dataToInsert[] = [
                     'code_document' => $request['code_document'],
                     'old_barcode_product' => $noResi,
                     'old_name_product' => $nama,
                     'old_quantity_product' => $qty,
                     'old_price_product' => $harga,
-                  
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ];
             }
-            
-            $chunkSize = 500;
-            $totalInsertedRows = 0;
+
+            $chunkSize = 500; // Adjust based on your server capacity
             foreach (array_chunk($dataToInsert, $chunkSize) as $chunkIndex => $chunk) {
-                $insertResult = Product_old::insert($chunk);
-                if ($insertResult) {
-                    $insertedRows = count($chunk);
-                    $totalInsertedRows += $insertedRows;
-                    Log::info("Inserted chunk {$chunkIndex} into product_olds", ['rows' => $insertedRows]);
-                } else {
-                    Log::error("Failed to insert chunk {$chunkIndex} into product_olds");
-                }
+                Product_old::insert($chunk);
+                Log::info("Inserted chunk {$chunkIndex} into product_olds", ['rows' => count($chunk)]);
             }
-    
-            DB::commit();
+
             Generate::query()->delete();
             Log::info('Deleted all records from generates table after merge.');
-    
-            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => $totalInsertedRows]);
-        } catch (\Illuminate\Database\QueryException $qe) {
-            DB::rollBack();
-            Log::error('QueryException in mapAndMergeHeaders: ' . $qe->getMessage());
-            return response()->json(['error' => 'Database query error: ' . $qe->getMessage()], 500);
+
+            // Return success response
+            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => count($dataToInsert)]);
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Exception in mapAndMergeHeaders: ' . $e->getMessage());
+            Log::error('Error in mapAndMergeHeaders: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
+
 }
