@@ -191,8 +191,7 @@ class GenerateController extends Controller
                     'old_name_product' => $nama,
                     'old_quantity_product' => $qty,
                     'old_price_product' => $harga,
-                    'created_at' => now(),
-                    'updated_at' => now()
+       
                 ];
             }
 
@@ -224,6 +223,15 @@ class GenerateController extends Controller
             DB::rollBack();
             Log::error('Exception in mapAndMergeHeaders: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteAll(){
+        try {
+            Generate::truncate();
+            return new ResponseResource(true, "data berhasil dihapus", null);
+        }catch (\Exception $e){
+            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
         }
     }
 

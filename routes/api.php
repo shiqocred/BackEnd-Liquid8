@@ -165,3 +165,5 @@ Route::resource('roles', RoleController::class);
 
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
+
+Route::delete('/deleteGenerate', [GenerateController::class, 'deleteAll']);
