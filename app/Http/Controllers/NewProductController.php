@@ -361,7 +361,6 @@ class NewProductController extends Controller
         
         Log::info('Data from ExcelOld:', ['data' => $ekspedisiData]);
 
-        // Inisialisasi array untuk menyimpan data yang akan digabungkan
         $mergedData = [
             'old_barcode_product' => [],
             'new_barcode_product' => [],
