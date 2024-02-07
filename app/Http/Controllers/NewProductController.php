@@ -313,7 +313,7 @@ class NewProductController extends Controller
             DB::commit();
     
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'code_document' => $this->generateDocumentCode(),
+                'code_document' =>  Document::latest()->first(),
                 'file_name' => $fileName,
                 'total_column_count' => count($header),
                 'total_row_count' => $rowCount,
@@ -350,6 +350,7 @@ class NewProductController extends Controller
 
 
         $latestDocument = Document::latest()->first();
+
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
         }
