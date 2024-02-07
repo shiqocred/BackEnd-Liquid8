@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('new_name_product');
             $table->bigInteger('new_qty_product');
             $table->bigInteger('new_price_product');
-            $table->string('new_tag_product');
+            $table->string('new_tag_product')->nullable();
+            $table->enum('status_migrate', ['proses', 'selesai']);
+            $table->string('status_product_before');
             $table->timestamps();
         });
     }

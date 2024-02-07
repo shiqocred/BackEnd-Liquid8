@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
+use App\Models\Migrate;
 use App\Models\MigrateDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class MigrateDocumentController extends Controller
@@ -84,6 +86,37 @@ class MigrateDocumentController extends Controller
             $resource = new ResponseResource(true, "Data berhasil di hapus!", $migrateDocument);
         } catch (\Exception $e) {
             $resource = new ResponseResource(false, "Data gagal di hapus!", [$e->getMessage()]);
+        }
+        return $resource->response();
+    }
+
+    public function MigrateDocumentFinish(Request $request)
+    {
+        $validator = Validator::make($request->all(), ['destiny_document_migrate' => 'required']);
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+        try {
+            DB::beginTransaction();
+            $migrateDocument = MigrateDocument::where('status_document_migrate', 'proses')->first();
+            if ($migrateDocument == null) {
+                $resource = new ResponseResource(false, "Data migrate tidak ditemukan!", []);
+                return $resource->response()->setStatusCode(404);
+            }
+            $migrate = Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->get();
+            Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->update(['status_migrate' => 'selesai']);
+            $migrateDocument->update([
+                'destiny_document_migrate' => $request['destiny_document_migrate'],
+                'total_product_document_migrate' => count($migrate),
+                'total_price_document_migrate' => $migrate->sum('new_price_product'),
+                'status_document_migrate' => 'selesai'
+            ]);
+            DB::commit();
+            $resource = new ResponseResource(true, 'Data berhasil di merge', $migrateDocument);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $resource = new ResponseResource(false, 'Data gagal di merge', [$e->getMessage()]);
         }
         return $resource->response();
     }

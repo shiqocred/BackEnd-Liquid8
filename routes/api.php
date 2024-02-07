@@ -74,6 +74,8 @@ Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
 
 //migrate
 Route::resource('migrates', MigrateController::class);
+Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
+Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
 Route::resource('migrate-documents', MigrateDocumentController::class);
 
 //sale
