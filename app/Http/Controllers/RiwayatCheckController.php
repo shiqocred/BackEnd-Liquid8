@@ -39,7 +39,7 @@ class RiwayatCheckController extends Controller
         //     return $resource->response()->setStatusCode(422);
         // }
 
-        DB::beginTransaction();
+        // DB::beginTransaction();
         try{
             $validator = Validator::make($request->all(), [
                 'code_document' => 'required|unique:riwayat_checks,code_document',
@@ -98,6 +98,8 @@ class RiwayatCheckController extends Controller
                 'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
                 'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
             ]);
+
+            dd($riwayat_check);
     
             //update status document
             $code_document = Document::where('code_document', $request['code_document'])->first();
@@ -120,11 +122,11 @@ class RiwayatCheckController extends Controller
                return $resource->response()->setStatusCode(403);
             }
 
-            DB::commit();
+            // DB::commit();
 
             return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
         }catch(\Exception $e){
-            DB::rollBack();
+            // DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
             $resource->response()->setStatusCode(500);
         }
