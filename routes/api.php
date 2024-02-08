@@ -120,43 +120,11 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
 Route::middleware(['auth:sanctum', 'check.role:crew,Team leader,Spv,Admin'])->group(function () {
     //=========================================== inbound ==========================================================
 
-
-
-
-    //document
-    Route::resource('/documents', DocumentController::class);
-    Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
-
-    //categories discount
-    Route::get('categories', [CategoryController::class, 'index']);
-
-    //colortags diskon
-    Route::get('color_tags', [ColorTagController::class, 'index']);
-
-    //riwayat
-    Route::resource('historys', RiwayatCheckController::class);
-    Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
-    Route::post('history/exportToExcel/', [RiwayatCheckController::class, 'exportToExcel']);
-    Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
-});
-
-
-Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-});
-
-
-Route::post('login', [AuthController::class, 'login']);
-Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
-
-Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
-
-
-     //generates file excel -> input data ekspedisi 
-     Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
-     Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-     Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
-     Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
+    //generates file excel -> input data ekspedisi 
+    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
+    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+    Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
+    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
     //product old
     Route::resource('product_olds', ProductOldController::class);
@@ -172,3 +140,33 @@ Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
     Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
     Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
     Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
+
+    //document
+    Route::resource('/documents', DocumentController::class);
+    Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
+
+    //categories discount
+    Route::get('categories', [CategoryController::class, 'index']);
+
+    //colortags diskon
+    Route::get('color_tags', [ColorTagController::class, 'index']);
+
+    //riwayat
+    Route::resource('historys', RiwayatCheckController::class);
+    Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
+    Route::post('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
+    Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
+});
+
+
+Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
+    Route::post('register', [AuthController::class, 'register']);
+});
+
+
+Route::post('login', [AuthController::class, 'login']);
+
+
+Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
+
+Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
