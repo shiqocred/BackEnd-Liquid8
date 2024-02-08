@@ -28,15 +28,15 @@ class MigrateController extends Controller
                 ->orWhere('new_status_product', 'bundle')
                 ->orWhere('new_status_product', 'promo')
                 ->latest()
-                ->paginate(20);
+                ->paginate(20, ['*'], 'product_page');
         } else {
             $data['new_product'] = New_product::where('new_status_product', 'display')
                 ->orWhere('new_status_product', 'bundle')
                 ->orWhere('new_status_product', 'promo')
                 ->latest()
-                ->paginate(20);
+                ->paginate(20, ['*'], 'product_page');
         }
-        $data['migrate'] = Migrate::where('status_migrate', 'proses')->latest()->paginate(20);;
+        $data['migrate'] = Migrate::where('status_migrate', 'proses')->latest()->paginate(20, ['*'], 'migrate_page');
         $data['code_document_migrate'] = $data['migrate']->isEmpty() ? codeDocumentMigrate() : $data['migrate'][0]['code_document_migrate'];
 
         $resource = new ResponseResource(true, "list migrate", $data);
