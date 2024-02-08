@@ -21,9 +21,9 @@ class MigrateDocumentController extends Controller
                 $query
                     ->where('code_document_migrate', 'like', '%' . request()->q . '%')
                     ->where('created_at', 'like', '%' . request()->q . '%');
-            })->latest()->paginate(10);
+            })->latest()->paginate(15);
         } else {
-            $migrateDocument = MigrateDocument::latest()->paginate(10);
+            $migrateDocument = MigrateDocument::latest()->paginate(15);
         }
         $resource = new ResponseResource(true, "list dokumen migrate", $migrateDocument);
         return $resource->response();
