@@ -23,7 +23,11 @@ class MigrateController extends Controller
                 $query
                     ->where('new_barcode_product', 'like', '%' . request()->q . '%')
                     ->orWhere('new_name_product', 'like', '%' . request()->q . '%');
-            })->get();
+            })
+                ->where('new_status_product', 'display')
+                ->orWhere('new_status_product', 'bundle')
+                ->orWhere('new_status_product', 'promo')
+                ->get();
         } else {
             $data['new_product'] = New_product::where('new_status_product', 'display')
                 ->orWhere('new_status_product', 'bundle')
