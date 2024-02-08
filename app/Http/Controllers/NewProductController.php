@@ -53,7 +53,7 @@ class NewProductController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
-            'old_barcode_product' => 'required',
+            'old_barcode_product' => 'required|unique:new_products,old_barcode_product',
             'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
@@ -66,10 +66,11 @@ class NewProductController extends Controller
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
+            'old_barcode_product.unique' => 'product sudah di scan'
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([$validator->errors()], 422);
         }
 
         $status = $request->input('condition');
