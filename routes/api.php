@@ -160,8 +160,10 @@ Route::get('color_tags', [ColorTagController::class, 'index']);
 //riwayat
 Route::resource('historys', RiwayatCheckController::class);
 Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
-
+Route::get('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
 Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
+
+
 
 Route::resource('users', UserController::class)->except(['store']);
 Route::resource('roles', RoleController::class);

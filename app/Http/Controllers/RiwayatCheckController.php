@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Document;
 use App\Models\New_product;
@@ -9,10 +10,12 @@ use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
 use App\Mail\AdminNotification;
 use App\Models\SpecialTransaction;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RiwayatCheckController extends Controller
 {
@@ -40,45 +43,45 @@ class RiwayatCheckController extends Controller
         // }
 
         // DB::beginTransaction();
-        try{
+        try {
             $validator = Validator::make($request->all(), [
                 'code_document' => 'required|unique:riwayat_checks,code_document',
             ]);
-    
+
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 422);
             }
-    
+
             $document = Document::where('code_document', $request['code_document'])->first();
-    
+
             if (!$document) {
                 return response()->json(['error' => 'Document tidak ada'], 404);
             }
-    
+
             if ($document->total_column_in_document == 0) {
                 return response()->json(['error' => 'Total data di document tidak boleh 0'], 422);
             }
-    
+
             $newProducts = New_product::where('code_document', $request['code_document'])->get();
-    
+
             $totalData = $newProducts->count();
             $totalLolos = 0;
             $totalDamaged = 0;
             $totalAbnormal = 0;
-    
-    
+
+
             foreach ($newProducts as $product) {
                 $newQualityData = json_decode($product->new_quality, true);
-    
+
                 if (is_array($newQualityData)) {
                     $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
                     $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
                     $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
                 }
             }
-    
-    
-    
+
+
+
             $riwayat_check = RiwayatCheck::create([
                 // 'user_id' => $user->id,
                 'user_id' => 4,
@@ -89,7 +92,7 @@ class RiwayatCheckController extends Controller
                 'total_data_damaged' => $totalDamaged,
                 'total_data_abnormal' => $totalAbnormal,
                 'total_discrepancy' => $document->total_column_in_document - $totalData,
-    
+
                 // persentase
                 'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
                 'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
@@ -99,11 +102,11 @@ class RiwayatCheckController extends Controller
                 'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
             ]);
 
-    
+
             //update status document
             $code_document = Document::where('code_document', $request['code_document'])->first();
             $code_document->update(['status_document' => 'done']);
-    
+
             //keterangan transaksi
             $keterangan = SpecialTransaction::create([
                 // 'user_id' => $user->id,
@@ -111,26 +114,24 @@ class RiwayatCheckController extends Controller
                 'transaction_name' => 'list product document sudah di check',
                 'status' => 'pending'
             ]);
-    
+
             $adminUser = User::where('email', 'sugeng@gmail.com')->first();
-    
+
             if ($adminUser) {
                 Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
             } else {
-               $resource= new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
-               return $resource->response()->setStatusCode(403);
+                $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
+                return $resource->response()->setStatusCode(403);
             }
 
             // DB::commit();
 
             return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             // DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
             $resource->response()->setStatusCode(500);
         }
-       
-
     }
 
 
@@ -173,5 +174,47 @@ class RiwayatCheckController extends Controller
         } catch (\Exception $e) {
             return new ResponseResource(false, 'data gagal di hapus', null);
         }
+    }
+
+    public function exportToExcel(): BinaryFileResponse
+    {
+        $checkHistory = RiwayatCheck::all();
+
+        if ($checkHistory->isEmpty()) {
+            $resource = new ResponseResource(false, "Data kosong, tidak bisa di export", null);
+            return $resource->response()->setStatusCode(422);
+        }
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header
+        $headers = [
+            'ID', 'User ID', 'Code Document', 'Total Data', 'Total Data In', 'Total Data Lolos', 'Total Data Damaged', 'Total Data Abnormal', 'Total Discrepancy', 'Status Approve', 'Percentage Total Data', 'Percentage In', 'Percentage Lolos', 'Percentage Damaged', 'Percentage Abnormal', 'Percentage Discrepancy'
+        ];
+
+        // Set header
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValueByColumnAndRow($index + 1, 1, $header);
+        }
+
+        // Get data
+        $riwayatChecks = RiwayatCheck::all();
+
+        // Fill data
+        foreach ($riwayatChecks as $row => $riwayatCheck) {
+            foreach ($headers as $column => $header) {
+                $cellValue = $riwayatCheck[strtolower(str_replace(' ', '_', $header))];
+                $sheet->setCellValueByColumnAndRow($column + 1, $row + 2, $cellValue);
+            }
+        }
+
+        // Write file
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'RiwayatChecks_' . Carbon::now()->format('YmdHis') . '.xlsx';
+        $tempFile = tempnam(sys_get_temp_dir(), $fileName);
+        $writer->save($tempFile);
+
+        // Return file as download
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 }
