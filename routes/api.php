@@ -41,134 +41,132 @@ use Illuminate\Support\Facades\Route;
 */
 
 
-Route::middleware(['auth:sanctum', 'check.role:Reparasi, Spv, Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(function () {
+    // =========================================== repair station ==================================================
+    Route::get('repair', [NewProductController::class, 'showRepair']);
+    Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
+    Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
+    Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
+    Route::get('/excelolds', [NewProductController::class, 'excelolds']);
+
+    //list dump
+    Route::get('/dumps', [NewProductController::class, 'listDump']);
+    Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(function () {
+    //=========================================== outbound ==========================================================
+
+    //migrate
+    Route::resource('migrates', MigrateController::class);
+    Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
+    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
+    Route::resource('migrate-documents', MigrateDocumentController::class);
+
+    //sale
+    Route::resource('sales', SaleController::class);
+    Route::resource('sale-documents', SaleDocumentController::class);
+    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Spv, Team leader, Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {
+    //=========================================== storage ==========================================================
+
+    //slow moving products 
+    //filters product bundle
+    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
+    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
+    Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+
+    //bundle
+    Route::get('bundle', [BundleController::class, 'index']);
+    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
+    Route::post('bundle', [ProductBundleController::class, 'store']);
+    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+
+    Route::get('bundle/product', [ProductBundleController::class, 'index']);
+    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+
+    //promo
+    Route::get('promo', [PromoController::class, 'index']);
+    Route::get('promo/{id}', [PromoController::class, 'show']);
+    Route::post('promo', [PromoController::class, 'store']);
+    Route::put('promo/{promo}', [PromoController::class, 'update']);
+    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
+
+    //palet filter
+    Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
+    Route::post('palet/filter_product/{id}/add', [PaletFilterController::class, 'store']);
+    Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
+
+    //palet
+    Route::get('palet/display', [PaletController::class, 'display']);
+    Route::get('palet', [PaletController::class, 'index']);
+    Route::post('palet', [PaletProductController::class, 'store']);
+    Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
+
+    //categories discount
+    Route::resource('categories', CategoryController::class);
+
+    //colortags diskon
+    Route::resource('color_tags', ColorTagController::class);
+
+    Route::resource('users', UserController::class)->except(['store']);
+    Route::resource('roles', RoleController::class);
 });
 
 
 
-Route::middleware(['auth:sanctum', 'check.role:crew, Team leader, Spv, Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:crew,Team leader,Spv,Admin'])->group(function () {
+    //=========================================== inbound ==========================================================
+
+    //generates file excel -> input data ekspedisi 
+    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
+    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+    Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
+    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
+
+    //product old
+    Route::resource('product_olds', ProductOldController::class);
+    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
+    Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
+    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
+
+    //new product (hasil scan)
+    Route::resource('new_products', NewProductController::class);
+    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
+    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
+    Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
+    Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
+    Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
+    Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
+
+    //document
+    Route::resource('/documents', DocumentController::class);
+    Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
+
+    //categories discount
+    Route::get('categories', [CategoryController::class, 'index']);
+
+    //colortags diskon
+    Route::get('color_tags', [ColorTagController::class, 'index']);
+
+    //riwayat
+    Route::resource('historys', RiwayatCheckController::class);
+    Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
+    Route::get('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
+    Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
 });
 
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
+    Route::post('register', [AuthController::class, 'register']);
 });
 
-// =========================================== repair station ==================================================
-Route::get('repair', [NewProductController::class, 'showRepair']);
-Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
-Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
-Route::post('repair/all-update', [NewProductController::class, 'updateAllDamagedOrAbnormal']);
-Route::get('/excelolds', [NewProductController::class, 'excelolds']);
-
-//list dump
-Route::get('/dumps', [NewProductController::class, 'listDump']);
-Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
-
-//=========================================== outbound ==========================================================
-
-//migrate
-Route::resource('migrates', MigrateController::class);
-Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
-Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
-Route::resource('migrate-documents', MigrateDocumentController::class);
-
-//sale
-Route::resource('sales', SaleController::class);
-Route::resource('sale-documents', SaleDocumentController::class);
-Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
-
-//=========================================== storage ==========================================================
-
-//slow moving products 
-//filters product bundle
-Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
-Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
-Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
-
-//bundle
-Route::get('bundle', [BundleController::class, 'index']);
-Route::get('bundle/{bundle}', [BundleController::class, 'show']);
-Route::post('bundle', [ProductBundleController::class, 'store']);
-Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
-
-Route::get('bundle/product', [ProductBundleController::class, 'index']);
-Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
-
-//promo
-Route::get('promo', [PromoController::class, 'index']);
-Route::get('promo/{id}', [PromoController::class, 'show']);
-Route::post('promo', [PromoController::class, 'store']);
-Route::put('promo/{promo}', [PromoController::class, 'update']);
-Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
-
-//palet filter
-Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
-Route::post('palet/filter_product/{id}/add', [PaletFilterController::class, 'store']);
-Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
-
-//palet
-Route::get('palet/display', [PaletController::class, 'display']);
-Route::get('palet', [PaletController::class, 'index']);
-Route::post('palet', [PaletProductController::class, 'store']);
-Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
-
-//categories discount
-Route::resource('categories', CategoryController::class);
-
-//colortags diskon
-Route::resource('color_tags', ColorTagController::class);
-
-//=========================================== inbound ==========================================================
-
-//generates file excel -> input data ekspedisi 
-Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
-Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
-Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
-
-//product old
-Route::resource('product_olds', ProductOldController::class);
-Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
-Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
-Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
-
-//new product (hasil scan)
-Route::resource('new_products', NewProductController::class);
-Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
-Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
-Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
-Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
-Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
-Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
-
-//document
-Route::resource('/documents', DocumentController::class);
-Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
-
-//categories discount
-Route::get('categories', [CategoryController::class, 'index']);
-
-//colortags diskon
-Route::get('color_tags', [ColorTagController::class, 'index']);
-
-//riwayat
-Route::resource('historys', RiwayatCheckController::class);
-Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
-Route::get('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
-Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
-
-
-
-Route::resource('users', UserController::class)->except(['store']);
-Route::resource('roles', RoleController::class);
 
 Route::post('login', [AuthController::class, 'login']);
-Route::post('register', [AuthController::class, 'register']);
+
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
+
+Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);

@@ -197,10 +197,8 @@ class RiwayatCheckController extends Controller
             $sheet->setCellValueByColumnAndRow($index + 1, 1, $header);
         }
 
-        // Get data
         $riwayatChecks = RiwayatCheck::all();
 
-        // Fill data
         foreach ($riwayatChecks as $row => $riwayatCheck) {
             foreach ($headers as $column => $header) {
                 $cellValue = $riwayatCheck[strtolower(str_replace(' ', '_', $header))];
@@ -208,13 +206,11 @@ class RiwayatCheckController extends Controller
             }
         }
 
-        // Write file
         $writer = new Xlsx($spreadsheet);
         $fileName = 'RiwayatChecks_' . Carbon::now()->format('YmdHis') . '.xlsx';
         $tempFile = tempnam(sys_get_temp_dir(), $fileName);
         $writer->save($tempFile);
 
-        // Return file as download
         return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 }

@@ -11,6 +11,12 @@ use App\Models\ResultFilter;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\Bundle;
+use App\Models\New_product;
+use App\Models\Palet;
+use App\Models\PaletProduct;
+use App\Models\Product_Bundle;
+use App\Models\Promo;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use Illuminate\Support\Facades\DB;
@@ -230,6 +236,24 @@ class GenerateController extends Controller
     public function deleteAll(){
         try {
             Generate::query()->delete();
+            return new ResponseResource(true, "data berhasil dihapus", null);
+        }catch (\Exception $e){
+            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
+        }
+    }
+
+    public function deleteAllData(){
+        try {
+            Generate::query()->delete();
+            Document::query()->delete();
+            Product_old::query()->delete();
+            Promo::query()->delete();
+            Product_Bundle::query()->delete();
+            PaletProduct::query()->delete();
+            Bundle::query()->delete();
+            Palet::query()->delete();
+            New_product::query()->delete();
+            
             return new ResponseResource(true, "data berhasil dihapus", null);
         }catch (\Exception $e){
             return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
