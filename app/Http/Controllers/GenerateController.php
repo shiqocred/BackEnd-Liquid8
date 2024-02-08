@@ -209,7 +209,6 @@ class GenerateController extends Controller
                     Log::error("Failed to insert chunk {$chunkIndex} into product_olds");
                 }
             }
-            DB::commit();
             Generate::query()->delete();
             Log::info('Deleted all records from generates table after merge.');
 
@@ -220,15 +219,17 @@ class GenerateController extends Controller
             return response()->json(['error' => 'Database query error: ' . $qe->getMessage()], 500);
         } catch (\Exception $e) {
         
-            DB::rollBack();
             Log::error('Exception in mapAndMergeHeaders: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
 
+
+
+
     public function deleteAll(){
         try {
-            Generate::truncate();
+            Generate::query()->delete();
             return new ResponseResource(true, "data berhasil dihapus", null);
         }catch (\Exception $e){
             return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
