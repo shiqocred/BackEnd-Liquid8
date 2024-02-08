@@ -10,46 +10,50 @@ use Illuminate\Http\Request;
 
 class ProductOldController extends Controller
 {
-    
+
     public function searchByBarcode(Request $request)
     {
         $codeDocument = $request->input('code_document');
+        $oldBarcode = $request->input('old_barcode_product');
+
         if (!$codeDocument) {
             return new ResponseResource(false, "Code document tidak boleh kosong.", null);
         }
-    
-        $oldBarcode = $request->input('old_barcode_product');
+
         if (!$oldBarcode) {
             return new ResponseResource(false, "Barcode tidak boleh kosong.", null);
         }
-    
+
+        $checkBarcode = New_product::where('code_document', $codeDocument)
+            ->where('old_barcode_product', $oldBarcode)
+            ->exists();
+
+        if ($checkBarcode) {
+            return new ResponseResource(false, "tidak bisa scan product yang sudah ada.", null);
+        }
+
         $product = Product_old::where('code_document', $codeDocument)
             ->where('old_barcode_product', $oldBarcode)
             ->first();
-    
+
         if (!$product) {
-            return new ResponseResource(false, "Produk tidak ditemukan", null);
+            return new ResponseResource(false, "Produk tidak ditemukan.", null);
         }
-    
+
         $newBarcode = $this->generateUniqueBarcode();
-    
-        $price_old_product = $product->old_price_product;
         $response = ['product' => $product, 'new_barcode' => $newBarcode];
-    
-        if ($price_old_product < 100000) {
-            $colorTags = Color_tag::all();
-    
-            // Mendeteksi range harga
-            $filterPriceColors = $colorTags->filter(function ($color) use ($price_old_product) {
-                return ($price_old_product >= $color['min_price_color']) && ($price_old_product <= $color['max_price_color']);
-            });
-    
-            $response['color_tags'] = $filterPriceColors->values();
+
+        if ($product->old_price_product < 100000) {
+            $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->old_price_product)
+                ->where('max_price_color', '>=', $product->old_price_product)
+                ->get();
         }
-    
-        return new ResponseResource(true, "Produk Ditemukan", $response);
+
+
+        return new ResponseResource(true, "Produk ditemukan.", $response);
     }
-    
+
+
     private function generateUniqueBarcode()
     {
         $prefix = 'LQD';
@@ -57,10 +61,10 @@ class ProductOldController extends Controller
             $randomNumber = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
             $barcode = $prefix . $randomNumber;
         } while (New_product::where('new_barcode_product', $barcode)->exists());
-    
+
         return $barcode;
     }
-    
+
 
     public function searchByDocument(Request $request)
     {
