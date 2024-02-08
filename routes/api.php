@@ -140,7 +140,7 @@ Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarc
 Route::resource('new_products', NewProductController::class);
 Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
 Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
-Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
+Route::get('new_product/expired', [NewProductController::class, 'listProductExpDisplay']);
 Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
 Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
 
@@ -156,7 +156,7 @@ Route::get('color_tags', [ColorTagController::class, 'index']);
 
 //riwayat
 Route::resource('historys', RiwayatCheckController::class);
-Route::get('riwayat-document', [RiwayatCheckController::class, 'getByDocument']);
+Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
 
 Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
 
@@ -166,4 +166,4 @@ Route::resource('roles', RoleController::class);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
 
-Route::delete('/deleteGenerate', [GenerateController::class, 'deleteAll']);
+Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);

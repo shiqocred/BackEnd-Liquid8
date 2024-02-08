@@ -25,7 +25,7 @@ class NewProductController extends Controller
             $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-        })->where('new_status_product', '!=', 'dump')->paginate(100);
+        })->where('new_status_product', '!=', 'dump')->where('new_status_product', '!=', 'promo')->paginate(100);
     
         return new ResponseResource(true, "list new product", $newProducts);
     }
@@ -236,17 +236,21 @@ class NewProductController extends Controller
     }
 
 
-
-    public function listProductExp(Request $request)
+    public function listProductExpDisplay(Request $request)
     {
         try {
             $query = $request->input('q');
-            $productExpired = New_product::where(function ($queryBuilder) use ($query) {
+            $productExpDisplat = New_product::where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_status_product', 'expired')
-                    ->where('new_name_product', 'LIKE', '%' . $query  . '%');
+                ->orWhere('new_status_product', 'display');
+            })->where(function ($subBuilder) use ($query) {
+                $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
+                ->orwhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
+                ->orwhere('code_document', 'LIKE', '%' . $query  . '%');
             })->paginate(50);
-
-            return new ResponseResource(true, "list product expired", $productExpired);
+                
+            
+            return new ResponseResource(true, "list product expired", $productExpDisplat);
         } catch (\Exception $e) {
             return response()->json(["error" => $e]);
         }
@@ -313,7 +317,7 @@ class NewProductController extends Controller
             DB::commit();
     
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'code_document' =>  Document::latest()->first(),
+                'code_document' => Document::latest()->first(),
                 'file_name' => $fileName,
                 'total_column_count' => count($header),
                 'total_row_count' => $rowCount,
@@ -350,7 +354,6 @@ class NewProductController extends Controller
 
 
         $latestDocument = Document::latest()->first();
-
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
         }
