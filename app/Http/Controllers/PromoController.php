@@ -16,13 +16,19 @@ class PromoController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $promos = Promo::latest()->where(function($queryBuilder) use ($query){
-            $queryBuilder->where('name_promo', 'LIKE', '%' . $query . '%');
-        })->with('new_product')->paginate(100);
-
+    
+        $promos = Promo::latest()
+            ->join('new_products', 'new_products.promo_id', '=', 'promos.id')
+            ->where(function($queryBuilder) use ($query) {
+                $queryBuilder->where('name_promo', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+            })
+            ->paginate(100);
+    
         return new ResponseResource(true, "list promo", $promos);
     }
-
+    
     /**
      * Show the form for creating a new resource.
      */
