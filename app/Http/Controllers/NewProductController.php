@@ -12,12 +12,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class NewProductController extends Controller
 {
-  
+
     public function index(Request $request)
     {
         $query = $request->input('q');
@@ -26,10 +27,10 @@ class NewProductController extends Controller
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
         })->where('new_status_product', '!=', 'dump')->where('new_status_product', '!=', 'promo')->paginate(100);
-    
+
         return new ResponseResource(true, "list new product", $newProducts);
     }
-    
+
     public function byDocument(Request $request)
     {
         $query = $request->input('code_document');
@@ -53,7 +54,7 @@ class NewProductController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
-            'old_barcode_product' => 'required|unique:new_products,old_barcode_product',
+            'old_barcode_product' => 'required|unique:new_products,old_barcode_product|exists:product_olds,old_barcode_product',
             'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
@@ -66,22 +67,52 @@ class NewProductController extends Controller
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.unique' => 'product sudah di scan'
+            'old_barcode_product.unique' => 'product sudah di scan',
+            'old_barcode_product.exists' => 'barcode tidak ada ',
+
         ]);
 
         if ($validator->fails()) {
-            return response()->json([$validator->errors()], 422);
+            return response()->json($validator->errors(), 422);
         }
 
-        $status = $request->input('condition');
-        $description = $request->input('deskripsi', '');
+        DB::beginTransaction();
 
-        $qualityData = [
+        try {
+            // Logika untuk memproses data
+            $status = $request->input('condition');
+            $description = $request->input('deskripsi', '');
+
+            $qualityData = $this->prepareQualityData($status, $description);
+
+            $inputData = $this->prepareInputData($request, $status, $qualityData);
+
+            $newProduct = New_product::create($inputData);
+
+            $this->updateDocumentStatus($request->input('code_document'));
+
+            $this->deleteOldProduct($request->input('old_barcode_product'));
+
+            DB::commit();
+
+            return new ResponseResource(true, "New Produk Berhasil ditambah", $newProduct);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    private function prepareQualityData($status, $description)
+    {
+        return [
             'lolos' => $status === 'lolos' ? 'lolos' : null,
             'damaged' => $status === 'damaged' ? $description : null,
             'abnormal' => $status === 'abnormal' ? $description : null,
         ];
+    }
 
+    private function prepareInputData($request, $status, $qualityData)
+    {
         $inputData = $request->only([
             'code_document',
             'old_barcode_product',
@@ -90,33 +121,41 @@ class NewProductController extends Controller
             'new_quantity_product',
             'new_price_product',
             'old_price_product',
-            'new_date_in_product',
             'new_status_product',
             'new_category_product',
             'new_tag_product'
         ]);
 
-        // Set zona waktu ke Indonesia/Jakarta
-        $indonesiaTime = Carbon::now('Asia/Jakarta');
-        $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
+        $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
+        $inputData['new_quality'] = json_encode($qualityData);
 
         if ($status !== 'lolos') {
             $inputData['new_category_product'] = null;
             $inputData['new_price_product'] = null;
         }
 
-        $inputData['new_quality'] = json_encode($qualityData);
+        return $inputData;
+    }
 
-        $newProduct = New_product::create($inputData);
-
-        //update status document
-        $code_document = Document::where('code_document', $request['code_document'])->first();
-
-        if ($code_document->status_document == 'pending') {
-            $code_document->update(['status_document' => 'in progress']);
+    private function updateDocumentStatus($codeDocument)
+    {
+        $document = Document::where('code_document', $codeDocument)->firstOrFail();
+        if ($document->status_document === 'pending') {
+            $document->update(['status_document' => 'in progress']);
         }
+    }
 
-        return new ResponseResource(true, "New Produk Berhasil ditambah", $newProduct);
+    private function deleteOldProduct($old_barcode_product)
+    {
+        
+        $oldProduct = Product_old::where('old_barcode_product', $old_barcode_product)->first();
+    
+        if ($oldProduct) {
+            $oldProduct->delete();
+        } else {
+            
+            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", $oldProduct);
+        }
     }
 
 
@@ -259,14 +298,14 @@ class NewProductController extends Controller
             $query = $request->input('q');
             $productExpDisplat = New_product::where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_status_product', 'expired')
-                ->orWhere('new_status_product', 'display');
+                    ->orWhere('new_status_product', 'display');
             })->where(function ($subBuilder) use ($query) {
                 $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
-                ->orwhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
-                ->orwhere('code_document', 'LIKE', '%' . $query  . '%');
+                    ->orwhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
+                    ->orwhere('code_document', 'LIKE', '%' . $query  . '%');
             })->paginate(50);
-                
-            
+
+
             return new ResponseResource(true, "list product expired", $productExpDisplat);
         } catch (\Exception $e) {
             return response()->json(["error" => $e]);
@@ -277,47 +316,47 @@ class NewProductController extends Controller
     {
         set_time_limit(300); // Extend max execution time
         ini_set('memory_limit', '512M'); // Increase memory limit
-    
+
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
             'file.unique' => 'Nama file sudah ada di database.',
         ]);
-    
+
         $file = $request->file('file');
         $filePath = $file->getPathname();
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $fileName);
-    
+
         DB::beginTransaction();
-    
+
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
             $dataToInsert = [];
             $rowCount = 0;
-    
+
             foreach ($sheet->getRowIterator(2) as $row) {
                 $cellIterator = $row->getCellIterator();
                 $cellIterator->setIterateOnlyExistingCells(FALSE);
-    
+
                 $rowData = [];
                 foreach ($cellIterator as $cell) {
                     $rowData[] = $cell->getValue() ?? ''; // Use default value for empty cells
                 }
-    
+
                 if (count($header) === count($rowData)) {
                     $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
                     $rowCount++;
                 }
             }
-    
+
             $chunks = array_chunk($dataToInsert, 500);
             foreach ($chunks as $chunk) {
                 ExcelOld::insert($chunk);
             }
 
-    
+
             // Create a new document with the rowCount
             Document::create([
                 'code_document' => $this->generateDocumentCode(),
@@ -326,13 +365,13 @@ class NewProductController extends Controller
                 'total_column_in_document' => $rowCount,
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
-        
-    
+
+
             // Call mapAndMergeHeaders function here
             $mergeResponse = $this->mapAndMergeHeaders();
-    
+
             DB::commit();
-    
+
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => Document::latest()->first(),
                 'file_name' => $fileName,
@@ -345,8 +384,9 @@ class NewProductController extends Controller
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
-    
-    protected function generateDocumentCode() {
+
+    protected function generateDocumentCode()
+    {
         $latestDocument = Document::latest()->first();
         $newId = $latestDocument ? $latestDocument->id + 1 : 1;
         $id_document = str_pad($newId, 4, '0', STR_PAD_LEFT);
@@ -354,7 +394,7 @@ class NewProductController extends Controller
         $year = date('Y');
         return $id_document . '/' . $month . '/' . $year;
     }
-    
+
     protected function mapAndMergeHeaders()
     {
         set_time_limit(300);
@@ -375,11 +415,11 @@ class NewProductController extends Controller
             return response()->json(['error' => 'No documents found.'], 404);
         }
         $code_document = $latestDocument->code_document;
-    
+
         $ekspedisiData = ExcelOld::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-        
+
         Log::info('Data from ExcelOld:', ['data' => $ekspedisiData]);
 
         $mergedData = [
@@ -402,7 +442,7 @@ class NewProductController extends Controller
                     }
                 }
             }
-    
+
 
 
             $status = $dataItem['Status'] ?? 'unknown';
@@ -416,8 +456,8 @@ class NewProductController extends Controller
 
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
-        
-        
+
+
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
             $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
