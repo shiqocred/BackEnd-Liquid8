@@ -57,7 +57,6 @@ class RiwayatCheckController extends Controller
                 return response()->json(['error' => 'Total data di document tidak boleh 0'], 422);
             }
 
-            DB::beginTransaction();
             try {
 
             $newProducts = New_product::where('code_document', $request['code_document'])->get();
@@ -119,11 +118,9 @@ class RiwayatCheckController extends Controller
                 return $resource->response()->setStatusCode(403);
             }
 
-            DB::commit();
 
             return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
         } catch (\Exception $e) {
-            DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
             $resource->response()->setStatusCode(500);
         }
