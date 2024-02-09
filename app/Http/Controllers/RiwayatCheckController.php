@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Mail\AdminNotification;
 use App\Models\SpecialTransaction;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -111,13 +112,22 @@ class RiwayatCheckController extends Controller
 
             $adminUser = User::where('email', 'sugeng@gmail.com')->first();
 
-            if ($adminUser) {
-                Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
-            } else {
-                $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
-                return $resource->response()->setStatusCode(403);
-            }
+            // if ($adminUser) {
+            //     Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+            //     Log::info('Email sent to ' . $adminUser->email);
+            // } else {
+            //     $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
+            //     Log::error("Email could not be sent. Error: " . $e->getMessage());
+            //     return $resource->response()->setStatusCode(403);
+            // }
 
+            try {
+                Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+                Log::info('Email sent to ' . $adminUser->email);
+            } catch (\Exception $e) {
+                Log::error("Email could not be sent. Error: " . $e->getMessage());
+                // Handle the exception or notify the user/admin as needed.
+            }
 
             return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
         } catch (\Exception $e) {
