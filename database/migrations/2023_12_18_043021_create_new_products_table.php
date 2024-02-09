@@ -25,7 +25,6 @@ return new class extends Migration
             $table->json('new_quality')->nullable();
             $table->string('new_category_product')->nullable();
             $table->string('new_tag_product')->nullable();
-
             $table->timestamps();
         });
     }

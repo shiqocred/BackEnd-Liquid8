@@ -18,7 +18,7 @@ class SaleDocumentController extends Controller
      */
     public function index()
     {
-        $saleDocument = SaleDocument::latest()->paginate(10);
+        $saleDocument = SaleDocument::where('status_document_sale', 'selesai')->latest()->paginate(10);
         $resource = new ResponseResource(true, "list document sale", $saleDocument);
         return $resource->response();
     }

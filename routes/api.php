@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BundleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorTagController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\MigrateController;
@@ -58,6 +59,9 @@ Route::middleware(['auth:sanctum', 'check.role:crew, Team leader, Spv, Admin'])-
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
 });
+
+// =========================================== Dashboard ==================================================
+Route::get('dashboard', [DashboardController::class, 'index']);
 
 // =========================================== repair station ==================================================
 Route::get('repair', [NewProductController::class, 'showRepair']);
