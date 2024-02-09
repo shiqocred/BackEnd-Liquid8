@@ -11,6 +11,14 @@ use App\Models\ResultFilter;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\Bundle;
+use App\Models\New_product;
+use App\Models\Palet;
+use App\Models\PaletProduct;
+use App\Models\Product_Bundle;
+use App\Models\Promo;
+use App\Models\RiwayatCheck;
+use App\Models\SpecialTransaction;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use Illuminate\Support\Facades\DB;
@@ -141,9 +149,9 @@ class GenerateController extends Controller
 
     public function mapAndMergeHeaders(Request $request)
     {
-        set_time_limit(300); // Extend max execution time
-        ini_set('memory_limit', '512M'); // Increase memory limit
 
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
         try {
 
             // Validasi input request
@@ -182,7 +190,7 @@ class GenerateController extends Controller
             $dataToInsert = [];
             foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
                 $nama = $mergedData['old_name_product'][$index] ?? null;
-                $qty = $mergedData['old_quantity_product'][$index] === '' ? null : (int)$mergedData['old_quantity_product'][$index];
+                $qty = is_numeric($mergedData['old_quantity_product'][$index]) ? (int)$mergedData['old_quantity_product'][$index] : 0;
                 $harga = $mergedData['old_price_product'][$index] ?? null;
 
                 $dataToInsert[] = [
@@ -191,25 +199,68 @@ class GenerateController extends Controller
                     'old_name_product' => $nama,
                     'old_quantity_product' => $qty,
                     'old_price_product' => $harga,
-                    'created_at' => now(),
-                    'updated_at' => now()
+       
                 ];
             }
 
-            $chunkSize = 500; // Adjust based on your server capacity
-            foreach (array_chunk($dataToInsert, $chunkSize) as $chunkIndex => $chunk) {
-                Product_old::insert($chunk);
-                Log::info("Inserted chunk {$chunkIndex} into product_olds", ['rows' => count($chunk)]);
-            }
+            $chunkSize = 500;
+            $totalInsertedRows = 0;
 
+             foreach (array_chunk($dataToInsert, $chunkSize) as $chunkIndex => $chunk) {
+              
+                $insertResult = Product_old::insert($chunk);
+                if ($insertResult) {
+                    $insertedRows = count($chunk);
+                    $totalInsertedRows += $insertedRows;
+                    Log::info("Inserted chunk {$chunkIndex} into product_olds", ['rows' => $insertedRows]);
+                } else {
+                    Log::error("Failed to insert chunk {$chunkIndex} into product_olds");
+                }
+            }
             Generate::query()->delete();
             Log::info('Deleted all records from generates table after merge.');
 
-            // Return success response
-            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => count($dataToInsert)]);
+            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => $totalInsertedRows]);
+        } catch (\Illuminate\Database\QueryException $qe) {
+            DB::rollBack();
+            Log::error('QueryException in mapAndMergeHeaders: ' . $qe->getMessage());
+            return response()->json(['error' => 'Database query error: ' . $qe->getMessage()], 500);
         } catch (\Exception $e) {
-            Log::error('Error in mapAndMergeHeaders: ' . $e->getMessage());
+        
+            Log::error('Exception in mapAndMergeHeaders: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+
+
+    public function deleteAll(){
+        try {
+            Generate::query()->delete();
+            return new ResponseResource(true, "data berhasil dihapus", null);
+        }catch (\Exception $e){
+            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
+        }
+    }
+
+    public function deleteAllData(){
+        try {
+            Generate::query()->delete();
+            Document::query()->delete();
+            Product_old::query()->delete();
+            Promo::query()->delete();
+            Product_Bundle::query()->delete();
+            PaletProduct::query()->delete();
+            Bundle::query()->delete();
+            Palet::query()->delete();
+            RiwayatCheck::query()->delete();
+            SpecialTransaction::query()->delete();
+            New_product::query()->delete();
+
+            return new ResponseResource(true, "data berhasil dihapus", null);
+        }catch (\Exception $e){
+            return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);
         }
     }
 

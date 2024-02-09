@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->string('code_document');
+            $table->string('base_document');
             $table->integer('total_data');
             $table->integer('total_data_in');
             $table->integer('total_data_lolos');

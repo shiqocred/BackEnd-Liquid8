@@ -10,27 +10,39 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 
 class PaletController extends Controller
-{ 
-    public function display()
+{
+    public function display(Request $request)
     {
+        $query = $request->input('q');
+
         $new_products = New_product::query()
-            ->where(function ($queryBuilder) {
-                $queryBuilder->where('new_status_product', 'display')
-                    ->whereRaw('json_extract(new_quality, "$.lolos") is not null')
-                    ->whereRaw('json_extract(new_quality, "$.lolos") = "lolos"');
+            ->where('new_status_product', 'display')
+            ->whereRaw('json_extract(new_quality, "$.lolos") = "lolos"')
+            ->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%');
             })
             ->paginate(50);
-    
+
         return new ResponseResource(true, "Data produk dengan status display.", $new_products);
     }
-    
-    
+
+
+
+
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $palets = Palet::latest()->where(function ($queryBuilder) use ($query){
-            $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%');
-        })->with('paletProducts')->paginate(100);
+        $palets = Palet::latest()
+            ->with('paletProducts')
+            ->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%')
+                    ->orWhere('category_palet', 'LIKE', '%' . $query . '%')
+                    ->orWhereHas('paletProducts', function ($subQueryBuilder) use ($query) {
+                        $subQueryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%');
+                    });
+            })->paginate(100);
         return new ResponseResource(true, "list palet", $palets);
     }
 
