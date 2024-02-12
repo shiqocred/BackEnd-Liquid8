@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('new_barcode_product')->unique();
             $table->string('new_name_product');
             $table->bigInteger('new_qty_product');
-            $table->bigInteger('new_price_product');
+            $table->decimal('new_price_product', 15, 2)->nullable();
             $table->string('new_tag_product')->nullable();
             $table->enum('status_migrate', ['proses', 'selesai']);
             $table->string('status_product_before');

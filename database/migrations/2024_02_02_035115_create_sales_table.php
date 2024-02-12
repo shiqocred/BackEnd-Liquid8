@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('code_document_sale');
             $table->string('product_name_sale');
             $table->string('product_barcode_sale');
-            $table->bigInteger('product_price_sale');
+            $table->decimal('product_price_sale', 15, 2)->nullable();
             $table->bigInteger('product_qty_sale');
             $table->enum('status_sale', ['proses', 'selesai']);
             $table->timestamps();

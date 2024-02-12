@@ -18,10 +18,13 @@ class SaleController extends Controller
     public function index()
     {
         $sale = Sale::where('status_sale', 'proses')->latest()->paginate(10);
-        if ($sale->isEmpty()) {
+        $saleDocument = SaleDocument::where('status_document_sale', 'proses')->first();
+        if ($saleDocument == null) {
             $sale[] = ['code_document_sale' => codeDocumentSale()];
+            $sale[] = ['sale_buyer_name' => ''];
         } else {
-            $sale[] = ['code_document_sale' => $sale[0]->code_document_sale];
+            $sale[] = ['code_document_sale' => $saleDocument->code_document_sale];
+            $sale[] = ['sale_buyer_name' => $saleDocument->sale_buyer_name];
         }
         $sale[] = ['total_sale' => $sale->sum('product_price_sale')];
         $resource = new ResponseResource(true, "list data sale", $sale);
@@ -45,6 +48,7 @@ class SaleController extends Controller
             $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
             return $resource->response()->setStatusCode(422);
         }
+
         try {
             $newProduct = New_product::where('new_barcode_product', $request->sale_barcode)->first();
             $bundle = Bundle::where('barcode_bundle', $request->sale_barcode)->first();
