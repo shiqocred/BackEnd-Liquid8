@@ -32,7 +32,7 @@ class AdminNotification extends Mailable
     public function build()
     {
         $url = URL::temporarySignedRoute(
-            'admin.approve', now()->addMinutes(30), ['userId' => $this->userId, 'transactionId' => $this->transactionId]
+            'admin.approve', now()->addMinutes(1440), ['userId' => $this->userId, 'transactionId' => $this->transactionId]
         );
     
         return $this->subject('Approved Check Product From The Crew')

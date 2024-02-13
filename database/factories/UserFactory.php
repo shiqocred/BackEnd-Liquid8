@@ -52,7 +52,7 @@ class UserFactory extends Factory
         $email = [
             'sugeng@gmail.com',
             'anas@gmail.com',
-            'hayyi@gmail.com',
+            'isagagah3@gmail.com',
             'freddy@gmail.com',
             'gebus@gmail.com',
             'cok@gmail.com'

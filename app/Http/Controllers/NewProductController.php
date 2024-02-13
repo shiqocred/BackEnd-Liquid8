@@ -314,9 +314,9 @@ class NewProductController extends Controller
 
     public function processExcelFiles(Request $request)
     {
-        set_time_limit(300); // Extend max execution time
-        ini_set('memory_limit', '512M'); // Increase memory limit
-
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
+        
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
             'file.unique' => 'Nama file sudah ada di database.',
@@ -342,7 +342,7 @@ class NewProductController extends Controller
 
                 $rowData = [];
                 foreach ($cellIterator as $cell) {
-                    $rowData[] = $cell->getValue() ?? ''; // Use default value for empty cells
+                    $rowData[] = $cell->getValue() ?? ''; 
                 }
 
                 if (count($header) === count($rowData)) {
@@ -420,7 +420,7 @@ class NewProductController extends Controller
             return json_decode($item->data, true);
         });
 
-        Log::info('Data from ExcelOld:', ['data' => $ekspedisiData]);
+      
 
         $mergedData = [
             'old_barcode_product' => [],
