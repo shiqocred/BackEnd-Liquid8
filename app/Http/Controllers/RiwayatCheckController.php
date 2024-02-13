@@ -61,48 +61,51 @@ class RiwayatCheckController extends Controller
 
         try {
 
-            $newProducts = New_product::where('code_document', $request['code_document'])->get();
+            // $newProducts = New_product::where('code_document', $request['code_document'])->get();
 
-            $totalData = $newProducts->count();
-            $totalLolos = $totalDamaged = $totalAbnormal = 0;
+            // $totalData = $newProducts->count();
+            // //disini kita check juga ya
 
-
-            foreach ($newProducts as $product) {
-                $newQualityData = json_decode($product->new_quality, true);
-
-                if (is_array($newQualityData)) {
-                    $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
-                    $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
-                    $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
-                }
-            }
+            // $totalLolos = $totalDamaged = $totalAbnormal = 0;
 
 
+            // foreach ($newProducts as $product) {
+            //     $newQualityData = json_decode($product->new_quality, true);
 
-            $riwayat_check = RiwayatCheck::create([
-                'user_id' => $user->id,
-                'code_document' => $request['code_document'],
-                'base_document' => $document->base_document,
-                'total_data' => $document->total_column_in_document,
-                'total_data_in' => $totalData,
-                'total_data_lolos' => $totalLolos,
-                'total_data_damaged' => $totalDamaged,
-                'total_data_abnormal' => $totalAbnormal,
-                'total_discrepancy' => $document->total_column_in_document - $totalData,
-                'status_approve' => 'pending',
-
-                // persentase
-                'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
-                'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
-                'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
-                'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
-                'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
-                'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
-            ]);
+            //     if (is_array($newQualityData)) {
+            //         $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
+            //         $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
+            //         $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
+            //     }
+            // }
 
 
-            $code_document = Document::where('code_document', $request['code_document'])->first();
-            $code_document->update(['status_document' => 'done']);
+            // $riwayat_check = RiwayatCheck::create([
+            //     'user_id' => $user->id,
+            //     'code_document' => $request['code_document'],
+            //     'base_document' => $document->base_document,
+            //     'total_data' => $document->total_column_in_document,
+            //     'total_data_in' => $totalData,
+            //     'total_data_lolos' => $totalLolos,
+            //     'total_data_damaged' => $totalDamaged,
+            //     'total_data_abnormal' => $totalAbnormal,
+            //     'total_discrepancy' => $document->total_column_in_document - $totalData,
+            //     'status_approve' => 'pending',
+
+            //     // persentase
+            //     'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
+            //     'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
+            //     'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
+            //     'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
+            //     'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
+            //     'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
+            // ]);
+
+            
+
+
+            // $code_document = Document::where('code_document', $request['code_document'])->first();
+            // $code_document->update(['status_document' => 'done']);
 
             //keterangan transaksi
             $keterangan = SpecialTransaction::create([
@@ -114,7 +117,7 @@ class RiwayatCheckController extends Controller
             $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
 
             if ($adminUser) {
-                Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+                $gas = Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
             } else {
                 $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
                 return $resource->response()->setStatusCode(403);
@@ -122,7 +125,8 @@ class RiwayatCheckController extends Controller
 
             DB::commit();
 
-            return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
+            // return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
+            return new ResponseResource(true, "Data berhasil ditambah", [ $keterangan]);
         } catch (\Exception $e) {
             DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
