@@ -223,7 +223,7 @@ class RiwayatCheckController extends Controller
         $user = User::find(auth()->id());
         Mail::to('isagagah3@gmail.com')->send(new TestEmail());
     
-        return "Email sent successfully". $user;
+        return "Email sent successfully gas". $user;
     }
 
 
