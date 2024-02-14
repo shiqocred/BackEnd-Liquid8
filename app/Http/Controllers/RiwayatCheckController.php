@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Mail\TestEmail;
 use App\Models\Document;
 use App\Models\New_product;
 use App\Models\RiwayatCheck;
@@ -34,8 +35,8 @@ class RiwayatCheckController extends Controller
 
     public function store(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
         $user = User::find(auth()->id());
 
         if (!$user) {
@@ -61,51 +62,48 @@ class RiwayatCheckController extends Controller
 
         try {
 
-            // $newProducts = New_product::where('code_document', $request['code_document'])->get();
+            $newProducts = New_product::where('code_document', $request['code_document'])->get();
 
-            // $totalData = $newProducts->count();
-            // //disini kita check juga ya
-
-            // $totalLolos = $totalDamaged = $totalAbnormal = 0;
+            $totalData = $newProducts->count();
+            $totalLolos = $totalDamaged = $totalAbnormal = 0;
 
 
-            // foreach ($newProducts as $product) {
-            //     $newQualityData = json_decode($product->new_quality, true);
+            foreach ($newProducts as $product) {
+                $newQualityData = json_decode($product->new_quality, true);
 
-            //     if (is_array($newQualityData)) {
-            //         $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
-            //         $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
-            //         $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
-            //     }
-            // }
-
-
-            // $riwayat_check = RiwayatCheck::create([
-            //     'user_id' => $user->id,
-            //     'code_document' => $request['code_document'],
-            //     'base_document' => $document->base_document,
-            //     'total_data' => $document->total_column_in_document,
-            //     'total_data_in' => $totalData,
-            //     'total_data_lolos' => $totalLolos,
-            //     'total_data_damaged' => $totalDamaged,
-            //     'total_data_abnormal' => $totalAbnormal,
-            //     'total_discrepancy' => $document->total_column_in_document - $totalData,
-            //     'status_approve' => 'pending',
-
-            //     // persentase
-            //     'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
-            //     'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
-            //     'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
-            //     'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
-            //     'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
-            //     'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
-            // ]);
-
-            
+                if (is_array($newQualityData)) {
+                    $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
+                    $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
+                    $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
+                }
+            }
 
 
-            // $code_document = Document::where('code_document', $request['code_document'])->first();
-            // $code_document->update(['status_document' => 'done']);
+
+            $riwayat_check = RiwayatCheck::create([
+                'user_id' => $user->id,
+                'code_document' => $request['code_document'],
+                'base_document' => $document->base_document,
+                'total_data' => $document->total_column_in_document,
+                'total_data_in' => $totalData,
+                'total_data_lolos' => $totalLolos,
+                'total_data_damaged' => $totalDamaged,
+                'total_data_abnormal' => $totalAbnormal,
+                'total_discrepancy' => $document->total_column_in_document - $totalData,
+                'status_approve' => 'pending',
+
+                // persentase
+                'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
+                'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
+                'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
+                'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
+                'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
+                'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
+            ]);
+
+
+            $code_document = Document::where('code_document', $request['code_document'])->first();
+            $code_document->update(['status_document' => 'done']);
 
             //keterangan transaksi
             $keterangan = SpecialTransaction::create([
@@ -117,7 +115,7 @@ class RiwayatCheckController extends Controller
             $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
 
             if ($adminUser) {
-                $gas = Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+                Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
             } else {
                 $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
                 return $resource->response()->setStatusCode(403);
@@ -125,8 +123,7 @@ class RiwayatCheckController extends Controller
 
             DB::commit();
 
-            // return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
-            return new ResponseResource(true, "Data berhasil ditambah", [ $keterangan]);
+            return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
         } catch (\Exception $e) {
             DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
@@ -220,4 +217,14 @@ class RiwayatCheckController extends Controller
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
         // response()->json(['status' => true, 'message' => "", 'downloadUrl' => $downloadUrl]);
     }
+
+    public function sendEmail()
+    {
+        $user = User::find(auth()->id());
+        Mail::to('isagagah3@gmail.com')->send(new TestEmail());
+    
+        return "Email sent successfully". $user;
+    }
+
+
 }
