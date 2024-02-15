@@ -218,13 +218,13 @@ class RiwayatCheckController extends Controller
         // response()->json(['status' => true, 'message' => "", 'downloadUrl' => $downloadUrl]);
     }
 
-    public function sendEmail()
-    {
-        $user = User::find(auth()->id());
-        Mail::to('isagagah3@gmail.com')->send(new TestEmail());
+    // public function sendEmail()
+    // {
+    //     $user = User::find(auth()->id());
+    //     Mail::to('isagagah3@gmail.com')->send(new TestEmail());
     
-        return "Email sent successfully gas". $user;
-    }
+    //     return "Email sent successfully gas". $user;
+    // }
 
 
 }
