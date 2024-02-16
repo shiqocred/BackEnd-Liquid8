@@ -167,6 +167,8 @@ Route::middleware(['auth:sanctum', 'check.role:crew,Team leader,Spv,Admin'])->gr
    Route::resource('historys', RiwayatCheckController::class);
    Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
    Route::post('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
+   Route::get('/testEmail', [RiwayatCheckController::class, 'sendEmail']);
+
    Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
 });
 

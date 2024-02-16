@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Mail\TestEmail;
 use App\Models\Document;
 use App\Models\New_product;
 use App\Models\RiwayatCheck;
@@ -11,7 +12,6 @@ use Illuminate\Http\Request;
 use App\Mail\AdminNotification;
 use App\Models\SpecialTransaction;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -35,30 +35,32 @@ class RiwayatCheckController extends Controller
 
     public function store(Request $request)
     {
-     
-            $user = User::find(auth()->id());
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
+        $user = User::find(auth()->id());
 
-            if (!$user) {
-                $resource = new ResponseResource(false, "User tidak dikenali", null);
-                return $resource->response()->setStatusCode(422);
-            }
+        if (!$user) {
+            $resource = new ResponseResource(false, "User tidak dikenali", null);
+            return $resource->response()->setStatusCode(422);
+        }
 
-            $validator = Validator::make($request->all(), [
-                'code_document' => 'required|unique:riwayat_checks,code_document',
-            ]);
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'required|unique:riwayat_checks,code_document',
+        ]);
 
-            if ($validator->fails()) {
-                return response()->json(['errors' => $validator->errors()], 422);
-            }
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-            // Periksa keberadaan dokumen
-            $document = Document::where('code_document', $request['code_document'])->firstOrFail();
+        $document = Document::where('code_document', $request['code_document'])->firstOrFail();
 
-            if ($document->total_column_in_document == 0) {
-                return response()->json(['error' => 'Total data di document tidak boleh 0'], 422);
-            }
+        if ($document->total_column_in_document == 0) {
+            return response()->json(['error' => 'Total data di document tidak boleh 0'], 422);
+        }
 
-            try {
+        DB::beginTransaction();
+
+        try {
 
             $newProducts = New_product::where('code_document', $request['code_document'])->get();
 
@@ -88,6 +90,7 @@ class RiwayatCheckController extends Controller
                 'total_data_damaged' => $totalDamaged,
                 'total_data_abnormal' => $totalAbnormal,
                 'total_discrepancy' => $document->total_column_in_document - $totalData,
+                'status_approve' => 'pending',
 
                 // persentase
                 'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
@@ -99,7 +102,6 @@ class RiwayatCheckController extends Controller
             ]);
 
 
-            //update status document
             $code_document = Document::where('code_document', $request['code_document'])->first();
             $code_document->update(['status_document' => 'done']);
 
@@ -110,27 +112,20 @@ class RiwayatCheckController extends Controller
                 'status' => 'pending'
             ]);
 
-            $adminUser = User::where('email', 'sugeng@gmail.com')->first();
+            $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
 
-            // if ($adminUser) {
-            //     Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
-            //     Log::info('Email sent to ' . $adminUser->email);
-            // } else {
-            //     $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
-            //     Log::error("Email could not be sent. Error: " . $e->getMessage());
-            //     return $resource->response()->setStatusCode(403);
-            // }
-
-            try {
+            if ($adminUser) {
                 Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
-                Log::info('Email sent to ' . $adminUser->email);
-            } catch (\Exception $e) {
-                Log::error("Email could not be sent. Error: " . $e->getMessage());
-                // Handle the exception or notify the user/admin as needed.
+            } else {
+                $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
+                return $resource->response()->setStatusCode(403);
             }
+
+            DB::commit();
 
             return new ResponseResource(true, "Data berhasil ditambah", [$riwayat_check, $keterangan]);
         } catch (\Exception $e) {
+            DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
             $resource->response()->setStatusCode(500);
         }
@@ -175,14 +170,14 @@ class RiwayatCheckController extends Controller
         $code_document = $request->input('code_document');
         // $code_document = '0001/02/2024';
         $checkHistory = RiwayatCheck::where('code_document', $code_document)->get();
-    
+
         if ($checkHistory->isEmpty()) {
             return response()->json(['status' => false, 'message' => "Data kosong, tidak bisa di export"], 422);
         }
-    
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-    
+
         // Header dan data disimpan secara vertikal
         $headers = [
             'ID', 'User ID', 'Code Document', 'Base Document', 'Total Data', 'Total Data In', 'Total Data Lolos', 'Total Data Damaged', 'Total Data Abnormal', 'Total Discrepancy', 'Status Approve', 'Percentage Total Data', 'Percentage In', 'Percentage Lolos', 'Percentage Damaged', 'Percentage Abnormal', 'Percentage Discrepancy'
@@ -204,23 +199,32 @@ class RiwayatCheckController extends Controller
         }
 
         $firstItem = $checkHistory->first();
-    
+
         $writer = new Xlsx($spreadsheet);
         $fileName = $firstItem->base_document;
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
-    
+
         // Create exports directory if not exist
         if (!file_exists(public_path($publicPath))) {
             mkdir(public_path($publicPath), 0777, true);
         }
-    
+
         $writer->save($filePath);
-    
+
         $downloadUrl = url($publicPath . '/' . $fileName);
-    
-        return new ResponseResource(true, "File siap diunduh.", $downloadUrl );
+
+        return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
         // response()->json(['status' => true, 'message' => "", 'downloadUrl' => $downloadUrl]);
     }
+
+    // public function sendEmail()
+    // {
+    //     $user = User::find(auth()->id());
+    //     Mail::to('isagagah3@gmail.com')->send(new TestEmail());
     
+    //     return "Email sent successfully gas". $user;
+    // }
+
+
 }
