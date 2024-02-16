@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
 use App\Models\Bundle;
+use App\Models\Buyer;
 use App\Models\New_product;
 use App\Models\Sale;
 use App\Models\SaleDocument;
@@ -24,7 +25,7 @@ class SaleController extends Controller
             $sale[] = ['sale_buyer_name' => ''];
         } else {
             $sale[] = ['code_document_sale' => $saleDocument->code_document_sale];
-            $sale[] = ['sale_buyer_name' => $saleDocument->sale_buyer_name];
+            $sale[] = ['sale_buyer_name' => $saleDocument->buyer_name_document_sale];
         }
         $sale[] = ['total_sale' => $sale->sum('product_price_sale')];
         $resource = new ResponseResource(true, "list data sale", $sale);
@@ -40,7 +41,7 @@ class SaleController extends Controller
             $request->all(),
             [
                 'sale_barcode' => 'required',
-                'sale_buyer_name' => 'required'
+                'buyer_id' => 'required|numeric'
             ]
         );
 
@@ -50,6 +51,13 @@ class SaleController extends Controller
         }
 
         try {
+
+            $buyer = Buyer::find($request->buyer_id);
+            if ($buyer == null) {
+                $resource = new ResponseResource(false, "Data Buyer tidak di temukan!", []);
+                return $resource->response()->setStatusCode(404);
+            }
+
             $newProduct = New_product::where('new_barcode_product', $request->sale_barcode)->first();
             $bundle = Bundle::where('barcode_bundle', $request->sale_barcode)->first();
 
@@ -74,7 +82,9 @@ class SaleController extends Controller
 
             if ($saleDocument == null) {
                 $saleDocumentRequest['code_document_sale'] = codeDocumentSale();
-                $saleDocumentRequest['buyer_name_document_sale'] = $request->sale_buyer_name;
+                $saleDocumentRequest['buyer_name_document_sale'] = $buyer->name_buyer;
+                $saleDocumentRequest['buyer_phone_document_sale'] = $buyer->phone_buyer;
+                $saleDocumentRequest['buyer_address_document_sale'] = $buyer->address_buyer;
                 $saleDocumentRequest['total_price_document_sale'] = 0;
                 $saleDocumentRequest['total_product_document_sale'] = 0;
                 $saleDocumentRequest['status_document_sale'] = 'proses';

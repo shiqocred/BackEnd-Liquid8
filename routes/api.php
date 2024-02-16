@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BundleController;
+use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DashboardController;
@@ -41,6 +42,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Route ini berfungsi jika route nya tidak di temukan. maka, akan ke muncul pesan 404
+Route::fallback(function () {
+   return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
+});
 
 Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(function () {
    // =========================================== repair station ==================================================
@@ -68,6 +73,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
    Route::resource('sales', SaleController::class);
    Route::resource('sale-documents', SaleDocumentController::class);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
+
+   Route::apiResource('buyers', BuyerController::class);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {

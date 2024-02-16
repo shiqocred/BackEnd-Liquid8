@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('code_document_sale')->unique();
             $table->string('buyer_name_document_sale');
+            $table->string('buyer_phone_document_sale');
+            $table->string('buyer_address_document_sale');
             $table->bigInteger('total_product_document_sale');
             $table->decimal('total_price_document_sale', 15, 2);
             $table->enum('status_document_sale', ['proses', 'selesai']);
