@@ -14,6 +14,7 @@ use App\Models\SpecialTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\ResponseResource;
+use App\Models\Notification;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -78,8 +79,6 @@ class RiwayatCheckController extends Controller
                 }
             }
 
-
-
             $riwayat_check = RiwayatCheck::create([
                 'user_id' => $user->id,
                 'code_document' => $request['code_document'],
@@ -106,20 +105,21 @@ class RiwayatCheckController extends Controller
             $code_document->update(['status_document' => 'done']);
 
             //keterangan transaksi
-            $keterangan = SpecialTransaction::create([
+            $keterangan = Notification::create([
                 'user_id' => $user->id,
-                'transaction_name' => 'list product document sudah di check',
-                'status' => 'pending'
+                'notification_name' => 'list product document sudah di check',
+                'admin_id' => 2,
+                'read_at' => Carbon::now('Asia/Jakarta'),
             ]);
 
-            $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
+            // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
 
-            if ($adminUser) {
-                Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
-            } else {
-                $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
-                return $resource->response()->setStatusCode(403);
-            }
+            // if ($adminUser) {
+            //     Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+            // } else {
+            //     $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
+            //     return $resource->response()->setStatusCode(403);
+            // }
 
             DB::commit();
 
@@ -217,14 +217,6 @@ class RiwayatCheckController extends Controller
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
         // response()->json(['status' => true, 'message' => "", 'downloadUrl' => $downloadUrl]);
     }
-
-    // public function sendEmail()
-    // {
-    //     $user = User::find(auth()->id());
-    //     Mail::to('isagagah3@gmail.com')->send(new TestEmail());
-    
-    //     return "Email sent successfully gas". $user;
-    // }
 
 
 }

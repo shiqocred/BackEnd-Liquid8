@@ -187,8 +187,8 @@ class NewProductController extends Controller
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
-            'old_price_product' => 'required|numeric',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+            'old_price_product' => 'required|numeric', 
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
             'new_tag_product' => 'nullable|exists:color_tags,name_color'

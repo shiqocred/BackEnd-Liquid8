@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {
+
    //=========================================== storage ==========================================================
 
    //slow moving products 
@@ -83,7 +84,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('bundle', [BundleController::class, 'index']);
    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
    Route::post('bundle', [ProductBundleController::class, 'store']);
-   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']); 
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
