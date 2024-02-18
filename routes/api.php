@@ -118,7 +118,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
 
 
 
-Route::middleware(['auth:sanctum', 'check.role:crew,Team leader,Spv,Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->group(function () {
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
