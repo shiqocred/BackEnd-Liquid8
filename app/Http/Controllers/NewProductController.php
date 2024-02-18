@@ -25,6 +25,7 @@ class NewProductController extends Controller
         $newProducts = New_product::latest()->where(function ($queryBuilder) use ($query) {
             $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
         })->where('new_status_product', '!=', 'dump')->where('new_status_product', '!=', 'promo')->paginate(100);
 

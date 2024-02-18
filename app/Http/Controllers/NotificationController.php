@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
+use App\Models\RiwayatCheck;
 use Illuminate\Support\Facades\Validator;
 
 class NotificationController extends Controller
@@ -42,7 +43,7 @@ class NotificationController extends Controller
     public function show(Notification $notification)
     {
         if(!$notification){
-            return new ResponseResource(false, "id notification tidak terdaftar", $notification);
+            return new ResponseResource(false, "id notification tidak terdaftar", null);
         }
         return new ResponseResource(true, "detail notification", $notification);
     }
@@ -96,46 +97,61 @@ class NotificationController extends Controller
         }
     }
 
-    public function approveTransaction($userId, $notificationId)
+    public function approveTransaction($notificationId)
     {
-        // Cari user berdasarkan ID, ini opsional kecuali kamu memerlukan data user nantinya
-        $user = User::find($userId);
-    
-        // Pastikan user tersebut ada
-        if (!$user) {
-            return response()->json(['error' => 'User tidak ditemukan'], 404);
-        }
+        $user = User::with('role')->find(auth()->id());
 
-        $notification = Notification::where('id', $notificationId)->first();
+        if ($user) {
+            if ($user->role && $user->role->role_name == 'Spv') {
+                $notification = Notification::where('id', $notificationId)->first();
         
-        if (!$notification) {
-            return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
+                if (!$notification) {
+                    return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
+                }
+                if ($notification->status == 'done') {
+                    return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
+                }
+            
+                $notification->update([
+                    'notification_name' => 'Approved',
+                    'status' => 'done',
+                ]);
+        
+                $riwayatCheck = RiwayatCheck::where('id', $notification->riwayat_check_id)->first();
+        
+                $riwayatCheck->update(['status_approve' => 'done']);
+            
+                return new ResponseResource(true,'Transaksi berhasil diapprove', $notification);
+            } else {
+                return new ResponseResource(false, "notification tidak di temukan", null);
+            }
+        }else {
+            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
-        if ($notification->status == 'done') {
-            return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
-        }
-    
-        $notification->update(['status' => 'done']);
-    
-        return new ResponseResource(true,'Transaksi berhasil diapprove', $notification);
+
+
+       
     }
 
-    public function notificationByRole(){
+    public function getNotificationByRole(){
 
-        $userId = User::find(auth()->id());
+        $user = User::with('role')->find(auth()->id());
 
-        if (!$userId) {
-            $resource = new ResponseResource(false, "User tidak dikenali", null);
-            return $resource->response()->setStatusCode(422);
+        if ($user) {
+            if ($user->role && $user->role->role_name == 'Spv') {
+                $notifSpv = Notification::where('spv_id', $user->id)->get();
+                return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
+            } else if ($user->role && $user->role->role_name == 'Crew') {
+                $notifCrew = Notification::where('user_id', $user->id)->get();
+                return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
+            }else {
+                $notifReparasi = Notification::where('user_id', $user->id)->get();
+                return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
+            }
+        }else {
+            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
 
-        $notifByRole = Notification::where('user_id', $userId)->get();
+   }
 
-        if ($notifByRole->isEmpty()) {
-            return new ResponseResource(false, "Tidak ada data", null);
-        }
-
-        return new ResponseResource(true, "list notif user", $notifByRole);
-    }
-    
 }

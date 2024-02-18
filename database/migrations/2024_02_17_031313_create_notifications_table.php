@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('notification_name');
             $table->enum('status', ['pending', 'done'])->default('pending');
-            $table->foreignId('admin_id')->constrained('users');
+            $table->foreignId('spv_id')->constrained('users');
+            $table->foreignId('riwayat_check_id')->constrained('riwayat_checks');
             $table->timestamp('read_at')->nullable(); 
             $table->timestamps();
         });

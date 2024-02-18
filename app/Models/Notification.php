@@ -13,4 +13,8 @@ class Notification extends Model
     public function users(){
         return $this->hasMany(User::class);
     }
+
+    public function riwayat_check(){
+        return $this->belongsTo(RiwayatCheck::class);
+    }
 }
