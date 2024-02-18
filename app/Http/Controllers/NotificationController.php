@@ -128,9 +128,6 @@ class NotificationController extends Controller
         }else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
-
-
-       
     }
 
     public function getNotificationByRole(){
@@ -153,5 +150,25 @@ class NotificationController extends Controller
         }
 
    }
+   public function getNotificationByRole2(){
+
+    $user = User::with('role')->find(auth()->id());
+
+    if ($user) {
+        if ($user->role && $user->role->role_name == 'Spv') {
+            $notifSpv = Notification::where('spv_id', $user->id)->get();
+            return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
+        } else if ($user->role && $user->role->role_name == 'Crew') {
+            $notifCrew = Notification::where('user_id', $user->id)->get();
+            return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
+        }else {
+            $notifReparasi = Notification::where('user_id', $user->id)->get();
+            return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
+        }
+    }else {
+        return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+    }
+
+}
 
 }
