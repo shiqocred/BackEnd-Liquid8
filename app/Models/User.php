@@ -28,7 +28,7 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class);
     }
     
-    public function special_transaction(){
-        return $this->belongsTo(SpecialTransaction::class);
+    public function notifications(){
+        return $this->hasMany(Notification::class);
     }
 }

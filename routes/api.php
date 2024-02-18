@@ -11,6 +11,7 @@ use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\MigrateController;
 use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\NewProductController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
 use App\Http\Controllers\PaletProductController;
@@ -31,16 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+
 
 // Route ini berfungsi jika route nya tidak di temukan. maka, akan ke muncul pesan 404
 Route::fallback(function () {
@@ -49,6 +41,7 @@ Route::fallback(function () {
 
 Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(function () {
    // =========================================== repair station ==================================================
+
    Route::get('repair', [NewProductController::class, 'showRepair']);
    Route::put('repair/update/{id}', [NewProductController::class, 'updateRepair']);
    Route::post('repair/multiple-update', [NewProductController::class, 'MultipleUpdateRepair']);
@@ -90,7 +83,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('bundle', [BundleController::class, 'index']);
    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
    Route::post('bundle', [ProductBundleController::class, 'store']);
-   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']); 
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
@@ -169,16 +162,20 @@ Route::middleware(['auth:sanctum', 'check.role:crew,Team leader,Spv,Admin'])->gr
    Route::post('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
    Route::get('/testEmail', [RiwayatCheckController::class, 'sendEmail']);
 
-   Route::get('/admin/approve/{userId}/{transactionId}', [SpecialTransactionController::class, 'approveTransaction'])->name('admin.approve');
+   Route::resource('notifications', NotificationController::class);
+   Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
 });
 
+Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader'])->group(function () {
+   Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
+});
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
 });
 
-Route::post('login', [AuthController::class, 'login']);
 
+Route::post('login', [AuthController::class, 'login']);
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
