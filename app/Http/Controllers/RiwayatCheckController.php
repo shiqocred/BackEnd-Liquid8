@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Resources\ResponseResource;
 use App\Models\Notification;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -158,11 +159,15 @@ class RiwayatCheckController extends Controller
 
     public function destroy(RiwayatCheck $history)
     {
+        DB::beginTransaction();
         try {
+            Notification::where('riwayat_check_id', $history->id)->delete();
             $history->delete();
+            DB::commit();
             return new ResponseResource(true, 'data berhasil di hapus', $history);
         } catch (\Exception $e) {
-            return new ResponseResource(false, 'data gagal di hapus', null);
+            DB::rollBack();
+            return new ResponseResource(false, 'data gagal di hapus', $e->getMessage());
         }
     }
 
