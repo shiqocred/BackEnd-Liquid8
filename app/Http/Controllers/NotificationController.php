@@ -42,7 +42,7 @@ class NotificationController extends Controller
      */
     public function show(Notification $notification)
     {
-        if(!$notification){
+        if (!$notification) {
             return new ResponseResource(false, "id notification tidak terdaftar", null);
         }
         return new ResponseResource(true, "detail notification", $notification);
@@ -80,7 +80,7 @@ class NotificationController extends Controller
 
         $notification->update([
             'notification_name' => $request->notification_name,
-            'status' => $request->status 
+            'status' => $request->status
         ]);
     }
 
@@ -89,10 +89,10 @@ class NotificationController extends Controller
      */
     public function destroy(Notification $notification)
     {
-        try{
+        try {
             $notification->delete();
             return new ResponseResource(true, "berhasil di hapus", null);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return response()->json(["error" => $e], 402);
         }
     }
@@ -104,71 +104,82 @@ class NotificationController extends Controller
         if ($user) {
             if ($user->role && $user->role->role_name == 'Spv') {
                 $notification = Notification::where('id', $notificationId)->first();
-        
+
                 if (!$notification) {
                     return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
                 }
                 if ($notification->status == 'done') {
                     return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
                 }
-            
+
                 $notification->update([
                     'notification_name' => 'Approved',
                     'status' => 'done',
                 ]);
-        
+
                 $riwayatCheck = RiwayatCheck::where('id', $notification->riwayat_check_id)->first();
-        
+
                 $riwayatCheck->update(['status_approve' => 'done']);
-            
-                return new ResponseResource(true,'Transaksi berhasil diapprove', $notification);
+
+                return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
             } else {
                 return new ResponseResource(false, "notification tidak di temukan", null);
             }
-        }else {
+        } else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
-
-    public function getNotificationByRole(){
-
+    public function getNotificationByRole(Request $request)
+    {
+        $query = $request->input('q'); 
         $user = User::with('role')->find(auth()->id());
+
 
         if ($user) {
             if ($user->role && $user->role->role_name == 'Spv') {
-                $notifSpv = Notification::where('spv_id', $user->id)->get();
+                $notifSpv = Notification::where('spv_id', $user->id)
+                    ->where('status', 'LIKE', '%' . $query . '%')
+                    ->paginate(50);
                 return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
+
             } else if ($user->role && $user->role->role_name == 'Crew') {
-                $notifCrew = Notification::where('user_id', $user->id)->get();
+                $notifCrew = Notification::where('user_id', $user->id)
+                    ->where('status', 'LIKE', '%' . $query . '%')
+                    ->paginate(50);
                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
-            }else {
-                $notifReparasi = Notification::where('user_id', $user->id)->get();
+
+            } else {
+                $notifReparasi = Notification::where('user_id', $user->id)
+                    ->where('status', 'LIKE', '%' . $query . '%')
+                    ->paginate(50);
                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
             }
-        }else {
+
+        } else {
+
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
-
-   }
-   public function getNotificationByRole2(){
-
-    $user = User::with('role')->find(auth()->id());
-
-    if ($user) {
-        if ($user->role && $user->role->role_name == 'Spv') {
-            $notifSpv = Notification::where('spv_id', $user->id)->get();
-            return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
-        } else if ($user->role && $user->role->role_name == 'Crew') {
-            $notifCrew = Notification::where('user_id', $user->id)->get();
-            return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
-        }else {
-            $notifReparasi = Notification::where('user_id', $user->id)->get();
-            return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
-        }
-    }else {
-        return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
     }
 
-}
 
+    //     public function getNotificationByRole(Request $request){
+
+    //         $query = $request->input('q');
+    //         $user = User::with('role')->find(auth()->id());
+
+    //         if ($user) {
+    //             if ($user->role && $user->role->role_name == 'Spv') {
+    //                 $notifSpv = Notification::where('spv_id', $user->id)->get();
+    //                 return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
+    //             } else if ($user->role && $user->role->role_name == 'Crew') {
+    //                 $notifCrew = Notification::where('user_id', $user->id)->get();
+    //                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
+    //             }else {
+    //                 $notifReparasi = Notification::where('user_id', $user->id)->get();
+    //                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
+    //             }
+    //         }else {
+    //             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+    //         }
+    //    }
 }

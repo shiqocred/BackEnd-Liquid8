@@ -20,7 +20,9 @@ class PaletController extends Controller
             ->whereRaw('json_extract(new_quality, "$.lolos") = "lolos"')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
-                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%');
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             })
             ->paginate(50);
 
