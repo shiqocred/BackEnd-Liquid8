@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product__bundles', function (Blueprint $table) {
+        Schema::create('repair_filters', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bundle_id')->constrained('bundles');
             $table->string('code_document')->nullable(); 
             $table->string('old_barcode_product')->nullable();
             $table->string('new_barcode_product')->unique()->nullable();
@@ -34,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product__bundles');
+        Schema::dropIfExists('repair_filters');
     }
 };

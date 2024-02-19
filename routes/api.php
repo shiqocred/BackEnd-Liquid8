@@ -19,6 +19,9 @@ use App\Http\Controllers\ProductBundleController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\PromoController;
+use App\Http\Controllers\RepairController;
+use App\Http\Controllers\RepairFilterController;
+use App\Http\Controllers\RepairProductController;
 use App\Http\Controllers\RiwayatCheckController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SaleDocumentController;
@@ -26,12 +29,11 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
 use App\Models\New_product;
+use App\Models\Repair;
 use App\Models\RiwayatCheck;
 use App\Models\SpecialTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
-
 
 
 // Route ini berfungsi jika route nya tidak di temukan. maka, akan ke muncul pesan 404
@@ -51,6 +53,23 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(func
    //list dump
    Route::get('/dumps', [NewProductController::class, 'listDump']);
    Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+
+   // =========================================== repair moving product ==================================================
+
+   //filters product bundle
+   Route::get('repair-mv/filter_product', [RepairFilterController::class, 'index']);
+   Route::post('repair-mv/filter_product/{id}/add', [RepairFilterController::class, 'store']);
+   Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
+
+   //bundle
+   Route::get('repair-mv', [RepairController::class, 'index']);
+   Route::get('repair-mv/{repair}', [Repair::class, 'show']);
+   Route::post('repair-mv', [RepairProductController::class, 'store']);
+   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']); 
+
+   Route::get('repair-mv/product', [RepairProductController::class, 'index']);
+   Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(function () {

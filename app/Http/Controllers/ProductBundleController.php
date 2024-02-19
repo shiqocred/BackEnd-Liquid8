@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bundle;
 use Illuminate\Http\Request;
 use App\Models\Product_Bundle;
-use App\Models\Product_Filter;
+use App\Models\Product_Filter; 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;

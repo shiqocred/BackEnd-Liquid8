@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bundle;
-use App\Models\New_product;
+use App\Models\Repair;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
-use App\Models\Product_Bundle;
+use App\Models\New_product;
 
-class BundleController extends Controller
+
+class RepairController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -18,25 +17,23 @@ class BundleController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
+
+        $repairs = Repair::latest()
+        ->with('repair_products')->where(function($repair) use ($query) {
+            $repair->where('repair_name', 'LIKE', '%' . $query . '%')
+            ->orWhereHas('repair_products', function($repair_product) use ($query) {
+                $repair_product->where('new_name_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+            });
+        })->paginate(50);
         
-        $bundles = Bundle::latest()
-            ->with('product_bundles')
-            ->where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('name_bundle', 'LIKE', '%' . $query . '%')
-                    ->orWhereHas('product_bundles', function ($subQueryBuilder) use ($query) {
-                        $subQueryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
-                    });
-            })
-            ->paginate(50);
-    
-        return new ResponseResource(true, "list bundle", $bundles);
+        return new ResponseResource(true, "list repair products", $repairs);
     }
-    
+
     /**
-     * Show the form for creating a new resource. 
+     * Show the form for creating a new resource.
      */
     public function create()
     {
@@ -54,15 +51,15 @@ class BundleController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Bundle $bundle)
+    public function show(Repair $repair)
     {
-        return new ResponseResource(true, "detail bundle", $bundle);
+        return new ResponseResource(true, 'detail repair', $repair);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Bundle $bundle)
+    public function edit(Repair $repair)
     {
         //
     }
@@ -70,7 +67,7 @@ class BundleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Bundle $bundle)
+    public function update(Request $request, Repair $repair)
     {
         //
     }
@@ -78,11 +75,11 @@ class BundleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Bundle $bundle)
+    public function destroy(Repair $repair)
     {
         DB::beginTransaction();
         try {
-            $productBundles = $bundle->product_bundles;
+            $productBundles = $repair->product_bundles;
 
             foreach ($productBundles as $product) {
                 New_product::create([
@@ -102,7 +99,7 @@ class BundleController extends Controller
                 $product->delete();
             }
 
-            $bundle->delete();
+            $repair->delete();
 
             DB::commit();
             return new ResponseResource(true, "Produk bundle berhasil dihapus", null);
