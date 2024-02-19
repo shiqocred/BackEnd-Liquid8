@@ -34,7 +34,7 @@ class DashboardController extends Controller
         $totalNewProductSaleByCategory[] = ['all_total' => $totalNewProductSaleByCategory->sum('total')];
 
         //Inbound Data
-        $document = Document::select('base_document', 'created_at', 'total_column_in_document')->latest()->paginate(5);
+        $document = Document::select('base_document', 'created_at', 'total_column_in_document')->latest()->paginate(8);
 
         //Expired Product
         $totalNewProductExpiredByCategory = New_product::select('new_category_product', DB::raw('COUNT(*) as total'))
