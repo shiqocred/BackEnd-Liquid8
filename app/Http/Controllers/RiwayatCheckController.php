@@ -111,7 +111,8 @@ class RiwayatCheckController extends Controller
                 'notification_name' => 'Butuh approvement',
                 'spv_id' => 2,
                 'read_at' => Carbon::now('Asia/Jakarta'),
-                'riwayat_check_id' => $riwayat_check->id
+                'riwayat_check_id' => $riwayat_check->id,
+                'repair_id' => null
             ]);
 
             // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();

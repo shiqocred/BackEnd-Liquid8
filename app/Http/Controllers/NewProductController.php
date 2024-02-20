@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use App\Models\Product_old;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Validator; 
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class NewProductController extends Controller
@@ -27,7 +27,12 @@ class NewProductController extends Controller
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-        })->where('new_status_product', '!=', 'dump')->where('new_status_product', '!=', 'promo')->paginate(100);
+        })->where('new_status_product', '!=', 'dump')
+        ->where('new_status_product', '!=', 'expired')
+        ->where('new_status_product', '!=', 'sale')
+        ->where('new_status_product', '!=', 'migrate')
+        ->where('new_status_product', '!=', 'repair')
+        ->paginate(100);
 
         return new ResponseResource(true, "list new product", $newProducts);
     }

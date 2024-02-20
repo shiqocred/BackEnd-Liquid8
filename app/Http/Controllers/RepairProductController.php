@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Repair;
+use App\Models\Notification;
 use App\Models\RepairFilter;
 use Illuminate\Http\Request;
 use App\Models\RepairProduct;
@@ -34,6 +37,10 @@ class RepairProductController extends Controller
      */
     public function store(Request $request)
     {
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
+        $user = User::find(auth()->id());
+        
         DB::beginTransaction();
         try {
             $product_filters = RepairFilter::all();
@@ -42,6 +49,7 @@ class RepairProductController extends Controller
             }
 
             $repair = Repair::create([
+                'user_id' => $user->id,
                 'repair_name' => $request->repair_name,
                 'total_price' => $request->total_price,
                 'total_custom_price' => $request->total_custom_price,
@@ -71,8 +79,17 @@ class RepairProductController extends Controller
 
             RepairFilter::query()->delete();
 
+            $keterangan = Notification::create([
+                'user_id' => $user->id,
+                'notification_name' => 'Butuh approvement',
+                'spv_id' => 2,
+                'read_at' => Carbon::now('Asia/Jakarta'),
+                'riwayat_check_id' => null,
+                'repair_id' => $repair->id
+            ]);
+
             DB::commit();
-            return new ResponseResource(true, "repair berhasil dibuat", $repair);
+            return new ResponseResource(true, "repair berhasil dibuat", [$repair, $keterangan]);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal membuat repair: " . $e->getMessage());

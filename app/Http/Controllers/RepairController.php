@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\New_product;
-
+use App\Models\Notification;
 
 class RepairController extends Controller
 {
@@ -53,6 +53,7 @@ class RepairController extends Controller
      */
     public function show(Repair $repair)
     {
+        $repair->load('repair_products');
         return new ResponseResource(true, 'detail repair', $repair);
     }
 
@@ -79,8 +80,7 @@ class RepairController extends Controller
     {
         DB::beginTransaction();
         try {
-            $productBundles = $repair->product_bundles;
-
+            $productBundles = $repair->repair_products;
             foreach ($productBundles as $product) {
                 New_product::create([
                     'code_document' => $product->code_document,
@@ -98,14 +98,13 @@ class RepairController extends Controller
 
                 $product->delete();
             }
-
             $repair->delete();
 
             DB::commit();
-            return new ResponseResource(true, "Produk bundle berhasil dihapus", null);
+            return new ResponseResource(true, "Produk repair berhasil dihapus", null);
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus repair', 'error' => $e->getMessage()], 500);
         }
     }
 }

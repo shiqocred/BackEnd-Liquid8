@@ -63,12 +63,14 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(func
 
    //bundle
    Route::get('repair-mv', [RepairController::class, 'index']);
-   Route::get('repair-mv/{repair}', [Repair::class, 'show']);
+   Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
    Route::post('repair-mv', [RepairProductController::class, 'store']);
    Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']); 
 
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
    Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
+
+
 
 });
 
@@ -136,7 +138,6 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
 });
 
 
-
 Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->group(function () {
 
    // =========================================== Dashboard ==================================================
@@ -182,7 +183,7 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('/testEmail', [RiwayatCheckController::class, 'sendEmail']);
 
    Route::resource('notifications', NotificationController::class);
-   Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
+   
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader'])->group(function () {
@@ -193,6 +194,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
 });
 
+
+Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group(function () {
+   Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
+});
 
 Route::post('login', [AuthController::class, 'login']);
 
