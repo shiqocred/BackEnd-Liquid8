@@ -14,4 +14,7 @@ class Repair extends Model
     public function repair_products(){
         return $this->hasMany(RepairProduct::class);
     }
+    public function notifications(){
+        return $this->hasMany(Notification::class);
+    }
 }

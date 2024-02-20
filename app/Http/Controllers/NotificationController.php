@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Notification;
-use Illuminate\Http\Request;
-use App\Http\Resources\ResponseResource;
 use App\Models\RiwayatCheck;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Resources\ResponseResource;
+use App\Models\Repair;
 use Illuminate\Support\Facades\Validator;
+use App\Models\New_product;
+
 
 class NotificationController extends Controller
 {
@@ -99,39 +103,80 @@ class NotificationController extends Controller
 
     public function approveTransaction($notificationId)
     {
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
         $user = User::with('role')->find(auth()->id());
+        DB::beginTransaction();
+        try {
+            if ($user) {
+                if ($user->role && $user->role->role_name == 'Spv') {
+                    $notification = Notification::where('id', $notificationId)->first();
 
-        if ($user) {
-            if ($user->role && $user->role->role_name == 'Spv') {
-                $notification = Notification::where('id', $notificationId)->first();
+                    if (!$notification) {
+                        return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
+                    }
+                    // if ($notification->status == 'done') {
+                    //     return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
+                    // }
 
-                if (!$notification) {
-                    return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
+
+                    $notification->update([
+                        'notification_name' => 'Approved',
+                        'status' => 'done',
+                    ]);
+                    
+                    if ($notification->riwayat_check_id !== null) {
+                        $riwayatCheck = RiwayatCheck::where('id', $notification->riwayat_check_id)->first();
+                        $riwayatCheck->update(['status_approve' => 'done']);
+                    }
+
+                    $repairCheck = Repair::where('user_id', $notification->user_id )->first();
+                    
+                    if ($repairCheck) {
+                        $repairCheck->update(['status_approve' => 'done']);
+                    
+                        $productFilter = $repairCheck->repair_products;
+                    
+                        foreach ($productFilter as $product) {
+                            New_product::create([
+                                'code_document' => $product->code_document,
+                                'old_barcode_product' => $product->old_barcode_product,
+                                'new_barcode_product' => $product->new_barcode_product,
+                                'new_name_product' => $product->new_name_product,
+                                'new_quantity_product' => $product->new_quantity_product,
+                                'new_price_product' => $product->new_price_product,
+                                'new_date_in_product' => $product->new_date_in_product,
+                                'new_status_product' => 'display',
+                                'new_quality' => $product->new_quality,
+                                'new_category_product' => $product->new_category_product,
+                                'new_tag_product' => $product->new_tag_product
+                            ]);
+                    
+                            // Hapus produk terkait dari repair_products sebelum menghapus repairCheck
+                            $product->delete();
+                        }
+                    
+                        // Setelah memastikan semua produk terkait dihapus, barulah repairCheck dihapus
+                        $repairCheck->delete();
+                    }
+                    
+
+                    DB::commit();
+                    return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
+                } else {
+                    return new ResponseResource(false, "notification tidak di temukan", null);
                 }
-                if ($notification->status == 'done') {
-                    return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
-                }
-
-                $notification->update([
-                    'notification_name' => 'Approved',
-                    'status' => 'done',
-                ]);
-
-                $riwayatCheck = RiwayatCheck::where('id', $notification->riwayat_check_id)->first();
-
-                $riwayatCheck->update(['status_approve' => 'done']);
-
-                return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
             } else {
-                return new ResponseResource(false, "notification tidak di temukan", null);
+                return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
             }
-        } else {
-            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return new ResponseResource(false, "gagal", $e->getMessage());
         }
     }
     public function getNotificationByRole(Request $request)
     {
-        $query = $request->input('q'); 
+        $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
 
 
@@ -141,45 +186,20 @@ class NotificationController extends Controller
                     ->where('status', 'LIKE', '%' . $query . '%')
                     ->paginate(50);
                 return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
-
             } else if ($user->role && $user->role->role_name == 'Crew') {
                 $notifCrew = Notification::where('user_id', $user->id)
                     ->where('status', 'LIKE', '%' . $query . '%')
                     ->paginate(50);
                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
-
             } else {
                 $notifReparasi = Notification::where('user_id', $user->id)
                     ->where('status', 'LIKE', '%' . $query . '%')
                     ->paginate(50);
                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
             }
-
         } else {
 
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
-
-
-    //     public function getNotificationByRole(Request $request){
-
-    //         $query = $request->input('q');
-    //         $user = User::with('role')->find(auth()->id());
-
-    //         if ($user) {
-    //             if ($user->role && $user->role->role_name == 'Spv') {
-    //                 $notifSpv = Notification::where('spv_id', $user->id)->get();
-    //                 return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
-    //             } else if ($user->role && $user->role->role_name == 'Crew') {
-    //                 $notifCrew = Notification::where('user_id', $user->id)->get();
-    //                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
-    //             }else {
-    //                 $notifReparasi = Notification::where('user_id', $user->id)->get();
-    //                 return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
-    //             }
-    //         }else {
-    //             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
-    //         }
-    //    }
 }

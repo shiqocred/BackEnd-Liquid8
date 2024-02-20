@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('repairs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained('users');
             $table->string('repair_name')->unique();
             $table->decimal('total_price', 12, 2);
             $table->decimal('total_custom_price', 12, 2);

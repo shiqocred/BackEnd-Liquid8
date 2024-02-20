@@ -17,4 +17,7 @@ class Notification extends Model
     public function riwayat_check(){
         return $this->belongsTo(RiwayatCheck::class);
     }
+    public function repair(){
+        return $this->belongsTo(Repair::class);
+    }
 }
