@@ -174,32 +174,71 @@ class NotificationController extends Controller
             return new ResponseResource(false, "gagal", $e->getMessage());
         }
     }
+
+    // public function getNotificationByRole(Request $request)
+    // {
+    //     $query = $request->input('q');
+    //     $user = User::with('role')->find(auth()->id());
+
+
+    //     if ($user) {
+    //         if ($user->role && $user->role->role_name == 'Spv') {
+    //             $notifSpv = Notification::where('spv_id', $user->id)
+    //                 ->where('status', 'LIKE', '%' . $query . '%')
+    //                 ->paginate(50);
+    //             return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
+    //         } else if ($user->role && $user->role->role_name == 'Crew') {
+    //             $notifCrew = Notification::where('user_id', $user->id)
+    //                 ->where('status', 'LIKE', '%' . $query . '%')
+    //                 ->paginate(50);
+    //             return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
+    //         } else {
+    //             $notifReparasi = Notification::where('user_id', $user->id)
+    //                 ->where('status', 'LIKE', '%' . $query . '%')
+    //                 ->paginate(50);
+    //             return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
+    //         }
+    //     } else {
+
+    //         return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+    //     }
+    // }
+
     public function getNotificationByRole(Request $request)
-    {
-        $query = $request->input('q');
-        $user = User::with('role')->find(auth()->id());
+{
+    $query = $request->input('q');
+    $user = User::with('role')->find(auth()->id());
 
-
-        if ($user) {
-            if ($user->role && $user->role->role_name == 'Spv') {
-                $notifSpv = Notification::where('spv_id', $user->id)
-                    ->where('status', 'LIKE', '%' . $query . '%')
-                    ->paginate(50);
-                return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
-            } else if ($user->role && $user->role->role_name == 'Crew') {
-                $notifCrew = Notification::where('user_id', $user->id)
-                    ->where('status', 'LIKE', '%' . $query . '%')
-                    ->paginate(50);
-                return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
-            } else {
-                $notifReparasi = Notification::where('user_id', $user->id)
-                    ->where('status', 'LIKE', '%' . $query . '%')
-                    ->paginate(50);
-                return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
-            }
+    if ($user) {
+        $notifQuery = Notification::query();
+        if ($user->role && $user->role->role_name == 'Spv') {
+            $notifQuery->where('spv_id', $user->id);
+        } elseif ($user->role && $user->role->role_name == 'Crew') {
+            $notifQuery->where('user_id', $user->id);
         } else {
-
-            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+            $notifQuery->where('user_id', $user->id); 
         }
+
+        if (!empty($query)) {
+            $notifQuery->where('status', 'LIKE', '%' . $query . '%');
+        }
+
+        $notifPaginated = $notifQuery->paginate(50);
+
+        $userIds = $notifPaginated->pluck('user_id')->unique();
+
+        $roles = User::whereIn('id', $userIds)->with('role')->get()->pluck('role.role_name', 'id');
+
+        $notifPaginated->getCollection()->transform(function ($notification) use ($roles) {
+            $notification->role_name = $roles[$notification->user_id] ?? null;
+            return $notification;
+        });
+
+        return new ResponseResource(true, "Notifications", $notifPaginated);
+        
+    } else {
+        return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
     }
+}
+
 }
