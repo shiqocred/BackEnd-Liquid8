@@ -175,35 +175,6 @@ class NotificationController extends Controller
         }
     }
 
-    // public function getNotificationByRole(Request $request)
-    // {
-    //     $query = $request->input('q');
-    //     $user = User::with('role')->find(auth()->id());
-
-
-    //     if ($user) {
-    //         if ($user->role && $user->role->role_name == 'Spv') {
-    //             $notifSpv = Notification::where('spv_id', $user->id)
-    //                 ->where('status', 'LIKE', '%' . $query . '%')
-    //                 ->paginate(50);
-    //             return new ResponseResource(true, "Supervisor Approval Notification", $notifSpv);
-    //         } else if ($user->role && $user->role->role_name == 'Crew') {
-    //             $notifCrew = Notification::where('user_id', $user->id)
-    //                 ->where('status', 'LIKE', '%' . $query . '%')
-    //                 ->paginate(50);
-    //             return new ResponseResource(true, "Approval Notification from Supervisor", $notifCrew);
-    //         } else {
-    //             $notifReparasi = Notification::where('user_id', $user->id)
-    //                 ->where('status', 'LIKE', '%' . $query . '%')
-    //                 ->paginate(50);
-    //             return new ResponseResource(true, "Approval Notification from Supervisor", $notifReparasi);
-    //         }
-    //     } else {
-
-    //         return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
-    //     }
-    // }
-
     public function getNotificationByRole(Request $request)
     {
         $query = $request->input('q');
@@ -229,7 +200,7 @@ class NotificationController extends Controller
     
             $roles = User::whereIn('id', $userIds)->with('role')->get()->pluck('role.role_name', 'id');
     
-            $role_id = $user->role->id;  // Menyimpan role_id dari user yang terautentikasi
+            $role_id = $user->role->id;  
     
             $notifPaginated->getCollection()->transform(function ($notification) use ($roles, $role_id) {
                 $notification->role_name = $roles[$notification->user_id] ?? null;
