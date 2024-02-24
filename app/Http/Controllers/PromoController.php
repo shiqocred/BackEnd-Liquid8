@@ -21,8 +21,10 @@ class PromoController extends Controller
             ->join('new_products', 'new_products.id', '=', 'promos.new_product_id')
             ->where(function($queryBuilder) use ($query) {
                 $queryBuilder->where('name_promo', 'LIKE', '%' . $query . '%')
-                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                    ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             })
             ->select('promos.*')->with('new_product')
             ->paginate(100);

@@ -25,6 +25,7 @@ class RepairController extends Controller
                 $repair_product->where('new_name_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             });
         })->paginate(50);

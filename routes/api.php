@@ -175,6 +175,8 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    //colortags diskon
    Route::get('color_tags', [ColorTagController::class, 'index']);
+   Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
+   Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
 
    //riwayat
    Route::resource('historys', RiwayatCheckController::class);

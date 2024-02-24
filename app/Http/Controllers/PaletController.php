@@ -21,6 +21,7 @@ class PaletController extends Controller
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             })
@@ -42,7 +43,10 @@ class PaletController extends Controller
                     ->orWhere('category_palet', 'LIKE', '%' . $query . '%')
                     ->orWhereHas('paletProducts', function ($subQueryBuilder) use ($query) {
                         $subQueryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%');
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
                     });
             })->paginate(100);
         return new ResponseResource(true, "list palet", $palets);

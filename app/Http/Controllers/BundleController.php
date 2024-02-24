@@ -18,23 +18,24 @@ class BundleController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        
+
         $bundles = Bundle::latest()
             ->with('product_bundles')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name_bundle', 'LIKE', '%' . $query . '%')
                     ->orWhereHas('product_bundles', function ($subQueryBuilder) use ($query) {
                         $subQueryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
                     });
             })
             ->paginate(50);
-    
+
         return new ResponseResource(true, "list bundle", $bundles);
     }
-    
+
     /**
      * Show the form for creating a new resource. 
      */
@@ -54,8 +55,18 @@ class BundleController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Bundle $bundle)
+    public function show(Request $request, Bundle $bundle)
     {
+        $query = $request->input('q');
+        $bundle->load(['product_bundles' => function ($productBundles) use ($query) {
+            if (!empty($query)) {
+                $productBundles->where('new_name_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+            }
+        }]);
         return new ResponseResource(true, "detail bundle", $bundle);
     }
 

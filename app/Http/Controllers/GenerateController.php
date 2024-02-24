@@ -6,8 +6,6 @@ use Carbon\Carbon;
 use App\Models\Document;
 use App\Models\Generate;
 use App\Models\Product_old;
-use App\Models\ResultMerge;
-use App\Models\ResultFilter;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
@@ -17,8 +15,9 @@ use App\Models\Palet;
 use App\Models\PaletProduct;
 use App\Models\Product_Bundle;
 use App\Models\Promo;
+use App\Models\Repair;
+use App\Models\RepairProduct;
 use App\Models\RiwayatCheck;
-use App\Models\SpecialTransaction;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 use Illuminate\Support\Facades\DB;
@@ -243,7 +242,7 @@ class GenerateController extends Controller
             Bundle::query()->delete();
             Palet::query()->delete();
             RiwayatCheck::query()->delete();
-            SpecialTransaction::query()->delete();
+            Repair::query()->delete();
             New_product::query()->delete();
 
             return new ResponseResource(true, "data berhasil dihapus", null);
