@@ -33,6 +33,7 @@ class BundleController extends Controller
             })
             ->paginate(50);
 
+
         return new ResponseResource(true, "list bundle", $bundles);
     }
 
