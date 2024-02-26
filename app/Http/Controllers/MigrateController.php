@@ -20,17 +20,20 @@ class MigrateController extends Controller
         // $migrate = Migrate::latest()->paginate(10);
         if (request()->has('q')) {
             $data['new_product'] = New_product::when(request()->q, function ($query) {
+                
                 $query
+                ->whereNotNull('new_tag_product')
                     ->where('new_barcode_product', 'like', '%' . request()->q . '%')
                     ->orWhere('new_name_product', 'like', '%' . request()->q . '%');
             })
                 ->where('new_status_product', 'display')
                 ->orWhere('new_status_product', 'bundle')
-                ->orWhere('new_status_product', 'promo')
+                ->orWhere('new_status_product', 'promo') 
                 ->latest()
                 ->paginate(20, ['*'], 'product_page');
         } else {
-            $data['new_product'] = New_product::where('new_status_product', 'display')
+            $data['new_product'] = New_product::whereNotNull('new_tag_product')
+            ->where('new_status_product', 'display')
                 ->orWhere('new_status_product', 'bundle')
                 ->orWhere('new_status_product', 'promo')
                 ->latest()
@@ -40,6 +43,7 @@ class MigrateController extends Controller
         $data['code_document_migrate'] = $data['migrate']->isEmpty() ? codeDocumentMigrate() : $data['migrate'][0]['code_document_migrate'];
 
         $resource = new ResponseResource(true, "list migrate", $data);
+
         return $resource->response();
     }
 

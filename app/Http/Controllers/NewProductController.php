@@ -34,6 +34,13 @@ class NewProductController extends Controller
             ->where('new_status_product', '!=', 'migrate')
             ->where('new_status_product', '!=', 'repair')
             ->paginate(100);
+        
+            // $startNumber = ($newProducts->currentPage() - 1) * $newProducts->perPage() + 1 ;
+
+            // $newProducts->getCollection()->transform(function($product) use (&$startNumber){
+            //     $product->number = $startNumber++;
+            //     return $product;
+            // });
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
@@ -311,7 +318,6 @@ class NewProductController extends Controller
                     ->orwhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
                     ->orwhere('code_document', 'LIKE', '%' . $query  . '%');
             })->paginate(50);
-
 
             return new ResponseResource(true, "list product expired", $productExpDisplat);
         } catch (\Exception $e) {
