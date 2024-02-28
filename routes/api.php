@@ -140,7 +140,11 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    //colortags diskon
    Route::resource('color_tags', ColorTagController::class);
 
-
+   //product
+   Route::post('new_products', [NewProductController::class, 'store']);
+   Route::put('new_products/{new_product}', [NewProductController::class, 'update']);
+   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
+   Route::delete('new_products/{new_product}', [NewProductController::class, 'show']);
 
    //migrate
    Route::resource('migrates', MigrateController::class);
@@ -165,7 +169,10 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
    //new product (hasil scan)
-   Route::resource('new_products', NewProductController::class);
+   // Route::resource('new_products', NewProductController::class);
+   Route::get('new_products', [NewProductController::class, 'index']);
+
+
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
    Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
