@@ -41,7 +41,7 @@ Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])->group(function () {
    // =========================================== repair station ==================================================
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -65,13 +65,10 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin'])->group(func
    Route::get('repair-mv', [RepairController::class, 'index']);
    Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
    Route::post('repair-mv', [RepairProductController::class, 'store']);
-   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']); 
+   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
 
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
    Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
-
-
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(function () {
@@ -92,6 +89,16 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {
+
+
+   //=========================================== inbound ==========================================================
+   //generates file excel -> input data ekspedisi 
+   Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
+   Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+   Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
+   Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
+
+
    //=========================================== storage ==========================================================
 
    //slow moving products 
@@ -104,7 +111,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('bundle', [BundleController::class, 'index']);
    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
    Route::post('bundle', [ProductBundleController::class, 'store']);
-   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']); 
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
@@ -133,8 +140,17 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    //colortags diskon
    Route::resource('color_tags', ColorTagController::class);
 
-   Route::resource('users', UserController::class)->except(['store']);
-   Route::resource('roles', RoleController::class);
+   //product
+   Route::post('new_products', [NewProductController::class, 'store']);
+   Route::put('new_products/{new_product}', [NewProductController::class, 'update']);
+   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
+   Route::delete('new_products/{new_product}', [NewProductController::class, 'show']);
+
+   //migrate
+   Route::resource('migrates', MigrateController::class);
+   Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
+   Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
+   Route::resource('migrate-documents', MigrateDocumentController::class);
 });
 
 
@@ -145,11 +161,6 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    //=========================================== inbound ==========================================================
 
-   //generates file excel -> input data ekspedisi 
-   Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
-   Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-   Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
-   Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
    //product old
    Route::resource('product_olds', ProductOldController::class);
@@ -158,7 +169,10 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
    //new product (hasil scan)
-   Route::resource('new_products', NewProductController::class);
+   // Route::resource('new_products', NewProductController::class);
+   Route::get('new_products', [NewProductController::class, 'index']);
+
+
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
    Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
@@ -185,15 +199,16 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('/testEmail', [RiwayatCheckController::class, 'sendEmail']);
 
    Route::resource('notifications', NotificationController::class);
-   
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader,Admin kasir'])->group(function () {
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
+   Route::resource('users', UserController::class)->except(['store']);
+   Route::resource('roles', RoleController::class);
 });
 
 

@@ -82,7 +82,7 @@ class NewProductController extends Controller
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
             'old_barcode_product.unique' => 'product sudah di scan',
-            'old_barcode_product.exists' => 'barcode tidak ada ',
+            'old_barcode_product.exists' => 'barcode tidak ada '
 
         ]);
 
@@ -121,7 +121,7 @@ class NewProductController extends Controller
         return [
             'lolos' => $status === 'lolos' ? 'lolos' : null,
             'damaged' => $status === 'damaged' ? $description : null,
-            'abnormal' => $status === 'abnormal' ? $description : null,
+            'abnormal' => $status === 'abnormal' ? $description : null
         ];
     }
 
@@ -204,7 +204,7 @@ class NewProductController extends Controller
             'old_price_product' => 'required|numeric',
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
             'condition' => 'required|in:lolos,damaged,abnormal',
-            'new_category_product' => 'nullable|exists:categories,name_category',
+            'new_category_product' => 'nullable',
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ]);
 
