@@ -45,7 +45,7 @@ class UserFactory extends Factory
             'sugeng1',
             'anas1',
             'firdy1',
-            'freddy1',
+            'freddy1', 
             'safrudin1',
             'hayyi1'
         ];

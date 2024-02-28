@@ -82,7 +82,7 @@ class NewProductController extends Controller
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
             'old_barcode_product.unique' => 'product sudah di scan',
-            'old_barcode_product.exists' => 'barcode tidak ada ',
+            'old_barcode_product.exists' => 'barcode tidak ada '
 
         ]);
 
@@ -121,7 +121,7 @@ class NewProductController extends Controller
         return [
             'lolos' => $status === 'lolos' ? 'lolos' : null,
             'damaged' => $status === 'damaged' ? $description : null,
-            'abnormal' => $status === 'abnormal' ? $description : null,
+            'abnormal' => $status === 'abnormal' ? $description : null
         ];
     }
 
@@ -720,7 +720,7 @@ class NewProductController extends Controller
                 ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
             })
-            ->paginate(50); 
+            ->paginate(5); 
 
         }catch(\Exception $e){
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
@@ -742,7 +742,7 @@ class NewProductController extends Controller
                 ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
             })
-            ->paginate(50); 
+            ->paginate(5); 
 
         }catch(\Exception $e){
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
