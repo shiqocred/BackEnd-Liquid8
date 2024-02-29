@@ -501,14 +501,13 @@ class NewProductController extends Controller
     {
         try {
             $query = $request->get('q');
-
             $products = New_product::where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('new_status_product', '!=', "dump")
+                $queryBuilder->where('new_status_product', '!=', 'dump')
                     ->where(function ($q) {
-                        $q->whereRaw('json_extract(new_quality, "$.damaged") is not null and json_extract(new_quality, "$.damaged") != "null"')
-                            ->orWhereRaw('json_extract(new_quality, "$.abnormal") is not null and json_extract(new_quality, "$.abnormal") != "null"');
+                        $q->where('new_quality->damaged', '!=', null)
+                            ->orWhere('new_quality->abnormal', '!=', null);
                     });
-
+            
                 if ($query) {
                     $queryBuilder->where(function ($q) use ($query) {
                         $q->where('old_barcode_product', 'like', '%' . $query . '%')
@@ -519,7 +518,8 @@ class NewProductController extends Controller
                     });
                 }
             })
-                ->paginate(50);
+            ->paginate(50);
+            
 
             if ($products->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada data", null);
