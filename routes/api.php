@@ -84,6 +84,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
    Route::resource('sales', SaleController::class);
    Route::resource('sale-documents', SaleDocumentController::class);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
+   Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
 
    Route::apiResource('buyers', BuyerController::class);
 });
