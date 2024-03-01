@@ -112,4 +112,88 @@ class SaleDocumentController extends Controller
 
         return $resource->response();
     }
+
+
+
+    public function combinedReport(Request $request)
+    {
+        $codeDocument = $request->input('code_document_sale');
+        $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
+
+        if (!$saleDocument) {
+            return response()->json([
+                'data' => null,
+                'message' => 'Dokumen penjualan tidak ditemukan',
+            ], 404);
+        }
+
+        $categoryReport = $this->generateCategoryReport($saleDocument);
+        $barcodeReport = $this->generateBarcodeReport($saleDocument);
+
+        return response()->json([
+            'data' => [
+                'category_report' => $categoryReport,
+                'NameBarcode_report' => $barcodeReport,
+            ],
+            'message' => 'Laporan penjualan',
+        ]);
+    }
+
+    private function generateCategoryReport($saleDocument)
+    {
+        $products = collect();
+
+        foreach ($saleDocument->sales as $sale) {
+            $products = $products->merge(
+                New_product::where('new_name_product', $sale->product_name_sale)
+                    ->where('new_status_product', 'sale')
+                    ->get()
+            );
+        }
+
+        if ($products->count() > 0) {
+            $result = $products->groupBy('new_category_product')
+                ->map(function ($group) {
+                    return [
+                        'category' => $group->first()->new_category_product,
+                        'total_quantity' => $group->sum('new_quantity_product'),
+                        'total_price' => $group->sum(function ($item) {
+                            return $item->new_quantity_product * $item->new_price_product;
+                        }),
+                    ];
+                });
+
+            return $result;
+        } else {
+            return null;
+        }
+    }
+
+    private function generateBarcodeReport($saleDocument)
+    {
+        $report = [];
+        $totalPrice = 0;
+
+        foreach ($saleDocument->sales as $index => $sale) {
+            $productName = $sale->product_name_sale;
+            $productBarcode = $sale->product_barcode_sale;
+            $productPrice = $sale->product_price_sale;
+            $productQty = $sale->product_qty_sale;
+
+            $subtotalPrice = $productPrice * $productQty;
+
+            $report[] = [
+                'Barang ' . ($index + 1),
+                'Nama Produk: ' . $productName,
+                'Barcode: ' . $productBarcode,
+                'Total Harga: ' . $subtotalPrice,
+            ];
+
+            $totalPrice += $subtotalPrice;
+        }
+
+        $report[] = ['Total Harga', $totalPrice];
+
+        return $report;
+    }
 }
