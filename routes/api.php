@@ -172,6 +172,7 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    //new product (hasil scan)
    // Route::resource('new_products', NewProductController::class);
    Route::get('new_products', [NewProductController::class, 'index']);
+   Route::post('new_products', [NewProductController::class, 'store']);
 
 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);

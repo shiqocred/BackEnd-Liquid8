@@ -142,7 +142,7 @@ class SaleDocumentController extends Controller
     private function generateCategoryReport($saleDocument)
     {
         $products = collect();
-    
+
         foreach ($saleDocument->sales as $sale) {
             $products = $products->merge(
                 New_product::where('new_name_product', $sale->product_name_sale)
@@ -150,7 +150,7 @@ class SaleDocumentController extends Controller
                     ->get()
             );
         }
-    
+
         if ($products->count() > 0) {
             $result = $products->groupBy('new_category_product')
                 ->map(function ($group) {
@@ -162,13 +162,13 @@ class SaleDocumentController extends Controller
                         }),
                     ];
                 })->values(); // Mengubah associative array ke indexed array
-    
+
             return $result;
         } else {
             return null;
         }
     }
-    
+
 
     private function generateBarcodeReport($saleDocument)
     {
