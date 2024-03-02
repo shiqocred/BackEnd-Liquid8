@@ -106,7 +106,7 @@ class RiwayatCheckController extends Controller
             //keterangan transaksi
             $keterangan = Notification::create([
                 'user_id' => $user->id,
-                'notification_name' => 'Butuh approvement',
+                'notification_name' => 'Butuh approvement untuk List Product',
                 'spv_id' => 2,
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => $riwayat_check->id,

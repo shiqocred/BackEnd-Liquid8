@@ -15,6 +15,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
 use App\Http\Controllers\PaletProductController;
+use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\ProductBundleController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
@@ -162,12 +163,14 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    //=========================================== inbound ==========================================================
 
-
    //product old
    Route::resource('product_olds', ProductOldController::class);
    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
    Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
+
+   //product approve
+   Route::resource('product-approves', ProductApproveController::class);
 
    //new product (hasil scan)
    // Route::resource('new_products', NewProductController::class);

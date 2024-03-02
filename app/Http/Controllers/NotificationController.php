@@ -3,14 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Repair;
+use App\Models\New_product;
 use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
+use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
-use App\Models\Repair;
 use Illuminate\Support\Facades\Validator;
-use App\Models\New_product;
 
 
 class NotificationController extends Controller
@@ -126,12 +127,46 @@ class NotificationController extends Controller
                     ]);
                     
                     if ($notification->riwayat_check_id !== null) {
-                        $riwayatCheck = RiwayatCheck::where('id', $notification->riwayat_check_id)->first();
-                        $riwayatCheck->update(['status_approve' => 'done']);
-                    }
-
-                    $repairCheck = Repair::where('user_id', $notification->user_id )->first();
+                        $riwayatCheck = RiwayatCheck::find($notification->riwayat_check_id);
                     
+                        if ($riwayatCheck) {
+                            $riwayatCheck->update(['status_approve' => 'done']);
+                    
+                            $productApproves = ProductApprove::where('code_document', $riwayatCheck->code_document)->get();
+                    
+                            $chunkedProductApproves = $productApproves->chunk(200); 
+                    
+                            foreach ($chunkedProductApproves as $chunk) {
+                                $dataToInsert = [];
+                    
+                                foreach ($chunk as $productApprove) {
+                                    $dataToInsert[] = [
+                                        'code_document' => $productApprove->code_document,
+                                        'old_barcode_product' => $productApprove->old_barcode_product,
+                                        'new_barcode_product' => $productApprove->new_barcode_product,
+                                        'new_name_product' => $productApprove->new_name_product,
+                                        'new_quantity_product' => $productApprove->new_quantity_product,
+                                        'new_price_product' => $productApprove->new_price_product,
+                                        'old_price_product' => $productApprove->old_price_product,
+                                        'new_date_in_product' => $productApprove->new_date_in_product,
+                                        'new_status_product' => $productApprove->new_status_product,
+                                        'new_quality' => $productApprove->new_quality,
+                                        'new_category_product' => $productApprove->new_category_product,
+                                        'new_tag_product' => $productApprove->new_tag_product,
+                                    ];
+                    
+                                    $productApprove->delete();
+                                }
+
+                                New_product::insert($dataToInsert);
+                            }
+                        }
+                    }
+                    
+
+                    //ini untuk orang yang ngirim product repair
+                    $repairCheck = Repair::where('user_id', $notification->user_id )->first();
+
                     if ($repairCheck) {
                         $repairCheck->update(['status_approve' => 'done']);
                     
@@ -160,7 +195,6 @@ class NotificationController extends Controller
                         $repairCheck->delete();
                     }
                     
-
                     DB::commit();
                     return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
                 } else {
