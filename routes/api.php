@@ -171,6 +171,8 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    //product approve
    Route::resource('product-approves', ProductApproveController::class);
+   Route::get('productApprovesByDoc', [ProductApproveController::class, 'searchByDocument']);
+
 
    //new product (hasil scan)
    // Route::resource('new_products', NewProductController::class);

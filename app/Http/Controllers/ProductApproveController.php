@@ -317,4 +317,15 @@ class ProductApproveController extends Controller
 
         return new ResponseResource(true, "list product by tag color", $productByTagColor);
     }
+
+    public function searchByDocument(Request $request)
+    {
+        $code_documents = ProductApprove::where('code_document', $request->input('search'))->paginate(50);
+
+        if ($code_documents->isNotEmpty()) {
+            return new ResponseResource(true, "list product_old", $code_documents);
+        } else {
+            return new ResponseResource(false, "code document tidak ada", null);
+        }
+    }
 }
