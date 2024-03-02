@@ -285,7 +285,6 @@ class NewProductController extends Controller
             $product->update(['new_status_product' => 'expired']);
         }
 
-
         return new ResponseResource(true, "Products expired successfully", $products);
     }
 
