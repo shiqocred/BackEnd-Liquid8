@@ -119,7 +119,7 @@ class SaleDocumentController extends Controller
     {
         $codeDocument = $request->input('code_document_sale');
         $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
-
+        
         if (!$saleDocument) {
             return response()->json([
                 'data' => null,
@@ -136,6 +136,7 @@ class SaleDocumentController extends Controller
                 'NameBarcode_report' => $barcodeReport,
             ],
             'message' => 'Laporan penjualan',
+            'buyer' => $saleDocument
         ]);
     }
 
