@@ -49,6 +49,7 @@ class UserFactory extends Factory
             'safrudin1',
             'hayyi1'
         ];
+        
         $email = [
             'sugeng@gmail.com',
             'anas@gmail.com',

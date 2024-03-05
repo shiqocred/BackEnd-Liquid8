@@ -70,6 +70,11 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
 
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
    Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
+
+   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
+   Route::get('new_products', [NewProductController::class, 'index']);
+
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(function () {
@@ -88,6 +93,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
 
    Route::apiResource('buyers', BuyerController::class);
+
+   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
+   Route::get('new_products', [NewProductController::class, 'index']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {
@@ -210,6 +218,8 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader,Admin kasir'])->group(function () {
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
+   Route::get('new_products', [NewProductController::class, 'index']);
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
