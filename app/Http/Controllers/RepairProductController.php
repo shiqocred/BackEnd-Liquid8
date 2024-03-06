@@ -82,7 +82,7 @@ class RepairProductController extends Controller
             $keterangan = Notification::create([
                 'user_id' => $user->id,
                 'notification_name' => 'Butuh Approvement untuk Repair',
-                'spv_id' => 2,
+                'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => null,
                 'repair_id' => $repair->id
