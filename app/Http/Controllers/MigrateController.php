@@ -20,20 +20,20 @@ class MigrateController extends Controller
         // $migrate = Migrate::latest()->paginate(10);
         if (request()->has('q')) {
             $data['new_product'] = New_product::when(request()->q, function ($query) {
-                
+
                 $query
-                ->whereNotNull('new_tag_product')
+                    ->whereNotNull('new_tag_product')
                     ->where('new_barcode_product', 'like', '%' . request()->q . '%')
                     ->orWhere('new_name_product', 'like', '%' . request()->q . '%');
             })
                 ->where('new_status_product', 'display')
                 ->orWhere('new_status_product', 'bundle')
-                ->orWhere('new_status_product', 'promo') 
+                ->orWhere('new_status_product', 'promo')
                 ->latest()
                 ->paginate(20, ['*'], 'product_page');
         } else {
             $data['new_product'] = New_product::whereNotNull('new_tag_product')
-            ->where('new_status_product', 'display')
+                ->where('new_status_product', 'display')
                 ->orWhere('new_status_product', 'bundle')
                 ->orWhere('new_status_product', 'promo')
                 ->latest()
@@ -116,6 +116,7 @@ class MigrateController extends Controller
 
                 $migrate = Migrate::create([
                     'code_document_migrate' => $migrateDocument->code_document_migrate,
+                    'old_barcode_product' => $newProduct['old_barcode_product'],
                     'new_barcode_product' => $newProduct['new_barcode_product'],
                     'new_name_product' => $newProduct['new_name_product'],
                     'new_qty_product' => $newProduct['new_quantity_product'],
