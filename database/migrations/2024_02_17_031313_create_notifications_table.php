@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Run the migrations. 
      */
     public function up(): void
     {  
@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->string('notification_name');
             $table->enum('status', ['pending', 'done'])->default('pending');
-            $table->foreignId('spv_id')->constrained('users');
+            $table->string('role');
             $table->foreignId('riwayat_check_id')->nullable()->constrained('riwayat_checks');
 
             $table->timestamp('read_at')->nullable(); 

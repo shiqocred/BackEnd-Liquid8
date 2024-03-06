@@ -13,6 +13,7 @@ use App\Mail\AdminNotification;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\Notification;
+use App\Models\ProductApprove;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -62,7 +63,7 @@ class RiwayatCheckController extends Controller
 
         try {
 
-            $newProducts = New_product::where('code_document', $request['code_document'])->get();
+            $newProducts = ProductApprove::where('code_document', $request['code_document'])->get();
 
             $totalData = $newProducts->count();
             $totalLolos = $totalDamaged = $totalAbnormal = 0;
@@ -107,10 +108,10 @@ class RiwayatCheckController extends Controller
             $keterangan = Notification::create([
                 'user_id' => $user->id,
                 'notification_name' => 'Butuh approvement untuk List Product',
-                'spv_id' => 2,
+                'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => $riwayat_check->id,
-                'repair_id' => null
+                'repair_id' => null 
             ]);
 
             // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();

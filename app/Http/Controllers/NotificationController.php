@@ -107,7 +107,9 @@ class NotificationController extends Controller
         set_time_limit(300); 
         ini_set('memory_limit', '512M'); 
         $user = User::with('role')->find(auth()->id());
+
         DB::beginTransaction();
+
         try {
             if ($user) {
                 if ($user->role && $user->role->role_name == 'Spv') {
@@ -116,10 +118,10 @@ class NotificationController extends Controller
                     if (!$notification) {
                         return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
                     }
+
                     // if ($notification->status == 'done') {
                     //     return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
                     // }
-
 
                     $notification->update([
                         'notification_name' => 'Approved',
@@ -213,11 +215,10 @@ class NotificationController extends Controller
     {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
-    
         if ($user) {
             $notifQuery = Notification::query();
             if ($user->role && $user->role->role_name == 'Spv') {
-                $notifQuery->where('spv_id', $user->id);
+                $notifQuery->where('role', $user->role->role_name);
             } elseif ($user->role && $user->role->role_name == 'Crew') {
                 $notifQuery->where('user_id', $user->id);
             } else {
