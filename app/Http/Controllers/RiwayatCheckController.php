@@ -111,7 +111,7 @@ class RiwayatCheckController extends Controller
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => $riwayat_check->id,
-                'repair_id' => null 
+                'repair_id' => null
             ]);
 
             // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
