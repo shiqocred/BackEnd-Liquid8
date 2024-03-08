@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\Color_tag;
 use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
@@ -34,13 +35,13 @@ class NewProductController extends Controller
             ->where('new_status_product', '!=', 'migrate')
             ->where('new_status_product', '!=', 'repair')
             ->paginate(100);
-        
-            // $startNumber = ($newProducts->currentPage() - 1) * $newProducts->perPage() + 1 ;
 
-            // $newProducts->getCollection()->transform(function($product) use (&$startNumber){
-            //     $product->number = $startNumber++;
-            //     return $product;
-            // });
+        // $startNumber = ($newProducts->currentPage() - 1) * $newProducts->perPage() + 1 ;
+
+        // $newProducts->getCollection()->transform(function($product) use (&$startNumber){
+        //     $product->number = $startNumber++;
+        //     return $product;
+        // });
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
@@ -309,20 +310,32 @@ class NewProductController extends Controller
     {
         try {
             $query = $request->input('q');
-            $productExpDisplat = New_product::where(function ($queryBuilder) use ($query) {
+            $productExpDisplay = New_product::where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_status_product', 'expired')
                     ->orWhere('new_status_product', 'display');
             })->where(function ($subBuilder) use ($query) {
                 $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
-                    ->orwhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
-                    ->orwhere('code_document', 'LIKE', '%' . $query  . '%');
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
+                    ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
             })->paginate(50);
 
-            return new ResponseResource(true, "list product expired", $productExpDisplat);
+            foreach ($productExpDisplay as &$product) {
+                if ($product['new_tag_product'] !== null) {
+                    $fixedPrice = Color_tag::where('name_color', $product['new_tag_product'])->first();
+
+                    if(!$fixedPrice){
+                        return new ResponseResource(false, "Data kosong", null);
+                    }
+                    $product['fixed_price'] = $fixedPrice->fixed_price_color;
+                }
+            }
+
+            return new ResponseResource(true, "List product expired", $productExpDisplay);
         } catch (\Exception $e) {
             return response()->json(["error" => $e]);
         }
     }
+
 
     public function processExcelFiles(Request $request)
     {
@@ -504,7 +517,7 @@ class NewProductController extends Controller
                         $q->where('new_quality->damaged', '!=', null)
                             ->orWhere('new_quality->abnormal', '!=', null);
                     });
-            
+
                 if ($query) {
                     $queryBuilder->where(function ($q) use ($query) {
                         $q->where('old_barcode_product', 'like', '%' . $query . '%')
@@ -515,8 +528,8 @@ class NewProductController extends Controller
                     });
                 }
             })
-            ->paginate(50);
-            
+                ->paginate(50);
+
 
             if ($products->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada data", null);
@@ -706,30 +719,29 @@ class NewProductController extends Controller
     public function getTagColor(Request $request)
     {
         $query = $request->input('q');
-        try{
+        try {
             $productByTagColor = New_product::latest()
-            ->whereNotNull('new_tag_product')
-            ->when($query, function ($queryBuilder) use ($query) {
-                $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-            })
-            ->paginate(50); 
-
-        }catch(\Exception $e){
+                ->whereNotNull('new_tag_product')
+                ->when($query, function ($queryBuilder) use ($query) {
+                    $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                })
+                ->paginate(50);
+        } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
-       
+
         return new ResponseResource(true, "list product by tag color", $productByTagColor);
     }
 
     public function getByCategory(Request $request)
     {
         $query = $request->input('q');
-        
+
         try {
             $productByTagColor = New_product::latest()
                 ->whereNotNull('new_category_product')
@@ -745,8 +757,7 @@ class NewProductController extends Controller
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
-    
+
         return new ResponseResource(true, "list product by tag color", $productByTagColor);
     }
-    
 }
