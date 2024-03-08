@@ -7,15 +7,14 @@ use App\Models\User;
 use App\Mail\TestEmail;
 use App\Models\Document;
 use App\Models\New_product;
-use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
-use App\Models\ProductApprove;
 use App\Mail\AdminNotification;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\ResponseResource;
+use App\Models\Notification;
+use App\Models\ProductApprove;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -112,7 +111,7 @@ class RiwayatCheckController extends Controller
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => $riwayat_check->id,
-                'repair_id' => null
+                'repair_id' => null 
             ]);
 
             // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
@@ -375,22 +374,23 @@ class RiwayatCheckController extends Controller
         // Set data untuk lembar kerja produk abnormal
         $this->setSheetDataProductAbnormal($thirdSheet, $getProductAbnormal, $currentRow3, $totalOldPriceAbnormal);
 
+
+
         $firstItem = $checkHistory->first();
 
         $writer = new Xlsx($spreadsheet);
         $fileName = $firstItem->base_document;
-        
-        $tempFilePath = storage_path('app/temp_export.xlsx');
-        $writer = new Xlsx($spreadsheet);
-        $writer->save($tempFilePath);
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
 
-        $fileName = 'exports/' . $firstItem->base_document;
-        Storage::disk('public')->put($fileName, file_get_contents($tempFilePath));
+        // Create exports directory if not exist
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
 
-        // Hapus file temporary
-        unlink($tempFilePath);
+        $writer->save($filePath);
 
-        $downloadUrl = url('exports/' . $firstItem->base_document);
+        $downloadUrl = url($publicPath . '/' . $fileName);
 
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
         // response()->json(['status' => true, 'message' => "", 'downloadUrl' => $downloadUrl]);
