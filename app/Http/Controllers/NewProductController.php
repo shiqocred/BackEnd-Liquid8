@@ -455,8 +455,6 @@ class NewProductController extends Controller
                 }
             }
 
-
-
             $status = $dataItem['Status'] ?? 'unknown';
             $description = $dataItem['Description'] ?? '';
 

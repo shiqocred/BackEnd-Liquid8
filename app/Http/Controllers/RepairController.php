@@ -99,6 +99,7 @@ class RepairController extends Controller
 
                 $product->delete();
             }
+        
             $repair->delete();
 
             DB::commit();
