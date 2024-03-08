@@ -7,7 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\New_product;
+use App\Models\Color_tag;
+use App\Models\Product_old;
 use App\Models\Notification;
+
 
 class RepairController extends Controller
 {
@@ -108,5 +111,46 @@ class RepairController extends Controller
             DB::rollback();
             return response()->json(['success' => false, 'message' => 'Gagal menghapus repair', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function getProductRepair(Request $request)
+    {
+        $codeDocument = $request->input('code_document');
+        $oldBarcode = $request->input('old_barcode_product');
+
+        if (!$codeDocument) {
+            return new ResponseResource(false, "Code document tidak boleh kosong.", null);
+        }
+
+        if (!$oldBarcode) {
+            return new ResponseResource(false, "Barcode tidak boleh kosong.", null);
+        }
+
+        // $checkBarcode = New_product::where('code_document', $codeDocument)
+        //     ->where('old_barcode_product', $oldBarcode)
+        //     ->exists();
+
+        // if ($checkBarcode) {
+        //     return new ResponseResource(false, "tidak bisa scan product yang sudah ada.", null);
+        // }
+
+        $product = New_product::where('code_document', $codeDocument)
+            ->where('old_barcode_product', $oldBarcode)
+            ->first();
+
+        if (!$product) {
+            return new ResponseResource(false, "Produk tidak ditemukan.", null);
+        }
+
+        // $newBarcode = $this->generateUniqueBarcode();
+        $response = ['product' => $product];
+
+        if ($product->old_price_product < 100000) {
+            $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->old_price_product)
+                ->where('max_price_color', '>=', $product->old_price_product)
+                ->get();
+        }
+
+        return new ResponseResource(true, "Produk ditemukan.", $response);
     }
 }

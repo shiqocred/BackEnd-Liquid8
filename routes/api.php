@@ -74,6 +74,9 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::get('new_products', [NewProductController::class, 'index']);
 
+   Route::get('getProductRepair', [RepairController::class, 'getProductRepair']);
+
+
 
 });
 
