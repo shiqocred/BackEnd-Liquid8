@@ -104,4 +104,16 @@ class ColorTagController extends Controller
         return new ResponseResource(true, "berhasil menghapus tag warna", $color_tag);
 
     }
+
+    public function getByNameColor(Request $request) {
+        $nameColor = $request->input('q');
+        $tagColor = Color_tag::where('name_color', $nameColor)->first();
+    
+        if($tagColor){
+            return new ResponseResource(true, "List color tag", $tagColor);
+        } else {
+            return new ResponseResource(false, "Data kosong", null);
+        }
+    }
+    
 }
