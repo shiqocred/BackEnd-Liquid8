@@ -142,8 +142,8 @@ class RepairController extends Controller
             return new ResponseResource(false, "Produk tidak ditemukan.", null);
         }
 
-        // $newBarcode = $this->generateUniqueBarcode();
-        $response = ['product' => $product];
+        $newBarcode = $this->generateUniqueBarcode();
+        $response = ['product' => $product, 'new_barcode' => $newBarcode];
 
         if ($product->old_price_product < 100000) {
             $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->old_price_product)
@@ -152,5 +152,16 @@ class RepairController extends Controller
         }
 
         return new ResponseResource(true, "Produk ditemukan.", $response);
+    }
+
+    private function generateUniqueBarcode()
+    {
+        $prefix = 'LQD';
+        do {
+            $randomNumber = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            $barcode = $prefix . $randomNumber;
+        } while (New_product::where('new_barcode_product', $barcode)->exists());
+
+        return $barcode;
     }
 }
