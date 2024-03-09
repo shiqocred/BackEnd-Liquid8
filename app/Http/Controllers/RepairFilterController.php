@@ -19,6 +19,11 @@ class RepairFilterController extends Controller
         $product_filters = RepairFilter::latest()->paginate(100);
         $totalNewPrice = RepairFilter::sum('new_price_product');
 
+        $totalNewPriceWithCategory = RepairFilter::whereNotNull('new_category_product')->sum('new_price_product');
+        $totalOldPriceWithoutCategory = RepairFilter::whereNull('new_category_product')->sum('old_price_product');
+    
+        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
+
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'data' => $product_filters,

@@ -264,16 +264,10 @@ class ProductApproveController extends Controller
         $newProduct = new Product_old([
             'code_document' => $productApprove->code_document,
             'old_barcode_product' => $productApprove->old_barcode_product,
-            'new_barcode_product' => $productApprove->new_barcode_product,
-            'new_name_product' => $productApprove->new_name_product,
-            'new_quantity_product' => $productApprove->new_quantity_product,
-            'new_price_product' => $productApprove->new_price_product,
+            'old_name_product' => $productApprove->new_name_product,
+            'old_quantity_product' => $productApprove->new_quantity_product,
             'old_price_product' => $productApprove->old_price_product,
-            'new_date_in_product' => $productApprove->new_date_in_product,
-            'new_status_product' => $productApprove->new_status_product,
-            'new_quality' => $productApprove->new_quality,
-            'new_category_product' => $productApprove->new_category_product,
-            'new_tag_product' => $productApprove->new_tag_product,
+          
             // Tambahkan kolom lainnya sesuai kebutuhan
         ]);
     

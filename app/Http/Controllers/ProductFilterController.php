@@ -13,16 +13,22 @@ class ProductFilterController extends Controller
     /**
      * Display a listing of the resource.
      */
+    
     public function index()
     {
         $product_filters = Product_Filter::latest()->paginate(100);
-        $totalNewPrice = Product_Filter::sum('new_price_product');
-
+    
+        $totalNewPriceWithCategory = Product_Filter::whereNotNull('new_category_product')->sum('new_price_product');
+        $totalOldPriceWithoutCategory = Product_Filter::whereNull('new_category_product')->sum('old_price_product');
+    
+        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
+    
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'data' => $product_filters,
         ]);
     }
+    
 
     /**
      * Show the form for creating a new resource.
