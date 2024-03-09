@@ -70,10 +70,21 @@ class PaletController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Palet $palet)
+    public function show(Request $request, Palet $palet)
     {
-        return new ResponseResource(true, "detail palet", $palet);
+        $query = $request->input('q');
+        $palet->load(['paletProducts' => function($productPalet) use ($query) {
+            if(!empty($query)){
+                $productPalet->where('new_name_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+            }
+        }]);
+        return new ResponseResource(true, "list product", $palet);
     }
+
 
     /**
      * Show the form for editing the specified resource.
