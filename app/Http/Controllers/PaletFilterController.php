@@ -18,6 +18,11 @@ class PaletFilterController extends Controller
         $product_filters = PaletFilter::latest()->paginate(100);
         $totalNewPrice = PaletFilter::sum('new_price_product');
 
+        $totalNewPriceWithCategory = PaletFilter::whereNotNull('new_category_product')->sum('new_price_product');
+        $totalOldPriceWithoutCategory = PaletFilter::whereNull('new_category_product')->sum('old_price_product');
+    
+        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
+
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'data' => $product_filters,
