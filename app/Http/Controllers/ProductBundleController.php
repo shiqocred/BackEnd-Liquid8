@@ -47,6 +47,8 @@ class ProductBundleController extends Controller
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
                 'total_product_bundle' => $request->total_product_bundle,
                 'barcode_bundle' => $request->barcode_bundle,
+                'category' => $request->category,
+                'name_color' => $request->name_color,
             ]);
 
             $insertData = $product_filters->map(function ($product) use ($bundle) {
@@ -58,6 +60,7 @@ class ProductBundleController extends Controller
                     'new_name_product' => $product->new_name_product,
                     'new_quantity_product' => $product->new_quantity_product,
                     'new_price_product' => $product->new_price_product,
+                    'old_price_product' => $product->old_price_product,
                     'new_date_in_product' => $product->new_date_in_product,
                     'new_status_product' => 'bundle',
                     'new_quality' => $product->new_quality,
