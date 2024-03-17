@@ -13,6 +13,7 @@ use App\Mail\AdminNotification;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\Notification;
+use App\Models\Product_old;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -61,7 +62,7 @@ class RiwayatCheckController extends Controller
 
         DB::beginTransaction();
 
-        try {
+        try { 
 
             $newProducts = ProductApprove::where('code_document', $request['code_document'])->get();
 
@@ -79,6 +80,12 @@ class RiwayatCheckController extends Controller
                 }
             }
 
+            $getTotalPrice = Product_old::where('code_document', $request['code_document'])->get();
+
+            $totalPrice = $getTotalPrice->sum(function ($product) {
+                return $product->old_price_product;
+            });
+
             $riwayat_check = RiwayatCheck::create([
                 'user_id' => $user->id,
                 'code_document' => $request['code_document'],
@@ -90,7 +97,7 @@ class RiwayatCheckController extends Controller
                 'total_data_abnormal' => $totalAbnormal,
                 'total_discrepancy' => $document->total_column_in_document - $totalData,
                 'status_approve' => 'pending',
-
+ 
                 // persentase
                 'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
                 'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
@@ -98,7 +105,9 @@ class RiwayatCheckController extends Controller
                 'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
                 'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
                 'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
+                'total_price' => $totalPrice
             ]);
+
 
 
             $code_document = Document::where('code_document', $request['code_document'])->first();
@@ -185,9 +194,10 @@ class RiwayatCheckController extends Controller
                 'old_price_product',
             )
             ->get();
-        $totalOldPriceAbnormal = $getProductAbnormal->sum(function ($product) {
-            return $product->old_price_product;
-        });
+
+            $totalOldPriceAbnormal = $getProductAbnormal->sum(function ($product) {
+                return $product->old_price_product;
+            });
 
         $response = new ResponseResource(true, "Riwayat Check", [
             'id' => $history->id,
@@ -207,6 +217,7 @@ class RiwayatCheckController extends Controller
             'percentage_damaged' => $history->percentage_damaged,
             'percentage_abnormal' => $history->percentage_abnormal,
             'percentage_discrepancy' => $history->percentage_discrepancy,
+            'total_price' => $history->total_price,
             'created_at' => $history->created_at,
             'updated_at' => $history->updated_at,
             'damaged' => [
@@ -225,7 +236,6 @@ class RiwayatCheckController extends Controller
 
         return $response->response();
     }
-
 
 
     public function getByDocument(Request $request)

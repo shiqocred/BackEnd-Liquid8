@@ -7,28 +7,44 @@ use Illuminate\Http\Request;
 use App\Models\Product_Filter;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\Category;
+use App\Models\Color_tag;
 
 class ProductFilterController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    
+
     public function index()
     {
         $product_filters = Product_Filter::latest()->paginate(100);
-    
+
         $totalNewPriceWithCategory = Product_Filter::whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = Product_Filter::whereNull('new_category_product')->sum('old_price_product');
-    
+
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
-    
+
+        $category = null;
+
+        if ($totalNewPrice > 100000) {
+            $category = Category::all();
+        } else {
+            foreach ($product_filters as $product_filter) {
+                $product_filter->new_tag_product = Color_tag::where('min_price_color', '<=', $product_filter->old_price_product)
+                    ->where('max_price_color', '>=', $product_filter->old_price_product)
+                    ->select('fixed_price_color', 'name_color')->get();
+
+            }
+        }
+
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
-            'data' => $product_filters,
+            'category' => $category,
+            'data' => $product_filters
         ]);
     }
-    
+
 
     /**
      * Show the form for creating a new resource.
@@ -39,7 +55,7 @@ class ProductFilterController extends Controller
         //
     }
 
-    
+
     public function store($id)
     {
         DB::beginTransaction();
