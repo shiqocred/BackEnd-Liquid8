@@ -54,6 +54,8 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    //list dump
    Route::get('/dumps', [NewProductController::class, 'listDump']);
    Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+   Route::put('/update-priceDump/{id}', [NewProductController::class, 'updatePriceDump']);
+   Route::get('/export-dumps-excel', [NewProductController::class, 'exportDumpToExcel']);
 
    // =========================================== repair moving product ==================================================
 
@@ -190,6 +192,7 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    //new product (hasil scan)
    // Route::resource('new_products', NewProductController::class);
    Route::get('new_products', [NewProductController::class, 'index']);
+   Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
 
 

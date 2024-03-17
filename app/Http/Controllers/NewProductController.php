@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\Category;
 use App\Models\Document;
 use App\Models\ExcelOld;
+use App\Models\Color_tag;
 use App\Models\New_product;
+use App\Models\Product_old;
 use Illuminate\Http\Request;
 use App\Models\ListProductBP;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\Color_tag;
-use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class NewProductController extends Controller
@@ -323,7 +326,7 @@ class NewProductController extends Controller
                 if ($product['new_tag_product'] !== null) {
                     $fixedPrice = Color_tag::where('name_color', $product['new_tag_product'])->first();
 
-                    if(!$fixedPrice){
+                    if (!$fixedPrice) {
                         return new ResponseResource(false, "Data kosong", null);
                     }
                     $product['fixed_price'] = $fixedPrice->fixed_price_color;
@@ -760,4 +763,104 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "list product by tag color", $productByTagColor);
     }
+
+    public function updatePriceDump(Request $request, $id)
+    {
+        $product = New_product::find($id);
+
+        if (!$product) {
+            return new ResponseResource(false, "id product tidak ditemukan", $product);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'new_price_product' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $inputData = $request->only([
+            'new_price_product',
+        ]);
+
+        $indonesiaTime = Carbon::now('Asia/Jakarta');
+        $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
+
+        $updateDump = $product->update($inputData);
+
+        return new ResponseResource(true, "New Produk Berhasil di Update", $updateDump);
+    }
+
+    public function exportDumpToExcel(Request $request)
+    {
+        set_time_limit(300);
+        $products = New_product::where('new_status_product', 'dump')
+          ->select(
+                'old_barcode_product',
+                'new_name_product',
+                'new_quantity_product',
+                'new_price_product',
+                'old_price_product',
+                'new_tag_product'
+            )
+            ->get();
+    
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+    
+        // Menulis header
+        $headers = [
+            'Old barcode', 'Name', 'Qty', 'New Price', 'Old Price', 'Warna'
+        ];
+    
+        $columnIndex = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex++, 1, $header);
+        }
+    
+        // Menulis data
+        $currentRow = 2; // Dimulai dari baris kedua karena baris pertama adalah header
+        foreach ($products as $product) {
+            $sheet->setCellValueByColumnAndRow(1, $currentRow, $product->old_barcode_product);
+            $sheet->setCellValueByColumnAndRow(2, $currentRow, $product->new_name_product);
+            $sheet->setCellValueByColumnAndRow(3, $currentRow, $product->new_quantity_product);
+            $sheet->setCellValueByColumnAndRow(4, $currentRow, $product->new_price_product);
+            $sheet->setCellValueByColumnAndRow(5, $currentRow, $product->old_price_product);
+            $sheet->setCellValueByColumnAndRow(6, $currentRow, $product->new_tag_product);
+    
+            $currentRow++; // Pindah ke baris berikutnya untuk data berikutnya
+        }
+    
+        // Mendapatkan nama file dengan nomor increment
+    
+        $fileName = "dump.xlsx";
+    
+        // Menyimpan file Excel
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+    
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+    
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+    
+        $downloadUrl = url($publicPath . '/' . $fileName);
+    
+        return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
+    }
+
+    public function getLatestPrice(Request $request){
+        $category = null;
+        if($request['old_price_product']){
+            $category = Category::all();
+        }
+
+        return new ResponseResource(true, 'list category', $category);
+    }
+    
+    
 }
