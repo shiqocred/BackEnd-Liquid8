@@ -31,8 +31,8 @@ class ProductFilterController extends Controller
             $category = Category::all();
         } else {
             foreach ($product_filters as $product_filter) {
-                $product_filter->new_tag_product = Color_tag::where('min_price_color', '<=', $product_filter->old_price_product)
-                    ->where('max_price_color', '>=', $product_filter->old_price_product)
+                $product_filter->new_tag_product = Color_tag::where('min_price_color', '<=', $totalNewPrice)
+                    ->where('max_price_color', '>=', $totalNewPrice)
                     ->select('fixed_price_color', 'name_color')->get();
 
             }
