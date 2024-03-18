@@ -80,11 +80,8 @@ class RiwayatCheckController extends Controller
                 }
             }
 
-            $getTotalPrice = Product_old::where('code_document', $request['code_document'])->get();
+            $totalPrice = Product_old::where('code_document', $request['code_document'])->sum('old_price_product');
 
-            $totalPrice = $getTotalPrice->sum(function ($product) {
-                return $product->old_price_product;
-            });
 
             $riwayat_check = RiwayatCheck::create([
                 'user_id' => $user->id,
@@ -107,7 +104,6 @@ class RiwayatCheckController extends Controller
                 'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
                 'total_price' => $totalPrice
             ]);
-
 
 
             $code_document = Document::where('code_document', $request['code_document'])->first();
