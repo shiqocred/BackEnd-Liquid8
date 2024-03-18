@@ -78,9 +78,6 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    Route::get('new_products', [NewProductController::class, 'index']);
 
    Route::get('getProductRepair', [RepairController::class, 'getProductRepair']);
-
-
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(function () {
@@ -97,6 +94,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
    Route::resource('sale-documents', SaleDocumentController::class);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
+   Route::get('sale-products', [SaleController::class, 'products']);
 
    Route::apiResource('buyers', BuyerController::class);
 
@@ -226,7 +224,6 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader,Admin kasir'])->group(function () {
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
    Route::get('new_products', [NewProductController::class, 'index']);
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {

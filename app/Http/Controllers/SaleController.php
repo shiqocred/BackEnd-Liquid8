@@ -51,7 +51,6 @@ class SaleController extends Controller
         }
 
         try {
-
             $buyer = Buyer::find($request->buyer_id);
             if ($buyer == null) {
                 $resource = new ResponseResource(false, "Data Buyer tidak di temukan!", []);
@@ -143,6 +142,30 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             $resource = new ResponseResource(false, "data gagal di hapus", $e->getMessage());
         }
+        return $resource->response();
+    }
+
+    public function products()
+    {
+        if (request()->has('q')) {
+            $searchQuery = request()->q;
+            $products = New_product::select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
+                ->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
+                ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
+                ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%')
+                ->union(Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date')
+                    ->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('category', 'like', '%' . $searchQuery . '%'))
+                ->orderBy('created_date', 'desc')
+                ->paginate(10);
+        } else {
+            $products = New_product::select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
+                ->union(Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date'))
+                ->orderBy('created_date', 'desc')
+                ->paginate(10);
+        }
+        $resource = new ResponseResource(true, "list data product", $products);
         return $resource->response();
     }
 }
