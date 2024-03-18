@@ -80,7 +80,11 @@ class RiwayatCheckController extends Controller
                 }
             }
 
-            $totalPrice = Product_old::where('code_document', $request['code_document'])->sum('old_price_product');
+            $getTotalPrice = Product_old::where('code_document', $request['code_document'])->get();
+
+            $totalPrice = $getTotalPrice->sum(function ($product) {
+                return $product->old_price_product;
+            });
 
 
             $riwayat_check = RiwayatCheck::create([
