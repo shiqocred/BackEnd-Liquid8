@@ -293,6 +293,13 @@ class RiwayatCheckController extends Controller
     {
         $code_document = $request->input('code_document');
 
+        $getProductDiscrepancy = Product_old::where('code_document', $code_document)->get();
+
+        $totalOldPriceDiscrepancy = $getProductDiscrepancy->sum(function ($product) {
+            return $product->old_price_product;
+        });
+
+
         $getProductDamaged = New_product::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->select(
@@ -401,6 +408,15 @@ class RiwayatCheckController extends Controller
 
         // Set data untuk lembar kerja produk abnormal
         $this->setSheetDataProductAbnormal($thirdSheet, $getProductAbnormal, $currentRow3, $totalOldPriceAbnormal);
+
+        // ========================================= Buat lembar kerja baru untuk produk discrepancy =====================================
+
+        $fourthSheet = $spreadsheet->createSheet();
+        $fourthSheet->setTitle('Discrepancy');
+        $currentRow4 = 1;
+
+        // Set data untuk lembar kerja produk discrepancy
+        $this->setSheetDataProductDiscrepancy($fourthSheet, $getProductDiscrepancy, $currentRow4, $totalOldPriceDiscrepancy);
 
 
 
@@ -523,5 +539,33 @@ class RiwayatCheckController extends Controller
         $currentRow++;
         $sheet->setCellValueByColumnAndRow(9, $currentRow, 'Total Price');
         $sheet->setCellValueByColumnAndRow(10, $currentRow, $totalOldPrice);
+    }
+    private function setSheetHeaderProductDiscrepancy($sheet, $headers, &$currentRow)
+    {
+        foreach ($headers as $index => $header) {
+            $sheet->setCellValueByColumnAndRow($index + 1, $currentRow, $header);
+        }
+    }
+
+    private function setSheetDataProductDiscrepancy($sheet, $data, &$currentRow, $totalOldPrice)
+    {
+        // Set header
+        $this->setSheetHeaderProductAbnormal($sheet, [
+            'Code Document', 'Old Barcode', 'Name Product', 'Qty', 'Unit Price'
+        ], $currentRow);
+
+        foreach ($data as $item) {
+            $currentRow++;
+            $sheet->setCellValueByColumnAndRow(1, $currentRow, $item->code_document);
+            $sheet->setCellValueByColumnAndRow(2, $currentRow, $item->old_barcode_product);
+            $sheet->setCellValueByColumnAndRow(3, $currentRow, $item->old_name_product);
+            $sheet->setCellValueByColumnAndRow(4, $currentRow, $item->old_quantity_product);
+            $sheet->setCellValueByColumnAndRow(5, $currentRow, $item->old_price_product);
+        }
+
+        // Menambahkan total harga produk discrepancy di akhir lembar kerja
+        $currentRow++;
+        $sheet->setCellValueByColumnAndRow(7, $currentRow, 'Total Price');
+        $sheet->setCellValueByColumnAndRow(8, $currentRow, $totalOldPrice);
     }
 }
