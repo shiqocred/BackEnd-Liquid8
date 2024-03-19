@@ -67,6 +67,7 @@ class RiwayatCheckController extends Controller
             $newProducts = ProductApprove::where('code_document', $request['code_document'])->get();
 
             $totalData = $newProducts->count();
+
             $totalLolos = $totalDamaged = $totalAbnormal = 0;
 
 
@@ -79,12 +80,21 @@ class RiwayatCheckController extends Controller
                     $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
                 }
             }
+            
 
-            $getTotalPrice = Product_old::where('code_document', $request['code_document'])->get();
-
-            $totalPrice = $getTotalPrice->sum(function ($product) {
+            //product_old
+            $getPriceProductOld = Product_old::where('code_document', $request['code_document'])->get();
+            $priceProductOld = $getPriceProductOld->sum(function ($product) {
                 return $product->old_price_product;
             });
+
+            //approve
+            $getPriceProductApprove = ProductApprove::where('code_document', $request['code_document'])->get();
+            $priceProductApprove = $getPriceProductApprove->sum(function ($product) {
+                return $product->old_price_product;
+            });
+
+            $totalPrice = $priceProductOld + $priceProductApprove;
 
 
             $riwayat_check = RiwayatCheck::create([
@@ -178,6 +188,7 @@ class RiwayatCheckController extends Controller
                 'new_price_product'
             )
             ->get();
+
         $totalOldPriceLolos = $getProductLolos->sum(function ($product) {
             return $product->old_price_product;
         });
@@ -196,6 +207,11 @@ class RiwayatCheckController extends Controller
             ->get();
 
             $totalOldPriceAbnormal = $getProductAbnormal->sum(function ($product) {
+                return $product->old_price_product;
+            });
+
+            $getProductDiscrepancy = Product_old::where('code_document', $history->code_document)->get();
+            $totalPriceDiscrepancy = $getProductDiscrepancy->sum(function ($product) {
                 return $product->old_price_product;
             });
 
@@ -232,6 +248,8 @@ class RiwayatCheckController extends Controller
                 'products' => $getProductAbnormal,
                 'total_old_price' => $totalOldPriceAbnormal,
             ],
+            'priceDiscrepancy' =>  $totalPriceDiscrepancy,
+            
         ]);
 
         return $response->response();
