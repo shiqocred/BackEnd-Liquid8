@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
+use App\Models\Bundle;
 use App\Models\New_product;
 use App\Models\Sale;
 use App\Models\SaleDocument;
@@ -93,14 +94,24 @@ class SaleDocumentController extends Controller
 
             foreach ($sale as $val) {
                 $newProduct = New_product::where('new_barcode_product', $val->product_barcode_sale)->first();
-                $newProduct->update(['new_status_product' => 'sale']);
+                $bundle = Bundle::where('barcode_bundle', $val->product_barcode_sale)->first();
+                if (!$newProduct && !$bundle) {
+                    return response()->json(['error' => 'Both new product and bundle not found'], 404);
+                } elseif (!$newProduct) {
+                    $bundle->update(['product_status' => 'sale']);
+                } elseif (!$bundle) {
+                    $newProduct->update(['new_status_product' => 'sale']);
+                } else {
+                    $newProduct->update(['new_status_product' => 'sale']);
+                    $bundle->update(['product_status' => 'sale']);
+                }
                 $val->update(['status_sale' => 'selesai']);
             }
 
             $saleDocument->update(
                 [
                     'total_product_document_sale' => count($sale),
-                    'total_price_document_sale' => BigInteger::of($sale->sum('product_price_sale')),
+                    'total_price_document_sale' => $sale->sum('product_price_sale'),
                     'status_document_sale' => 'selesai'
                 ]
             );
@@ -119,7 +130,7 @@ class SaleDocumentController extends Controller
     {
         $codeDocument = $request->input('code_document_sale');
         $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
-        
+
         if (!$saleDocument) {
             return response()->json([
                 'data' => null,
