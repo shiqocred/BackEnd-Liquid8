@@ -62,7 +62,7 @@ class RiwayatCheckController extends Controller
 
         DB::beginTransaction();
 
-        try { 
+        try {
 
             $newProducts = ProductApprove::where('code_document', $request['code_document'])->get();
 
@@ -80,7 +80,7 @@ class RiwayatCheckController extends Controller
                     $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
                 }
             }
-            
+
 
             //product_old
             $getPriceProductOld = Product_old::where('code_document', $request['code_document'])->get();
@@ -95,8 +95,9 @@ class RiwayatCheckController extends Controller
             });
 
             $totalPrice = $priceProductOld + $priceProductApprove;
-
-
+            $getDataPO = Product_old::where('code_document', $request['code_document'])->get();
+            $productDiscrepancy = $getDataPO->count();
+            
             $riwayat_check = RiwayatCheck::create([
                 'user_id' => $user->id,
                 'code_document' => $request['code_document'],
@@ -108,14 +109,14 @@ class RiwayatCheckController extends Controller
                 'total_data_abnormal' => $totalAbnormal,
                 'total_discrepancy' => $document->total_column_in_document - $totalData,
                 'status_approve' => 'pending',
- 
+
                 // persentase
                 'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
                 'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
                 'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
                 'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
                 'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
-                'percentage_discrepancy' => (($document->total_column_in_document - $totalData) / $document->total_column_in_document) * 100,
+                'percentage_discrepancy' => ($productDiscrepancy / $document->total_column_in_document) * 100,
                 'total_price' => $totalPrice
             ]);
 
@@ -157,6 +158,7 @@ class RiwayatCheckController extends Controller
 
     public function show(RiwayatCheck $history)
     {
+        // dd($history->percentage_discrepancy);
         $getProductDamaged = New_product::where('code_document', $history->code_document)
             ->where('new_quality->damaged', '!=', null)
             ->select(
@@ -173,6 +175,9 @@ class RiwayatCheckController extends Controller
         $totalOldPriceDamaged = $getProductDamaged->sum(function ($product) {
             return $product->old_price_product;
         });
+
+        $totalPercentageDamaged = ($totalOldPriceDamaged / $history->total_price) * 100;
+        $totalPercentageDamaged = round($totalPercentageDamaged, 2);
 
         $getProductLolos = New_product::where('code_document', $history->code_document)
             ->where('new_quality->lolos', '!=', null)
@@ -193,6 +198,9 @@ class RiwayatCheckController extends Controller
             return $product->old_price_product;
         });
 
+        $totalPercentageLolos = ($totalOldPriceLolos / $history->total_price) * 100;
+        $totalPercentageLolos = round($totalPercentageLolos, 2);
+
         $getProductAbnormal = New_product::where('code_document', $history->code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->select(
@@ -206,14 +214,26 @@ class RiwayatCheckController extends Controller
             )
             ->get();
 
-            $totalOldPriceAbnormal = $getProductAbnormal->sum(function ($product) {
-                return $product->old_price_product;
-            });
+        $totalOldPriceAbnormal = $getProductAbnormal->sum(function ($product) {
+            return $product->old_price_product;
+        });
 
-            $getProductDiscrepancy = Product_old::where('code_document', $history->code_document)->get();
-            $totalPriceDiscrepancy = $getProductDiscrepancy->sum(function ($product) {
-                return $product->old_price_product;
-            });
+        $totalPercentageAbnormal = ($totalOldPriceAbnormal / $history->total_price) * 100;
+        $totalPercentageAbnormal = round($totalPercentageAbnormal, 2);
+
+
+        $getProductDiscrepancy = Product_old::where('code_document', $history->code_document)->get();
+
+        $totalPriceDiscrepancy = $getProductDiscrepancy->sum('old_price_product');
+
+        if ($history->total_price != 0) {
+            $totalPercentageDiscrepancy = ($totalPriceDiscrepancy / $history->total_price) * 100;
+            $totalPercentageDiscrepancy = round($totalPercentageDiscrepancy, 2);
+        } else {
+            $totalPercentageDiscrepancy = 0; // Handle pembagian dengan total_price = 0
+        }
+
+
 
         $response = new ResponseResource(true, "Riwayat Check", [
             'id' => $history->id,
@@ -239,17 +259,21 @@ class RiwayatCheckController extends Controller
             'damaged' => [
                 'products' => $getProductDamaged,
                 'total_old_price' => $totalOldPriceDamaged,
+                'percentage_damaged' => $totalPercentageDamaged,
             ],
             'lolos' => [
                 'products' => $getProductLolos,
                 'total_old_price' => $totalOldPriceLolos,
+                'percentage_lolos' => $totalPercentageLolos,
             ],
             'abnormal' => [
                 'products' => $getProductAbnormal,
                 'total_old_price' => $totalOldPriceAbnormal,
+                'percentage_abnormal' => $totalPercentageAbnormal,
             ],
             'priceDiscrepancy' =>  $totalPriceDiscrepancy,
-            
+            'dp_percentage' => $totalPercentageDiscrepancy,
+
         ]);
 
         return $response->response();
@@ -293,12 +317,14 @@ class RiwayatCheckController extends Controller
     {
         $code_document = $request->input('code_document');
 
-        $getProductDiscrepancy = Product_old::where('code_document', $code_document)->get();
+        $getHistory = RiwayatCheck::where('code_document')->first();
 
+        $getProductDiscrepancy = Product_old::where('code_document', $code_document)->get();
         $totalOldPriceDiscrepancy = $getProductDiscrepancy->sum(function ($product) {
             return $product->old_price_product;
         });
 
+        $totalPercentageDiscrepancy = ($getHistory->total_price / $totalOldPriceDiscrepancy) * 100;
 
         $getProductDamaged = New_product::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
@@ -317,6 +343,8 @@ class RiwayatCheckController extends Controller
             return $product->old_price_product;
         });
 
+        $totalPercentageDamaged = ($getHistory->total_price / $totalOldPriceDamaged) * 100;
+
         $getProductLolos = New_product::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->select(
@@ -331,9 +359,12 @@ class RiwayatCheckController extends Controller
                 'new_price_product'
             )
             ->get();
+
         $totalOldPriceLolos = $getProductLolos->sum(function ($product) {
             return $product->old_price_product;
         });
+
+        $totalPercentageLolos = ($getHistory->total_price / $totalOldPriceLolos) * 100;
 
         $getProductAbnormal = New_product::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
@@ -351,6 +382,8 @@ class RiwayatCheckController extends Controller
         $totalOldPriceAbnormal = $getProductAbnormal->sum(function ($product) {
             return $product->old_price_product;
         });
+
+        $totalPercentageAbnormal = ($getHistory->total_price / $totalOldPriceAbnormal) * 100;
 
         // $code_document = '0001/02/2024';
         $checkHistory = RiwayatCheck::where('code_document', $code_document)->get();
