@@ -21,14 +21,20 @@ class SaleController extends Controller
         $sale = Sale::where('status_sale', 'proses')->latest()->paginate(10);
         $saleDocument = SaleDocument::where('status_document_sale', 'proses')->first();
         if ($saleDocument == null) {
-            $codeDocumentSale = ['code_document_sale' => codeDocumentSale()];
-            $saleBuyerName = ['sale_buyer_name' => ''];
+            $codeDocumentSale = codeDocumentSale();
+            $saleBuyerName = '';
         } else {
-            $codeDocumentSale = ['code_document_sale' => $saleDocument->code_document_sale];
-            $saleBuyerName = ['sale_buyer_name' => $saleDocument->buyer_name_document_sale];
+            $codeDocumentSale = $saleDocument->code_document_sale;
+            $saleBuyerName = $saleDocument->buyer_name_document_sale;
         }
-        $totalSale = ['total_sale' => $sale->sum('product_price_sale')];
-        $resource = new ResponseResource(true, "list data sale", [$codeDocumentSale, $saleBuyerName, $totalSale, $sale]);
+        $totalSale = $sale->sum('product_price_sale');
+        $data = [
+            'code_document_sale' => $codeDocumentSale,
+            'sale_buyer_name' => $saleBuyerName,
+            'total_sale' => $totalSale,
+        ];
+        $data += $sale->toArray();
+        $resource = new ResponseResource(true, "list data sale", $data);
         return $resource->response();
     }
 
