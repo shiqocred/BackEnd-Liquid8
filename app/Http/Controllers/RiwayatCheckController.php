@@ -259,20 +259,20 @@ class RiwayatCheckController extends Controller
             'damaged' => [
                 'products' => $getProductDamaged,
                 'total_old_price' => $totalOldPriceDamaged,
-                'percentage_damaged' => $totalPercentageDamaged,
+                'price_percentage' => $totalPercentageDamaged,
             ],
             'lolos' => [
                 'products' => $getProductLolos,
                 'total_old_price' => $totalOldPriceLolos,
-                'percentage_lolos' => $totalPercentageLolos,
+                'price_percentage' => $totalPercentageLolos,
             ],
             'abnormal' => [
                 'products' => $getProductAbnormal,
                 'total_old_price' => $totalOldPriceAbnormal,
-                'percentage_abnormal' => $totalPercentageAbnormal,
+                'price_percentage' => $totalPercentageAbnormal,
             ],
             'priceDiscrepancy' =>  $totalPriceDiscrepancy,
-            'dp_percentage' => $totalPercentageDiscrepancy,
+            'price_percentage' => $totalPercentageDiscrepancy,
 
         ]);
 
