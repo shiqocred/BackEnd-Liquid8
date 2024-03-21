@@ -225,6 +225,7 @@ class NewProductController extends Controller
             'abnormal' => $status === 'abnormal' ? $description : null,
         ];
 
+
         $inputData = $request->only([
             'code_document',
             'old_barcode_product',
@@ -241,6 +242,21 @@ class NewProductController extends Controller
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
         $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
+
+        
+        if ($inputData['old_price_product'] > 100000) {
+            $inputData['new_tag_product'] = null;
+        }
+
+        if ($request->input('old_price_product') <= 100000) {
+            $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
+                ->where('max_price_color', '>=', $request->input('old_price_product'))
+                ->select('fixed_price_color', 'name_color')->first();
+                $inputData['new_tag_product'] = $tagwarna['name_color'];
+                $inputData['new_price_product'] = $tagwarna['fixed_price_color'];
+                $inputData['new_category_product'] = null;
+                
+        }
 
         if ($status !== 'lolos') {
             // Set nilai-nilai default jika status bukan 'lolos'
@@ -860,6 +876,76 @@ class NewProductController extends Controller
         }
 
         return new ResponseResource(true, 'list category', $category);
+    }
+
+    //khusu super admin
+    public function addProductByAdmin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|integer',
+            'new_price_product' => 'required|numeric',
+            // 'new_date_in_product' => 'required|date',
+            'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
+            'condition' => 'nullable|in:lolos,damaged,abnormal',
+            'new_category_product' => 'nullable|exists:categories,name_category',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+        ],  [
+            'new_barcode_product.unique' => 'barcode sudah ada'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            // Logika untuk memproses data
+            $status = $request->input('condition');
+            $description = $request->input('deskripsi', '');
+
+            $qualityData = [
+                'lolos' => $status === 'lolos' ? 'lolos' : null,
+                'damaged' => $status === 'damaged' ? $description : null,
+                'abnormal' => $status === 'abnormal' ? $description : null,
+            ];
+            
+
+            $inputData = $request->only([
+                'new_barcode_product',
+                'new_name_product',
+                'new_quantity_product',
+                'new_price_product',
+                'new_status_product',
+                'new_category_product',
+                'new_tag_product'
+            ]);
+            $inputData['new_status_product'] = 'display';
+    
+            $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
+            $inputData['new_quality'] = json_encode($qualityData);
+    
+            if ($status !== 'lolos') {
+                $inputData['new_category_product'] = null;
+                // $inputData['new_price_product'] = null;
+            }
+    
+            return $inputData;
+
+            $newProduct = New_product::create($inputData);
+
+
+            $this->deleteOldProduct($request->input('old_barcode_product'));
+
+            DB::commit();
+
+            return new ResponseResource(true, "New Produk Berhasil ditambah", $newProduct);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
     
     

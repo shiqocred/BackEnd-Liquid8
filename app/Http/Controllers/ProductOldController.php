@@ -43,7 +43,7 @@ class ProductOldController extends Controller
         $newBarcode = $this->generateUniqueBarcode();
         $response = ['product' => $product, 'new_barcode' => $newBarcode];
 
-        if ($product->old_price_product <= 100000) {
+        if ($product->old_price_product <= 99999) {
             $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->old_price_product)
                 ->where('max_price_color', '>=', $product->old_price_product)
                 ->get();
