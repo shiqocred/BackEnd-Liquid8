@@ -143,7 +143,14 @@ class SaleController extends Controller
     public function destroy(Sale $sale)
     {
         try {
-            if ($sale->count() <= 1) {
+            $sale = Sale::where('status_sale', 'proses')->first();
+            if ($sale == null) {
+                return response()->json(['status' => false, 'message' => 'sale not found'], 404);
+            }
+            $allSale = Sale::where('code_document_sale', $sale->code_document_sale)
+                ->where('status_sale', 'proses')
+                ->get();
+            if ($allSale->count() <= 1) {
                 $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->first();
                 $saleDocument->delete();
             }
