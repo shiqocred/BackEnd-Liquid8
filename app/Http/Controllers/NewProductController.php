@@ -207,7 +207,7 @@ class NewProductController extends Controller
             'new_price_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
-            'condition' => 'required|in:lolos,damaged,abnormal',
+            'condition' => 'nullable',
             'new_category_product' => 'nullable',
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ]);
@@ -871,11 +871,16 @@ class NewProductController extends Controller
     public function getLatestPrice(Request $request)
     {
         $category = null;
-        if ($request['old_price_product']) {
+        $tagwarna = null;
+        if ($request['old_price_product'] > 100000) {
             $category = Category::all();
+        }else {
+            $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
+            ->where('max_price_color', '>=', $request->input('old_price_product'))
+            ->select('fixed_price_color', 'name_color')->first();
         }
 
-        return new ResponseResource(true, 'list category', $category);
+        return new ResponseResource(true, 'list category', ["category" =>$category, "warna" => $tagwarna]);
     }
 
     //khusu super admin
