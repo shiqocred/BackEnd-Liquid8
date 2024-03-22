@@ -143,6 +143,10 @@ class SaleController extends Controller
     public function destroy(Sale $sale)
     {
         try {
+            if ($sale->count() <= 1) {
+                $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->first();
+                $saleDocument->delete();
+            }
             $sale->delete();
             $resource = new ResponseResource(true, "data berhasil di hapus", $sale);
         } catch (\Exception $e) {
