@@ -229,6 +229,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader,Admin kasir
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Admin'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
+   Route::post('/check-price', [NewProductController::class, 'checkPrice']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
@@ -247,3 +248,4 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+

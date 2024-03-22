@@ -317,14 +317,15 @@ class RiwayatCheckController extends Controller
     {
         $code_document = $request->input('code_document');
 
-        $getHistory = RiwayatCheck::where('code_document')->first();
+        $getHistory = RiwayatCheck::where('code_document', $code_document)->first();
 
         $getProductDiscrepancy = Product_old::where('code_document', $code_document)->get();
         $totalOldPriceDiscrepancy = $getProductDiscrepancy->sum(function ($product) {
             return $product->old_price_product;
         });
 
-        $totalPercentageDiscrepancy = ($getHistory->total_price / $totalOldPriceDiscrepancy) * 100;
+        $price_persentage_dp = ($totalOldPriceDiscrepancy / $getHistory->total_price) * 100;
+        $price_persentage_dp = round($price_persentage_dp, 2);
 
         $getProductDamaged = New_product::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
@@ -343,7 +344,8 @@ class RiwayatCheckController extends Controller
             return $product->old_price_product;
         });
 
-        $totalPercentageDamaged = ($getHistory->total_price / $totalOldPriceDamaged) * 100;
+        $price_persentage_damaged = ($totalOldPriceDamaged / $getHistory->total_price ) * 100;
+        $price_persentage_damaged = round($price_persentage_damaged, 2);
 
         $getProductLolos = New_product::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
@@ -364,7 +366,8 @@ class RiwayatCheckController extends Controller
             return $product->old_price_product;
         });
 
-        $totalPercentageLolos = ($getHistory->total_price / $totalOldPriceLolos) * 100;
+        $price_persentage_lolos = ($totalOldPriceLolos / $getHistory->total_price ) * 100;
+        $price_persentage_lolos = round($price_persentage_lolos, 2);
 
         $getProductAbnormal = New_product::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
@@ -383,7 +386,8 @@ class RiwayatCheckController extends Controller
             return $product->old_price_product;
         });
 
-        $totalPercentageAbnormal = ($getHistory->total_price / $totalOldPriceAbnormal) * 100;
+        $price_persentage_abnormal = ($totalOldPriceAbnormal / $getHistory->total_price  ) * 100;
+        $price_persentage_abnormal = round($price_persentage_abnormal, 2);
 
         // $code_document = '0001/02/2024';
         $checkHistory = RiwayatCheck::where('code_document', $code_document)->get();
@@ -397,7 +401,7 @@ class RiwayatCheckController extends Controller
 
         // Header dan data disimpan secara vertikal
         $headers = [
-            'ID', 'User ID', 'Code Document', 'Base Document', 'Total Data', 'Total Data In', 'Total Data Lolos', 'Total Data Damaged', 'Total Data Abnormal', 'Total Discrepancy', 'Status Approve', 'Percentage Total Data', 'Percentage In', 'Percentage Lolos', 'Percentage Damaged', 'Percentage Abnormal', 'Percentage Discrepancy'
+            'ID', 'User ID', 'Code Document', 'Base Document', 'Total Data', 'Total Data In', 'Total Data Lolos', 'Total Data Damaged', 'Total Data Abnormal', 'Total Discrepancy', 'Status Approve', 'Percentage Total Data', 'Percentage In', 'Percentage Lolos', 'Percentage Damaged', 'Percentage Abnormal', 'Percentage Discrepancy', 'Total Price'
         ];
 
         $currentRow = 1;
@@ -415,13 +419,16 @@ class RiwayatCheckController extends Controller
             $currentRow++;
         }
 
+        $sheet->setCellValueByColumnAndRow(19, $currentRow, 'Total Price');
+        $sheet->setCellValueByColumnAndRow(20, $currentRow, $getHistory->total_price);
+
         // ========================================= Buat lembar kerja baru untuk produk damaged =====================================
         $secondSheet = $spreadsheet->createSheet();
         $secondSheet->setTitle('Damaged');
         $currentRow2 = 1;
 
         // Set data untuk lembar kerja produk rusak
-        $this->setSheetDataProductDamaged($secondSheet, $getProductDamaged, $currentRow2, $totalOldPriceDamaged);
+        $this->setSheetDataProductDamaged($secondSheet, $getProductDamaged, $currentRow2, $totalOldPriceDamaged, $price_persentage_damaged);
 
 
         // ========================================= Buat lembar kerja baru untuk produk lolos =====================================
@@ -430,7 +437,7 @@ class RiwayatCheckController extends Controller
         $currentRow4 = 1;
 
         // Set data untuk lembar kerja produk lolos
-        $this->setSheetDataProductLolos($fourthSheet, $getProductLolos, $currentRow4, $totalOldPriceLolos);
+        $this->setSheetDataProductLolos($fourthSheet, $getProductLolos, $currentRow4, $totalOldPriceLolos, $price_persentage_lolos);
 
 
         // ========================================= Buat lembar kerja baru untuk produk abnormal =====================================
@@ -440,7 +447,7 @@ class RiwayatCheckController extends Controller
         $currentRow3 = 1;
 
         // Set data untuk lembar kerja produk abnormal
-        $this->setSheetDataProductAbnormal($thirdSheet, $getProductAbnormal, $currentRow3, $totalOldPriceAbnormal);
+        $this->setSheetDataProductAbnormal($thirdSheet, $getProductAbnormal, $currentRow3, $totalOldPriceAbnormal, $price_persentage_abnormal);
 
         // ========================================= Buat lembar kerja baru untuk produk discrepancy =====================================
 
@@ -449,7 +456,7 @@ class RiwayatCheckController extends Controller
         $currentRow4 = 1;
 
         // Set data untuk lembar kerja produk discrepancy
-        $this->setSheetDataProductDiscrepancy($fourthSheet, $getProductDiscrepancy, $currentRow4, $totalOldPriceDiscrepancy);
+        $this->setSheetDataProductDiscrepancy($fourthSheet, $getProductDiscrepancy, $currentRow4, $totalOldPriceDiscrepancy, $price_persentage_dp);
 
 
 
@@ -480,11 +487,11 @@ class RiwayatCheckController extends Controller
         }
     }
 
-    private function setSheetDataProductDamaged($sheet, $data, &$currentRow, $totalOldPrice)
+    private function setSheetDataProductDamaged($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
     {
         // Set header
         $this->setSheetHeaderProductDamaged($sheet, [
-            'Code Document', 'Old Barcode', 'New Barcode', 'Name Product', 'Keterangan', 'Qty', 'Unit Price'
+            'Code Document', 'Old Barcode', 'New Barcode', 'Name Product', 'Keterangan', 'Qty', 'Unit Price', 'Price Persentage'
         ], $currentRow);
 
         foreach ($data as $item) {
@@ -499,11 +506,12 @@ class RiwayatCheckController extends Controller
             $sheet->setCellValueByColumnAndRow(6, $currentRow, $item->new_quantity_product);
             $sheet->setCellValueByColumnAndRow(7, $currentRow, $item->old_price_product);
         }
+        $sheet->setCellValueByColumnAndRow(8, $currentRow, $price_persentage);
 
         // Menambahkan total harga produk rusak di akhir lembar kerja
         $currentRow++;
-        $sheet->setCellValueByColumnAndRow(9, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(10, $currentRow, $totalOldPrice);
+        $sheet->setCellValueByColumnAndRow(10, $currentRow, 'Total Price');
+        $sheet->setCellValueByColumnAndRow(11, $currentRow, $totalOldPrice);
     }
 
     private function setSheetHeaderProductLolos($sheet, $headers, &$currentRow)
@@ -513,11 +521,11 @@ class RiwayatCheckController extends Controller
         }
     }
 
-    private function setSheetDataProductLolos($sheet, $data, &$currentRow, $totalOldPrice)
+    private function setSheetDataProductLolos($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
     {
         // Set header
         $this->setSheetHeaderProductLolos($sheet, [
-            'Code Document', 'Old Barcode', 'New Barcode', 'Name Product', 'Keterangan', 'Qty', 'Unit Price', 'Category', 'Diskon', 'After Diskon'
+            'Code Document', 'Old Barcode', 'New Barcode', 'Name Product', 'Keterangan', 'Qty', 'Unit Price', 'Category', 'Diskon', 'After Diskon', 'Price Percentage'
         ], $currentRow);
 
         foreach ($data as $item) {
@@ -537,10 +545,11 @@ class RiwayatCheckController extends Controller
             $sheet->setCellValueByColumnAndRow(10, $currentRow, $item->new_price_product); // Harga setelah diskon
 
         }
+        $sheet->setCellValueByColumnAndRow(11, $currentRow, $price_persentage); 
 
         $currentRow++;
-        $sheet->setCellValueByColumnAndRow(12, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(13, $currentRow, $totalOldPrice);
+        $sheet->setCellValueByColumnAndRow(13, $currentRow, 'Total Price');
+        $sheet->setCellValueByColumnAndRow(14, $currentRow, $totalOldPrice);
     }
 
     private function setSheetHeaderProductAbnormal($sheet, $headers, &$currentRow)
@@ -550,11 +559,11 @@ class RiwayatCheckController extends Controller
         }
     }
 
-    private function setSheetDataProductAbnormal($sheet, $data, &$currentRow, $totalOldPrice)
+    private function setSheetDataProductAbnormal($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
     {
         // Set header
         $this->setSheetHeaderProductAbnormal($sheet, [
-            'Code Document', 'Old Barcode', 'New Barcode', 'Name Product', 'Keterangan', 'Qty', 'Unit Price'
+            'Code Document', 'Old Barcode', 'New Barcode', 'Name Product', 'Keterangan', 'Qty', 'Unit Price', 'Price Percentage'
         ], $currentRow);
 
         foreach ($data as $item) {
@@ -567,11 +576,12 @@ class RiwayatCheckController extends Controller
             $sheet->setCellValueByColumnAndRow(6, $currentRow, $item->new_quantity_product);
             $sheet->setCellValueByColumnAndRow(7, $currentRow, $item->old_price_product);
         }
-
+        
+        $sheet->setCellValueByColumnAndRow(8, $currentRow, $price_persentage);
         // Menambahkan total harga produk abnormal di akhir lembar kerja
         $currentRow++;
-        $sheet->setCellValueByColumnAndRow(9, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(10, $currentRow, $totalOldPrice);
+        $sheet->setCellValueByColumnAndRow(10, $currentRow, 'Total Price');
+        $sheet->setCellValueByColumnAndRow(11, $currentRow, $totalOldPrice);
     }
     private function setSheetHeaderProductDiscrepancy($sheet, $headers, &$currentRow)
     {
@@ -580,11 +590,11 @@ class RiwayatCheckController extends Controller
         }
     }
 
-    private function setSheetDataProductDiscrepancy($sheet, $data, &$currentRow, $totalOldPrice)
+    private function setSheetDataProductDiscrepancy($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
     {
         // Set header
-        $this->setSheetHeaderProductAbnormal($sheet, [
-            'Code Document', 'Old Barcode', 'Name Product', 'Qty', 'Unit Price'
+        $this->setSheetHeaderProductDiscrepancy($sheet, [
+            'Code Document', 'Old Barcode', 'Name Product', 'Qty', 'Unit Price', 'Price Percentage'
         ], $currentRow);
 
         foreach ($data as $item) {
@@ -595,10 +605,11 @@ class RiwayatCheckController extends Controller
             $sheet->setCellValueByColumnAndRow(4, $currentRow, $item->old_quantity_product);
             $sheet->setCellValueByColumnAndRow(5, $currentRow, $item->old_price_product);
         }
-
+        $sheet->setCellValueByColumnAndRow(6, $currentRow, $price_persentage);
+        
         // Menambahkan total harga produk discrepancy di akhir lembar kerja
         $currentRow++;
-        $sheet->setCellValueByColumnAndRow(7, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(8, $currentRow, $totalOldPrice);
+        $sheet->setCellValueByColumnAndRow(8, $currentRow, 'Total Price');
+        $sheet->setCellValueByColumnAndRow(9, $currentRow, $totalOldPrice);
     }
 }

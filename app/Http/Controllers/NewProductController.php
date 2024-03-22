@@ -243,7 +243,7 @@ class NewProductController extends Controller
         $indonesiaTime = Carbon::now('Asia/Jakarta');
         $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
 
-        
+
         if ($inputData['old_price_product'] > 100000) {
             $inputData['new_tag_product'] = null;
         }
@@ -252,10 +252,9 @@ class NewProductController extends Controller
             $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
                 ->where('max_price_color', '>=', $request->input('old_price_product'))
                 ->select('fixed_price_color', 'name_color')->first();
-                $inputData['new_tag_product'] = $tagwarna['name_color'];
-                $inputData['new_price_product'] = $tagwarna['fixed_price_color'];
-                $inputData['new_category_product'] = null;
-                
+            $inputData['new_tag_product'] = $tagwarna['name_color'];
+            $inputData['new_price_product'] = $tagwarna['fixed_price_color'];
+            $inputData['new_category_product'] = null;
         }
 
         if ($status !== 'lolos') {
@@ -812,7 +811,7 @@ class NewProductController extends Controller
     {
         set_time_limit(300);
         $products = New_product::where('new_status_product', 'dump')
-          ->select(
+            ->select(
                 'old_barcode_product',
                 'new_name_product',
                 'new_quantity_product',
@@ -821,20 +820,20 @@ class NewProductController extends Controller
                 'new_tag_product'
             )
             ->get();
-    
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-    
+
         // Menulis header
         $headers = [
             'Old barcode', 'Name', 'Qty', 'New Price', 'Old Price', 'Warna'
         ];
-    
+
         $columnIndex = 1;
         foreach ($headers as $header) {
             $sheet->setCellValueByColumnAndRow($columnIndex++, 1, $header);
         }
-    
+
         // Menulis data
         $currentRow = 2; // Dimulai dari baris kedua karena baris pertama adalah header
         foreach ($products as $product) {
@@ -844,34 +843,35 @@ class NewProductController extends Controller
             $sheet->setCellValueByColumnAndRow(4, $currentRow, $product->new_price_product);
             $sheet->setCellValueByColumnAndRow(5, $currentRow, $product->old_price_product);
             $sheet->setCellValueByColumnAndRow(6, $currentRow, $product->new_tag_product);
-    
+
             $currentRow++; // Pindah ke baris berikutnya untuk data berikutnya
         }
-    
+
         // Mendapatkan nama file dengan nomor increment
-    
+
         $fileName = "dump.xlsx";
-    
+
         // Menyimpan file Excel
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
-    
+
         // Membuat direktori exports jika belum ada
         if (!file_exists(public_path($publicPath))) {
             mkdir(public_path($publicPath), 0777, true);
         }
-    
+
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
-    
+
         $downloadUrl = url($publicPath . '/' . $fileName);
-    
+
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
     }
 
-    public function getLatestPrice(Request $request){
+    public function getLatestPrice(Request $request)
+    {
         $category = null;
-        if($request['old_price_product']){
+        if ($request['old_price_product']) {
             $category = Category::all();
         }
 
@@ -911,7 +911,7 @@ class NewProductController extends Controller
                 'damaged' => $status === 'damaged' ? $description : null,
                 'abnormal' => $status === 'abnormal' ? $description : null,
             ];
-            
+
 
             $inputData = $request->only([
                 'new_barcode_product',
@@ -923,15 +923,15 @@ class NewProductController extends Controller
                 'new_tag_product'
             ]);
             $inputData['new_status_product'] = 'display';
-    
+
             $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
             $inputData['new_quality'] = json_encode($qualityData);
-    
+
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
                 // $inputData['new_price_product'] = null;
             }
-    
+
             return $inputData;
 
             $newProduct = New_product::create($inputData);
@@ -947,6 +947,17 @@ class NewProductController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
-    
+
+    public function checkPrice(Request $request)
+    {
+        $totalNewPrice = $request['new_price_product'];
+
+        if ($totalNewPrice < 100000) {
+            $tagwarna = Color_tag::where('min_price_color', '<=', $totalNewPrice)
+            ->where('max_price_color', '>=', $totalNewPrice)
+            ->select('fixed_price_color', 'name_color')->first();
+        
+            return new ResponseResource(true, "tag warna", $tagwarna);
+        }
+    }
 }
