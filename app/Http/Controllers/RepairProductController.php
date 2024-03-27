@@ -151,6 +151,8 @@ class RepairProductController extends Controller
 
         $product->update(['new_status_product' => 'dump']);
 
+        $product->delete();
+
         return new ResponseResource(true, "data product sudah di update", $product);
     }
 }
