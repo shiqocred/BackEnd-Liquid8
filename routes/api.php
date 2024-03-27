@@ -174,6 +174,9 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
+   
+   // =========================================== Category ==================================================
+   Route::get('list-category', [CategoryController::class, 'index']);
 
    //=========================================== inbound ==========================================================
 

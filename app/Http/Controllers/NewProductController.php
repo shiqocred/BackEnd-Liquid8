@@ -265,7 +265,6 @@ class NewProductController extends Controller
 
         $inputData['new_quality'] = json_encode($qualityData);
 
-
         $new_product->update($inputData);
 
         return new ResponseResource(true, "New Produk Berhasil di Update", $new_product);
@@ -937,7 +936,6 @@ class NewProductController extends Controller
                 // $inputData['new_price_product'] = null;
             }
 
-            return $inputData;
 
             $newProduct = New_product::create($inputData);
 
