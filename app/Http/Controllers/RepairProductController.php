@@ -142,12 +142,12 @@ class RepairProductController extends Controller
             return new ResponseResource(false, "Produk tidak ditemukan", null);
         }
 
-        $quality = json_decode($product->new_quality, true);
+        // $quality = json_decode($product->new_quality, true);
 
 
-        if (isset($quality['lolos'])) {
-            return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
-        }
+        // if (isset($quality['damaged'])) {
+        //     return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
+        // }
 
         $product->update(['new_status_product' => 'dump']);
 
