@@ -265,7 +265,6 @@ class NewProductController extends Controller
 
         $inputData['new_quality'] = json_encode($qualityData);
 
-
         $new_product->update($inputData);
 
         return new ResponseResource(true, "New Produk Berhasil di Update", $new_product);
@@ -874,13 +873,13 @@ class NewProductController extends Controller
         $tagwarna = null;
         if ($request['old_price_product'] > 100000) {
             $category = Category::all();
-        }else {
+        } else {
             $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
-            ->where('max_price_color', '>=', $request->input('old_price_product'))
-            ->select('fixed_price_color', 'name_color')->first();
+                ->where('max_price_color', '>=', $request->input('old_price_product'))
+                ->select('fixed_price_color', 'name_color')->first();
         }
 
-        return new ResponseResource(true, 'list category', ["category" =>$category, "warna" => $tagwarna]);
+        return new ResponseResource(true, 'list category', ["category" => $category, "warna" => $tagwarna]);
     }
 
     //khusu super admin
@@ -935,9 +934,9 @@ class NewProductController extends Controller
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
                 // $inputData['new_price_product'] = null;
+                // $inputData['new_price_product'] = null;
             }
 
-            return $inputData;
 
             $newProduct = New_product::create($inputData);
 
@@ -946,7 +945,7 @@ class NewProductController extends Controller
 
             DB::commit();
 
-            return new ResponseResource(true, "New Produk Berhasil ditambah", $newProduct);
+            return response()->json($inputData, 200);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -959,9 +958,9 @@ class NewProductController extends Controller
 
         if ($totalNewPrice < 100000) {
             $tagwarna = Color_tag::where('min_price_color', '<=', $totalNewPrice)
-            ->where('max_price_color', '>=', $totalNewPrice)
-            ->select('fixed_price_color', 'name_color')->first();
-        
+                ->where('max_price_color', '>=', $totalNewPrice)
+                ->select('fixed_price_color', 'name_color')->first();
+
             return new ResponseResource(true, "tag warna", $tagwarna);
         }
     }
