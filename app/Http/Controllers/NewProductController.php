@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\RepairProduct;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -719,7 +720,7 @@ class NewProductController extends Controller
     public function listDump(Request $request)
     {
         $query = $request->get('q');
-
+    
         $products = New_product::where('new_status_product', 'dump')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
@@ -729,9 +730,23 @@ class NewProductController extends Controller
                     ->orWhere('new_name_product', 'like', '%' . $query . '%');
             })
             ->paginate(50);
-
-        return new ResponseResource(true, "List dump", $products);
+    
+        $products2 = RepairProduct::where('new_status_product', 'dump')
+            ->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
+                    ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'like', '%' . $query . '%')
+                    ->orWhere('new_category_product', 'like', '%' . $query . '%')
+                    ->orWhere('new_name_product', 'like', '%' . $query . '%');
+            })
+            ->paginate(50);
+    
+        // Menggabungkan data dari kedua respons menjadi satu array
+        $mergedData = array_merge($products->items(), $products2->items());
+    
+        return new ResponseResource(true, "List dump", $mergedData);
     }
+    
 
     public function getTagColor(Request $request)
     {
