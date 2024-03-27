@@ -924,7 +924,8 @@ class NewProductController extends Controller
                 'new_price_product',
                 'new_status_product',
                 'new_category_product',
-                'new_tag_product'
+                'new_tag_product',
+                'price_discount',
             ]);
             $inputData['new_status_product'] = 'display';
 
