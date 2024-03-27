@@ -129,4 +129,28 @@ class RepairProductController extends Controller
     {
         //
     }
+
+    public function updateRepair($id)
+    {
+        $product = RepairProduct::find($id);
+
+        if ($product->new_status_product == 'dump') {
+            return new ResponseResource(false, "status product sudah dump", $product);
+        }
+
+        if (!$product) {
+            return new ResponseResource(false, "Produk tidak ditemukan", null);
+        }
+
+        $quality = json_decode($product->new_quality, true);
+
+
+        if (isset($quality['lolos'])) {
+            return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
+        }
+
+        $product->update(['new_status_product' => 'dump']);
+
+        return new ResponseResource(true, "data product sudah di update", $product);
+    }
 }

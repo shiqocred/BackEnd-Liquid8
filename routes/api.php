@@ -54,6 +54,7 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    //list dump
    Route::get('/dumps', [NewProductController::class, 'listDump']);
    Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
+   Route::put('/update-repair-dump/{id}', [RepairProductController::class, 'updateRepair']);
    Route::put('/update-priceDump/{id}', [NewProductController::class, 'updatePriceDump']);
    Route::get('/export-dumps-excel', [NewProductController::class, 'exportDumpToExcel']);
 
