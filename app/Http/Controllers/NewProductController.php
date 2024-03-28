@@ -731,20 +731,20 @@ class NewProductController extends Controller
             })
             ->paginate(50);
     
-        $products2 = RepairProduct::where('new_status_product', 'dump')
-            ->where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
-                    ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
-                    ->orWhere('new_tag_product', 'like', '%' . $query . '%')
-                    ->orWhere('new_category_product', 'like', '%' . $query . '%')
-                    ->orWhere('new_name_product', 'like', '%' . $query . '%');
-            })
-            ->paginate(50);
+        // $products2 = RepairProduct::where('new_status_product', 'dump')
+        //     ->where(function ($queryBuilder) use ($query) {
+        //         $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
+        //             ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
+        //             ->orWhere('new_tag_product', 'like', '%' . $query . '%')
+        //             ->orWhere('new_category_product', 'like', '%' . $query . '%')
+        //             ->orWhere('new_name_product', 'like', '%' . $query . '%');
+        //     })
+        //     ->paginate(50);
     
-        // Menggabungkan data dari kedua respons menjadi satu array
-        $mergedData = array_merge($products->items(), $products2->items());
+        // // Menggabungkan data dari kedua respons menjadi satu array
+        // $products = array_merge($products1->items(), $products2->items());
     
-        return new ResponseResource(true, "List dump", $mergedData);
+        return new ResponseResource(true, "List dump", $products);
     }
     
 

@@ -146,7 +146,6 @@ class RepairProductController extends Controller
                 DB::rollback();
                 return new ResponseResource(false, "status product sudah dump", $product);
             }
-
             if (!$product) {
                 // Batalkan transaksi dan kembalikan respons
                 DB::rollback();
@@ -154,17 +153,18 @@ class RepairProductController extends Controller
             }
 
             $totalQuantity = $repair->total_products - 1;
-            $totalPrice = $repair->total_price;
-
+            $totalPrice = $repair->total_price - $product->new_price_product;
+            $totalCustomPrice = $repair->total_custom_price - $product->new_price_product;
+            $user = User::find(auth()->id());
             // Perbarui entri Repair
-            Repair::where('id', $product->repair_id)->update([
-                "user_id" => 2,
-                "repair_name" => "test repair",
+            $repairProduct = Repair::where('id', $product->repair_id)->update([
+                "user_id" => $user->id,
+                "repair_name" => $repair->repair_name,
                 "total_price" => $totalPrice,
-                "total_custom_price" => "500000.00",
+                "total_custom_price" => $totalCustomPrice,
                 "total_products" => $totalQuantity,
-                "product_status" => "not sale",
-                "barcode" => "0DqBFVyoEz",
+                "product_status" => $repair->product_status,
+                "barcode" => $repair->barcode,
             ]);
 
             // Perbarui status produk menjadi 'dump'
@@ -191,7 +191,7 @@ class RepairProductController extends Controller
             // Commit transaksi karena operasi-operasi database berhasil
             DB::commit();
 
-            return new ResponseResource(true, "data product sudah di update", $product);
+            return new ResponseResource(true, "data product sudah di update", $repairProduct);
         } catch (\Exception $e) {
             // Batalkan transaksi dan kembalikan respons jika terjadi kesalahan
             DB::rollback();
