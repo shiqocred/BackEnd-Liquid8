@@ -153,14 +153,15 @@ class RepairProductController extends Controller
             }
 
             $totalQuantity = $repair->total_products - 1;
-            $totalPrice = $repair->total_price;
+            $totalPrice = $repair->total_price - $product->new_price_product;
+            $totalCustomPrice = $repair->total_custom_price - $product->new_price_product;
             $user = User::find(auth()->id());
             // Perbarui entri Repair
             $repairProduct = Repair::where('id', $product->repair_id)->update([
                 "user_id" => $user->id,
                 "repair_name" => $repair->repair_name,
                 "total_price" => $totalPrice,
-                "total_custom_price" => $repair->total_custom_price,
+                "total_custom_price" => $totalCustomPrice,
                 "total_products" => $totalQuantity,
                 "product_status" => $repair->product_status,
                 "barcode" => $repair->barcode,
