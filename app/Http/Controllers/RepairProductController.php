@@ -135,49 +135,62 @@ class RepairProductController extends Controller
     {
         // Mulai transaksi database
         DB::beginTransaction();
-    
+
         try {
             $product = RepairProduct::find($id);
             $repair = Repair::where('id', $product->repair_id)->first();
 
-    
+
             if ($product->new_status_product == 'dump') {
                 // Batalkan transaksi dan kembalikan respons
                 DB::rollback();
                 return new ResponseResource(false, "status product sudah dump", $product);
             }
-    
             if (!$product) {
                 // Batalkan transaksi dan kembalikan respons
                 DB::rollback();
                 return new ResponseResource(false, "Produk tidak ditemukan", null);
             }
-    
+
             $totalQuantity = $repair->total_products - 1;
             $totalPrice = $repair->total_price;
-    
+            $user = User::find(auth()->id());
             // Perbarui entri Repair
-            Repair::where('id', $product->repair_id)->update([
-                "user_id" => 2,
-                "repair_name" => "test repair",
+            $repairProduct = Repair::where('id', $product->repair_id)->update([
+                "user_id" => $user->id,
+                "repair_name" => $repair->repair_name,
                 "total_price" => $totalPrice,
-                "total_custom_price" => "500000.00",
+                "total_custom_price" => $repair->total_custom_price,
                 "total_products" => $totalQuantity,
-                "product_status" => "not sale",
-                "barcode" => "0DqBFVyoEz",
+                "product_status" => $repair->product_status,
+                "barcode" => $repair->barcode,
             ]);
-    
+
             // Perbarui status produk menjadi 'dump'
             $product->update(['new_status_product' => 'dump']);
 
-         
+            New_product::create([
+                "code_document" => $product->code_document,
+                "old_barcode_product" => $product->old_barcode_product,
+                "new_barcode_product" => $product->new_barcode_product,
+                "new_name_product" => $product->new_name_product,
+                "new_quantity_product" => $product->new_quantity_product,
+                "new_price_product" => $product->new_price_product,
+                "old_price_product" => $product->old_price_product,
+                "new_date_in_product" => $product->new_date_in_product,
+                "new_status_product" => $product->new_status_product,
+                "new_quality" => $product->new_quality,
+                "new_category_product" => $product->new_category_product,
+                "new_tag_product" => $product->new_tag_product,
+            ]);
+
             // Hancurkan objek produk
             $product->delete();
-    
+
             // Commit transaksi karena operasi-operasi database berhasil
             DB::commit();
-    
-            return new ResponseResource(true, "data product sudah di update", $product);
+
+            return new ResponseResource(true, "data product sudah di update", $repairProduct);
         } catch (\Exception $e) {
             // Batalkan transaksi dan kembalikan respons jika terjadi kesalahan
             DB::rollback();
