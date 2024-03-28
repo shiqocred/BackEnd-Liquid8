@@ -166,6 +166,8 @@ class RepairProductController extends Controller
                 "product_status" => $repair->product_status,
                 "barcode" => $repair->barcode,
             ]);
+            
+            $getRepairProduct = Repair::find($product->repair_id);
 
             // Perbarui status produk menjadi 'dump'
             $product->update(['new_status_product' => 'dump']);
@@ -191,7 +193,7 @@ class RepairProductController extends Controller
             // Commit transaksi karena operasi-operasi database berhasil
             DB::commit();
 
-            return new ResponseResource(true, "data product sudah di update", $repairProduct);
+            return new ResponseResource(true, "data product sudah di update", $getRepairProduct);
         } catch (\Exception $e) {
             // Batalkan transaksi dan kembalikan respons jika terjadi kesalahan
             DB::rollback();
