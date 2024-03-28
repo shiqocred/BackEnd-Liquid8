@@ -12,6 +12,7 @@ use App\Models\RepairProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use App\Models\New_product;
 
 class RepairProductController extends Controller
 {
@@ -22,7 +23,7 @@ class RepairProductController extends Controller
     {
         $product_repairs = RepairProduct::latest()->paginate(100);
         return new ResponseResource(true, "list product repair", $product_repairs);
-    } 
+    }
 
     /**
      * Show the form for creating a new resource.
@@ -37,10 +38,10 @@ class RepairProductController extends Controller
      */
     public function store(Request $request)
     {
-        set_time_limit(300); 
-        ini_set('memory_limit', '512M'); 
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
         $user = User::find(auth()->id());
-        
+
         DB::beginTransaction();
         try {
             $product_filters = RepairFilter::all();
@@ -132,27 +133,61 @@ class RepairProductController extends Controller
 
     public function updateRepair($id)
     {
-        $product = RepairProduct::find($id);
+        // Mulai transaksi database
+        DB::beginTransaction();
 
-        if ($product->new_status_product == 'dump') {
-            return new ResponseResource(false, "status product sudah dump", $product);
+        try {
+            $product = RepairProduct::find($id);
+            $repair = Repair::where('id', $product->repair_id)->first();
+
+
+            if ($product->new_status_product == 'dump') {
+                // Batalkan transaksi dan kembalikan respons
+                DB::rollback();
+                return new ResponseResource(false, "status product sudah dump", $product);
+            }
+
+            if (!$product) {
+                // Batalkan transaksi dan kembalikan respons
+                DB::rollback();
+                return new ResponseResource(false, "Produk tidak ditemukan", null);
+            }
+
+            $totalQuantity = $repair->total_products - 1;
+            $totalPrice = $repair->total_price;
+
+            // Perbarui entri Repair
+            Repair::where('id', $product->repair_id)->update([
+                "user_id" => 2,
+                "repair_name" => "test repair",
+                "total_price" => $totalPrice,
+                "total_custom_price" => "500000.00",
+                "total_products" => $totalQuantity,
+                "product_status" => "not sale",
+                "barcode" => "0DqBFVyoEz",
+            ]);
+
+            // Perbarui status produk menjadi 'dump'
+            $product->update(['new_status_product' => 'dump']);
+
+            New_product::create([
+                "code_document" => $product->code_document,
+                "new_barcode_product" => $product->new_barcode_product,
+                "new_name_product" => $product->new_name_product,
+
+            ]);
+
+            // Hancurkan objek produk
+            $product->delete();
+
+            // Commit transaksi karena operasi-operasi database berhasil
+            DB::commit();
+
+            return new ResponseResource(true, "data product sudah di update", $product);
+        } catch (\Exception $e) {
+            // Batalkan transaksi dan kembalikan respons jika terjadi kesalahan
+            DB::rollback();
+            return new ResponseResource(false, "Terjadi kesalahan saat memperbarui produk", null);
         }
-
-        if (!$product) {
-            return new ResponseResource(false, "Produk tidak ditemukan", null);
-        }
-
-        // $quality = json_decode($product->new_quality, true);
-
-
-        // if (isset($quality['damaged'])) {
-        //     return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
-        // }
-
-        $product->update(['new_status_product' => 'dump']);
-
-        $product->delete();
-
-        return new ResponseResource(true, "data product sudah di update", $product);
     }
 }
