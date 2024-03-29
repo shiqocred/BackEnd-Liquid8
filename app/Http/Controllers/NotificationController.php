@@ -216,7 +216,7 @@ class NotificationController extends Controller
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
         if ($user) {
-            $notifQuery = Notification::query();
+            $notifQuery = Notification::query()->latest();
             if ($user->role && $user->role->role_name == 'Spv') {
                 $notifQuery->where('role', $user->role->role_name);
             } elseif ($user->role && $user->role->role_name == 'Crew') {
