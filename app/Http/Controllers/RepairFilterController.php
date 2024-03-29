@@ -21,8 +21,13 @@ class RepairFilterController extends Controller
 
         $totalNewPriceWithCategory = RepairFilter::whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = RepairFilter::whereNull('new_category_product')->sum('old_price_product');
+        $totalNewPriceWithoutCtgrTagColor = RepairFilter::whereNull('new_category_product')
+        ->whereNull('new_tag_product')->whereNull('old_price_product')->sum('new_price_product');
+        $totalOldPriceWithoutCtgrTagColor = RepairFilter::whereNull('new_category_product')
+        ->whereNull('new_tag_product')->whereNull('new_price_product')->sum('old_price_product');
+       
     
-        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
+        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory + $totalNewPriceWithoutCtgrTagColor + $totalOldPriceWithoutCtgrTagColor ;
 
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
