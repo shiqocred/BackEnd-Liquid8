@@ -137,6 +137,7 @@ class RepairProductController extends Controller
         DB::beginTransaction();
 
         try {
+
             $product = RepairProduct::find($id);
             $repair = Repair::where('id', $product->repair_id)->first();
 
@@ -166,7 +167,7 @@ class RepairProductController extends Controller
                 "product_status" => $repair->product_status,
                 "barcode" => $repair->barcode,
             ]);
-            
+
             $getRepairProduct = Repair::find($product->repair_id);
 
             // Perbarui status produk menjadi 'dump'
@@ -189,6 +190,12 @@ class RepairProductController extends Controller
 
             // Hancurkan objek produk
             $product->delete();
+            // Cek apakah tidak ada RepairProduct lagi
+            $remainingProducts = RepairProduct::where('repair_id', $product->repair_id)->count();
+            if ($remainingProducts == 0) {
+                // Hapus Repair jika tidak ada RepairProduct lagi
+                $repair->delete();
+            }
 
             // Commit transaksi karena operasi-operasi database berhasil
             DB::commit();
