@@ -27,7 +27,7 @@ class ProductFilterController extends Controller
 
         $category = null;
 
-        if ($totalNewPrice > 100000) {
+        if ($totalNewPrice > 99999) {
             $category = Category::all();
         } else {
             foreach ($product_filters as $product_filter) {
