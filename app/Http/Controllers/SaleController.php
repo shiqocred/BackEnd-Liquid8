@@ -166,7 +166,9 @@ class SaleController extends Controller
     {
         if (request()->has('q')) {
             $searchQuery = request()->q;
-            $products = New_product::select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
+            $products = New_product::whereJsonContains('new_quality', ['damaged' => null])
+                ->whereJsonContains('new_quality', ['abnormal' => null])
+                ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
                 ->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
                 ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
                 ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%')
@@ -177,7 +179,9 @@ class SaleController extends Controller
                 ->orderBy('created_date', 'desc')
                 ->paginate(10);
         } else {
-            $products = New_product::select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
+            $products = New_product::whereJsonContains('new_quality', ['damaged' => null])
+            ->whereJsonContains('new_quality', ['abnormal' => null])
+            ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
                 ->union(Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date'))
                 ->orderBy('created_date', 'desc')
                 ->paginate(10);
