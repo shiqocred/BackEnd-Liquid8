@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BundleController;
+use App\Http\Controllers\BundleQcdController;
 use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\FilterQcdController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\MigrateController;
 use App\Http\Controllers\MigrateDocumentController;
@@ -19,6 +21,7 @@ use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\ProductBundleController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
+use App\Http\Controllers\ProductQcdController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RepairController;
 use App\Http\Controllers\RepairFilterController;
@@ -57,6 +60,14 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    Route::put('/update-repair-dump/{id}', [RepairProductController::class, 'updateRepair']);
    Route::put('/update-priceDump/{id}', [NewProductController::class, 'updatePriceDump']);
    Route::get('/export-dumps-excel', [NewProductController::class, 'exportDumpToExcel']);
+
+   //qcd
+   Route::get('qcd/filter_product', [FilterQcdController::class, 'index']);
+   Route::post('qcd/filter_product/{id}/add', [FilterQcdController::class, 'store']);
+   Route::delete('qcd/destroy/{id}', [FilterQcdController::class, 'destroy']);
+   Route::get('bundle/qcd', [BundleQcdController::class, 'index']);
+   Route::post('bundle/qcd', [ProductQcdController::class, 'store']);
+   Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
 
    // =========================================== repair moving product ==================================================
 
@@ -121,6 +132,10 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
    Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+
+
+
+
 
    //bundle
    Route::get('bundle', [BundleController::class, 'index']);

@@ -573,7 +573,6 @@ class NewProductController extends Controller
 
             $quality = json_decode($product->new_quality, true);
 
-
             if (isset($quality['lolos'])) {
                 return new ResponseResource(false, "Hanya produk yang damaged atau abnormal yang bisa di repair", null);
             }
@@ -615,12 +614,15 @@ class NewProductController extends Controller
                 'new_tag_product'
             ]);
 
-
             $indonesiaTime = Carbon::now('Asia/Jakarta');
             $inputData['new_date_in_product'] = $indonesiaTime;
 
             $quality['lolos'] = 'lolos';
             $inputData['new_quality'] = json_encode($quality);
+
+            if($inputData['old_price_product'] <100000) {
+                $inputData['new_category_product'] = null;
+            }
 
             $product->update($inputData);
 
@@ -731,7 +733,7 @@ class NewProductController extends Controller
                     ->orWhere('new_category_product', 'like', '%' . $query . '%')
                     ->orWhere('new_name_product', 'like', '%' . $query . '%');
             })
-            ->paginate(50);
+            ->paginate(100);
     
         // $products2 = RepairProduct::where('new_status_product', 'dump')
         //     ->where(function ($queryBuilder) use ($query) {

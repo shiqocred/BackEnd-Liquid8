@@ -119,6 +119,7 @@ class PaletController extends Controller
                     'new_name_product' => $product->new_name_product,
                     'new_quantity_product' => $product->new_quantity_product,
                     'new_price_product' => $product->new_price_product,
+                    'old_price_product' => $product->old_price_product,
                     'new_date_in_product' => $product->new_date_in_product,
                     'new_status_product' => $product->new_status_product,
                     'new_quality' => $product->new_quality,

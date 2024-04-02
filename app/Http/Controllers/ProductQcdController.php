@@ -2,23 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bundle;
+use App\Models\BundleQcd;
+use App\Models\FilterQcd;
+use App\Models\ProductQcd;
 use Illuminate\Http\Request;
-use App\Models\Product_Bundle;
-use App\Models\Product_Filter; 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 
-class ProductBundleController extends Controller
+class ProductQcdController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $product_bundles = Product_Bundle::latest()->paginate(100);
-        return new ResponseResource(true, "list product bundle", $product_bundles);
+        $product_qcd = ProductQcd::latest()->paginate(100);
+        return new ResponseResource(true, "list product bundle", $product_qcd);
     }
 
     /**
@@ -36,12 +36,12 @@ class ProductBundleController extends Controller
     {
         DB::beginTransaction();
         try {
-            $product_filters = Product_Filter::all();
+            $product_filters = FilterQcd::all();
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
 
-            $bundle = Bundle::create([
+            $bundle = BundleQcd::create([
                 'name_bundle' => $request->name_bundle,
                 'total_price_bundle' => $request->total_price_bundle,
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
@@ -53,7 +53,7 @@ class ProductBundleController extends Controller
 
             $insertData = $product_filters->map(function ($product) use ($bundle) {
                 return [
-                    'bundle_id' => $bundle->id,
+                    'bundle_qcd_id' => $bundle->id,
                     'code_document' => $product->code_document,
                     'old_barcode_product' => $product->old_barcode_product,
                     'new_barcode_product' => $product->new_barcode_product,
@@ -62,16 +62,16 @@ class ProductBundleController extends Controller
                     'new_price_product' => $product->new_price_product,
                     'old_price_product' => $product->old_price_product,
                     'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' => 'bundle',
+                    'new_status_product' => 'pending_delete',
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product
                 ];
             })->toArray();
 
-            Product_Bundle::insert($insertData); 
+            ProductQcd::insert($insertData);
 
-            Product_Filter::query()->delete();
+            FilterQcd::query()->delete();
 
             DB::commit();
             return new ResponseResource(true, "Bundle berhasil dibuat", $bundle);
@@ -82,11 +82,10 @@ class ProductBundleController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      */
-    public function show(Product_Bundle $product_Bundle)
+    public function show(ProductQcd $productQcd)
     {
         //
     }
@@ -94,7 +93,7 @@ class ProductBundleController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Product_Bundle $product_Bundle)
+    public function edit(ProductQcd $productQcd)
     {
         //
     }
@@ -102,7 +101,7 @@ class ProductBundleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product_Bundle $product_Bundle)
+    public function update(Request $request, ProductQcd $productQcd)
     {
         //
     }
@@ -114,7 +113,7 @@ class ProductBundleController extends Controller
     {
         DB::beginTransaction();
         try {
-            Product_Bundle::where('bundle_id', $id)->delete();
+            ProductQcd::where('bundle_qcd_id', $id)->delete();
 
             // $bundle = Bundle::findOrFail($id);
             // $bundle->delete();
