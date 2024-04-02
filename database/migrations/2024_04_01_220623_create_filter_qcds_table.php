@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product__filters', function (Blueprint $table) {
+        Schema::create('filter_qcds', function (Blueprint $table) {
             $table->id();
             $table->string('code_document')->nullable(); 
             $table->string('old_barcode_product')->nullable();
@@ -27,7 +27,6 @@ return new class extends Migration
             $table->string('new_tag_product')->nullable();
             $table->timestamps();
         });
-      
     }
 
     /**
@@ -35,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product__filters');
+        Schema::dropIfExists('filter_qcds');
     }
 };
