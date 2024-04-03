@@ -69,6 +69,7 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    Route::get('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'show']);
    Route::post('bundle/qcd', [ProductQcdController::class, 'store']);
    Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
+   Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
 
    // =========================================== repair moving product ==================================================
 
