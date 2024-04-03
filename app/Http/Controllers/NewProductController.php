@@ -309,7 +309,6 @@ class NewProductController extends Controller
     }
 
 
-
     public function listProductExp(Request $request)
     {
         try {
@@ -1004,4 +1003,17 @@ class NewProductController extends Controller
             return new ResponseResource(true, "tag warna", $tagwarna);
         }
     }
+
+    public function totalPerColor(Request $request) {
+        $new_product = New_product::whereNotNull('new_tag_product')->pluck('new_tag_product');
+        $countByColor = $new_product->countBy(function ($item) {
+            return $item;
+        });
+
+        if(count($countByColor) < 1) {
+            return new ResponseResource(false, "tidak ada data data color", null);
+        }
+        return new ResponseResource(true, "list data product by color", $countByColor);
+    }
+    
 }
