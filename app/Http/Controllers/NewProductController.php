@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\BundleQcd;
 use App\Models\RepairProduct;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -838,66 +839,72 @@ class NewProductController extends Controller
         return new ResponseResource(true, "New Produk Berhasil di Update", $updateDump);
     }
 
-    public function exportDumpToExcel(Request $request)
+    public function exportDumpToExcel(Request $request, $id)
     {
         set_time_limit(300);
-        $products = New_product::where('new_status_product', 'dump')
-            ->select(
-                'old_barcode_product',
-                'new_name_product',
-                'new_quantity_product',
-                'new_price_product',
-                'old_price_product',
-                'new_tag_product'
-            )
-            ->get();
-
+    
+        $bundleQcds = BundleQcd::find($id)->load(['product_qcds']);
+    
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-
-        // Menulis header
+    
         $headers = [
-            'Old barcode', 'Name', 'Qty', 'New Price', 'Old Price', 'Warna'
+            'Name bundle', 'total_price_bundle', 'total price custom bundle', 'total product bundle', 'barcode_bundle',
         ];
-
+    
+        $headers2 = [
+            'Name', 'New Price', 'Old Price', 'Qty', 'Category', 'Harga Tag Warna', 'New Barcode'
+        ];
+    
         $columnIndex = 1;
         foreach ($headers as $header) {
             $sheet->setCellValueByColumnAndRow($columnIndex++, 1, $header);
         }
-
-        // Menulis data
-        $currentRow = 2; // Dimulai dari baris kedua karena baris pertama adalah header
-        foreach ($products as $product) {
-            $sheet->setCellValueByColumnAndRow(1, $currentRow, $product->old_barcode_product);
-            $sheet->setCellValueByColumnAndRow(2, $currentRow, $product->new_name_product);
-            $sheet->setCellValueByColumnAndRow(3, $currentRow, $product->new_quantity_product);
-            $sheet->setCellValueByColumnAndRow(4, $currentRow, $product->new_price_product);
-            $sheet->setCellValueByColumnAndRow(5, $currentRow, $product->old_price_product);
-            $sheet->setCellValueByColumnAndRow(6, $currentRow, $product->new_tag_product);
-
-            $currentRow++; // Pindah ke baris berikutnya untuk data berikutnya
+    
+        $currentRow = 2;
+        $sheet->setCellValueByColumnAndRow(1, $currentRow, $bundleQcds->name_bundle);
+        $sheet->setCellValueByColumnAndRow(2, $currentRow, $bundleQcds->total_price_bundle);
+        $sheet->setCellValueByColumnAndRow(3, $currentRow, $bundleQcds->total_price_custom_bundle);
+        $sheet->setCellValueByColumnAndRow(4, $currentRow, $bundleQcds->total_product_bundle);
+        $sheet->setCellValueByColumnAndRow(5, $currentRow, $bundleQcds->barcode_bundle);
+    
+        $currentRow++;
+    
+        // Menambahkan baris kosong antara data headers dan headers2
+        $currentRow++;
+    
+        $columnIndex = 1;
+        foreach ($headers2 as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $currentRow, $header);
         }
-
-        // Mendapatkan nama file dengan nomor increment
-
-        $fileName = "dump.xlsx";
-
-        // Menyimpan file Excel
+        foreach ($bundleQcds->product_qcds as $product) {
+            $currentRow++;
+            $sheet->setCellValueByColumnAndRow(1, $currentRow, $product->new_name_product);
+            $sheet->setCellValueByColumnAndRow(2, $currentRow, $product->new_price_product);
+            $sheet->setCellValueByColumnAndRow(3, $currentRow, $product->old_price_product);
+            $sheet->setCellValueByColumnAndRow(4, $currentRow, $product->new_quantity_product);
+            $sheet->setCellValueByColumnAndRow(5, $currentRow, $product->new_category_product);
+            $sheet->setCellValueByColumnAndRow(6, $currentRow, $product->new_tag_product);
+            $sheet->setCellValueByColumnAndRow(7, $currentRow, $product->new_barcode_product);
+        }
+    
+        $fileName = "bundleQcd.xlsx";
+    
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
+    
         if (!file_exists(public_path($publicPath))) {
             mkdir(public_path($publicPath), 0777, true);
         }
-
+    
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
-
+    
         $downloadUrl = url($publicPath . '/' . $fileName);
-
+    
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
     }
+    
 
     public function getLatestPrice(Request $request)
     {

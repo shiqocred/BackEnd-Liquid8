@@ -59,7 +59,7 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    Route::put('/update-dumps/{id}', [NewProductController::class, 'updateDump']);
    Route::put('/update-repair-dump/{id}', [RepairProductController::class, 'updateRepair']);
    Route::put('/update-priceDump/{id}', [NewProductController::class, 'updatePriceDump']);
-   Route::get('/export-dumps-excel', [NewProductController::class, 'exportDumpToExcel']);
+   Route::get('/export-dumps-excel/{id}', [NewProductController::class, 'exportDumpToExcel']);
 
    //qcd
    Route::get('qcd/filter_product', [FilterQcdController::class, 'index']);
@@ -133,10 +133,6 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
    Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
-
-
-
-
 
    //bundle
    Route::get('bundle', [BundleController::class, 'index']);
