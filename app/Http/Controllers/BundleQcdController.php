@@ -121,4 +121,22 @@ class BundleQcdController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
         }
     }
+    public function destroyBundle(BundleQcd $bundleQcd)
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($bundleQcd->product_qcds as $productBundle) {
+                $productBundle->delete();
+            }
+    
+            $bundleQcd->delete();
+    
+            DB::commit();
+            return new ResponseResource(true, "Produk bundle berhasil dihapus", null);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
+        }
+    }
+    
 }
