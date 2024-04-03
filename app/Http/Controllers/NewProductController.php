@@ -335,9 +335,9 @@ class NewProductController extends Controller
                 $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
-            })->whereJsonContains('new_quality', ['damaged' => null] )
-            ->whereJsonContains('new_quality', ['abnormal' => null])
-            ->paginate(50);
+            })->whereJsonContains('new_quality', ['damaged' => null])
+                ->whereJsonContains('new_quality', ['abnormal' => null])
+                ->paginate(50);
 
             foreach ($productExpDisplay as &$product) {
                 if ($product['new_tag_product'] !== null) {
@@ -620,9 +620,22 @@ class NewProductController extends Controller
             $quality['lolos'] = 'lolos';
             $inputData['new_quality'] = json_encode($quality);
 
-            if($inputData['old_price_product'] <100000) {
+            if ($inputData['old_price_product'] < 100000) {
+
                 $inputData['new_category_product'] = null;
+
+                $colortag = Color_tag::where('min_price_color', '<=', $inputData['old_price_product'])
+                    ->where('max_price_color', '>=', $inputData['old_price_product'])
+                    ->select('fixed_price_color', 'name_color')
+                    ->first();
+
+                $inputData['new_price_product'] = $colortag['fixed_price_color'];
+                $inputData['new_tag_product'] = $colortag['name_color'];
             }
+
+
+
+
 
             $product->update($inputData);
 
@@ -724,7 +737,7 @@ class NewProductController extends Controller
     public function listDump(Request $request)
     {
         $query = $request->get('q');
-    
+
         $products = New_product::where('new_status_product', 'dump')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
@@ -734,7 +747,7 @@ class NewProductController extends Controller
                     ->orWhere('new_name_product', 'like', '%' . $query . '%');
             })
             ->paginate(100);
-    
+
         // $products2 = RepairProduct::where('new_status_product', 'dump')
         //     ->where(function ($queryBuilder) use ($query) {
         //         $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
@@ -744,13 +757,13 @@ class NewProductController extends Controller
         //             ->orWhere('new_name_product', 'like', '%' . $query . '%');
         //     })
         //     ->paginate(50);
-    
+
         // // Menggabungkan data dari kedua respons menjadi satu array
         // $products = array_merge($products1->items(), $products2->items());
-    
+
         return new ResponseResource(true, "List dump", $products);
     }
-    
+
 
     public function getTagColor(Request $request)
     {
@@ -890,7 +903,7 @@ class NewProductController extends Controller
     {
         $category = null;
         $tagwarna = null;
-        if ($request['old_price_product'] > 100000) {
+        if ($request['old_price_product'] > 99999) {
             $category = Category::all();
         } else {
             $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
