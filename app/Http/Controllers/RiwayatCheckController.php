@@ -158,7 +158,6 @@ class RiwayatCheckController extends Controller
 
     public function show(RiwayatCheck $history)
     {
-        // dd($history->percentage_discrepancy);
         $getProductDamaged = New_product::where('code_document', $history->code_document)
             ->where('new_quality->damaged', '!=', null)
             ->select(

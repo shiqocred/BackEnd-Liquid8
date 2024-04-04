@@ -99,7 +99,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 
    //migrate
    Route::resource('migrates', MigrateController::class);
-   Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
    Route::resource('migrate-documents', MigrateDocumentController::class);
 
@@ -171,7 +170,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
 
    //product
    Route::post('new_products', [NewProductController::class, 'store']);
-  
+
    Route::put('new_products/{new_product}', [NewProductController::class, 'update']);
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
@@ -188,7 +187,7 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
-   
+
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);
 
@@ -210,8 +209,8 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('new_products', [NewProductController::class, 'index']);
    Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
-   //migrate
-   Route::get('countColor', [NewProductController::class, 'totalPerColor']); 
+
+   Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
 
 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
@@ -268,4 +267,3 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
-
