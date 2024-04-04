@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sale_documents', function (Blueprint $table) {
             $table->id();
             $table->string('code_document_sale')->unique();
+            $table->bigInteger('buyer_id_document_sale');
             $table->string('buyer_name_document_sale');
             $table->string('buyer_phone_document_sale');
             $table->string('buyer_address_document_sale');
