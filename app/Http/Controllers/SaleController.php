@@ -90,6 +90,7 @@ class SaleController extends Controller
 
             if ($saleDocument == null) {
                 $saleDocumentRequest['code_document_sale'] = codeDocumentSale();
+                $saleDocumentRequest['buyer_id_document_sale'] = $buyer->id;
                 $saleDocumentRequest['buyer_name_document_sale'] = $buyer->name_buyer;
                 $saleDocumentRequest['buyer_phone_document_sale'] = $buyer->phone_buyer;
                 $saleDocumentRequest['buyer_address_document_sale'] = $buyer->address_buyer;
