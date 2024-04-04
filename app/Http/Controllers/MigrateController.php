@@ -17,28 +17,6 @@ class MigrateController extends Controller
      */
     public function index()
     {
-        // $migrate = Migrate::latest()->paginate(10);
-        if (request()->has('q')) {
-            $data['new_product'] = New_product::when(request()->q, function ($query) {
-
-                $query
-                    ->whereNotNull('new_tag_product')
-                    ->where('new_barcode_product', 'like', '%' . request()->q . '%')
-                    ->orWhere('new_name_product', 'like', '%' . request()->q . '%');
-            })
-                ->where('new_status_product', 'display')
-                ->orWhere('new_status_product', 'bundle')
-                ->orWhere('new_status_product', 'promo')
-                ->latest()
-                ->paginate(20, ['*'], 'product_page');
-        } else {
-            $data['new_product'] = New_product::whereNotNull('new_tag_product')
-                ->where('new_status_product', 'display')
-                ->orWhere('new_status_product', 'bundle')
-                ->orWhere('new_status_product', 'promo')
-                ->latest()
-                ->paginate(20, ['*'], 'product_page');
-        }
         $data['migrate'] = Migrate::where('status_migrate', 'proses')->latest()->paginate(20, ['*'], 'migrate_page');
         $data['code_document_migrate'] = $data['migrate']->isEmpty() ? codeDocumentMigrate() : $data['migrate'][0]['code_document_migrate'];
 
@@ -50,9 +28,62 @@ class MigrateController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(New_product $new_product)
+    public function store(Request $request)
     {
-        //
+        $codeDocumentMigrate = codeDocumentMigrate();
+
+        $validator = Validator::make($request->all(), [
+            'product_color' => 'required',
+            'product_total' => 'required|numeric',
+            'destiny_document_migrate' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+
+        $productByTagColor = New_product::where('new_tag_product', $request->product_color)->get();
+        if ($productByTagColor->isEmpty()) {
+            $resource = new ResponseResource(false, "Data tidak di temukan!", ["product_color" => "product not found!"]);
+            return $resource->response()->setStatusCode(404);
+        }
+
+        if ($productByTagColor->count() < $request->product_total) {
+            $resource = new ResponseResource(false, "Input tidak valid!", ["product_total" => "the product is less than the quantity requested!"]);
+            return $resource->response()->setStatusCode(422);
+        }
+
+        try {
+            $migrateDocument = MigrateDocument::where('status_document_migrate', 'proses')->first();
+            if ($migrateDocument == null) {
+                $migrateDocumentStore = (new MigrateDocumentController)->store(new Request([
+                    'code_document_migrate' => $codeDocumentMigrate,
+                    'destiny_document_migrate' => $request->destiny_document_migrate,
+                    'total_product_document_migrate' => 0,
+                    'status_document_migrate' => 'proses'
+                ]));
+
+                if ($migrateDocumentStore->getStatusCode() != 201) {
+                    return $migrateDocumentStore;
+                }
+
+                $migrateDocument = $migrateDocumentStore->getData()->data->resource;
+            }
+
+            $migrate = Migrate::create([
+                'code_document_migrate' => $migrateDocument->code_document_migrate,
+                'product_color' => $request->product_color,
+                'product_total' => $request->product_total,
+                'status_migrate' => 'proses',
+            ]);
+
+            $resource = new ResponseResource(true, "data berhasil disimpan!", $migrate);
+            return $resource->response();
+        } catch (\Exception $e) {
+            $resource = new ResponseResource(false, "Data gagal di simpan!", [$e->getMessage()]);
+            return $resource->response()->setStatusCode(422);
+        }
     }
 
     /**
@@ -79,8 +110,10 @@ class MigrateController extends Controller
     {
         try {
             DB::beginTransaction();
-            $new_product = New_product::where('new_barcode_product', $migrate->new_barcode_product)->first();
-            $new_product->update(['new_status_product' => $migrate->status_product_before]);
+            $migreteRecordCheck = Migrate::where('code_document_migrate', $migrate->code_document_migrate)->count();
+            if ($migreteRecordCheck <= 1) {
+                MigrateDocument::where('code_document_migrate', $migrate->code_document_migrate)->delete();
+            }
             $migrate->delete();
             $resource = new ResponseResource(true, "Data berhasil di hapus!", $migrate);
             DB::commit();

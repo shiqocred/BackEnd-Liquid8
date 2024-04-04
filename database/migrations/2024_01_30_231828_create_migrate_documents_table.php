@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('code_document_migrate')->unique();
             $table->string('destiny_document_migrate');
             $table->bigInteger('total_product_document_migrate');
-            $table->bigInteger('total_price_document_migrate');
             $table->enum('status_document_migrate', ['proses', 'selesai']);
             $table->timestamps();
         });
