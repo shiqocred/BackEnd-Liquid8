@@ -14,13 +14,9 @@ return new class extends Migration
         Schema::create('migrates', function (Blueprint $table) {
             $table->id();
             $table->string('code_document_migrate');
-            $table->string('new_barcode_product')->unique();
-            $table->string('new_name_product');
-            $table->bigInteger('new_qty_product');
-            $table->decimal('new_price_product', 15, 2)->nullable();
-            $table->string('new_tag_product')->nullable();
+            $table->string('product_color');
+            $table->integer('product_total');
             $table->enum('status_migrate', ['proses', 'selesai']);
-            $table->string('status_product_before');
             $table->timestamps();
         });
     }
