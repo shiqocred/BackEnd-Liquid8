@@ -210,8 +210,8 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('new_products', [NewProductController::class, 'index']);
    Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
-   
-   Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
+   //migrate
+   Route::get('countColor', [NewProductController::class, 'totalPerColor']); 
 
 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);

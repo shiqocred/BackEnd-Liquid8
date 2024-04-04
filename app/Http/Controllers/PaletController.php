@@ -14,23 +14,22 @@ class PaletController extends Controller
     public function display(Request $request)
     {
         $query = $request->input('q');
-
+    
         $new_products = New_product::query()
             ->where('new_status_product', 'display')
-            ->whereRaw('json_extract(new_quality, "$.lolos") = "lolos"')
+            ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
-                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%');
             })
+            ->where('new_tag_product', null)
             ->paginate(50);
-
+    
         return new ResponseResource(true, "Data produk dengan status display.", $new_products);
     }
-
-
+    
 
 
     public function index(Request $request)
