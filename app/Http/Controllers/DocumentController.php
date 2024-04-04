@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
 use App\Models\Document;
+use App\Models\Product_old;
+use App\Models\ProductApprove;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
@@ -56,7 +58,10 @@ class DocumentController extends Controller
     public function destroy(Document $document)
     {
         try{
+            $product_old = Product_old::where('code_document', $document->code_document)->delete();
+            $approve = ProductApprove::where('code_document', $document->code_document)->delete();
             $document->delete();
+            
             return new ResponseResource(true, "data berhasil dihapus", $document);
         }catch (\Exception $e){
             return new ResponseResource(false, "terjadi kesalahan saat menghapus data", null);

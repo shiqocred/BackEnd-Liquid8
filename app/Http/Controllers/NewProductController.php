@@ -620,6 +620,10 @@ class NewProductController extends Controller
             $quality['lolos'] = 'lolos';
             $inputData['new_quality'] = json_encode($quality);
 
+            if($inputData['new_price_product'] > 100000){
+                $inputData['new_category_product'] = null;
+            }
+
             if ($inputData['old_price_product'] < 100000) {
 
                 $inputData['new_category_product'] = null;
@@ -920,7 +924,7 @@ class NewProductController extends Controller
         return new ResponseResource(true, 'list category', ["category" => $category, "warna" => $tagwarna]);
     }
 
-    //khusu super admin
+    //khusus super admin
     public function addProductByAdmin(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -956,6 +960,7 @@ class NewProductController extends Controller
 
 
             $inputData = $request->only([
+                'old_price_product',
                 'new_barcode_product',
                 'new_name_product',
                 'new_quantity_product',
@@ -965,6 +970,7 @@ class NewProductController extends Controller
                 'new_tag_product',
                 'price_discount',
             ]);
+
             $inputData['new_status_product'] = 'display';
 
             $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
@@ -973,14 +979,26 @@ class NewProductController extends Controller
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
                 // $inputData['new_price_product'] = null;
-                // $inputData['new_price_product'] = null;
             }
 
+        //     if($inputData['new_price_product'] > 99999) {
+        //         $newprice = $inputData['new_price_product'];
+        //         $inputData['old_price_product'] = $inputData['new_price_product'];
+        //         $inputData['new_price_product'] = $inputData['price_discount'];
+        //         $newProduct = New_product::create($inputData);
+        //        $inputData['new_price_product'] = $newprice;
+                
+        //     }else {
+        //         $tagwarna = Color_tag::where('min_price_color', '<=', $totalNewPrice)
+        //         ->where('max_price_color', '>=', $totalNewPrice)
+        //         ->select('fixed_price_color', 'name_color')->first();
 
-            $newProduct = New_product::create($inputData);
+        //     return new ResponseResource(true, "tag warna", $tagwarna);
+        // }
+        
+        $newProduct = New_product::create($inputData);
 
-
-            $this->deleteOldProduct($request->input('old_barcode_product'));
+            // $this->deleteOldProduct($request->input('old_barcode_product'));
 
             DB::commit();
 
@@ -1005,7 +1023,8 @@ class NewProductController extends Controller
     }
 
     public function totalPerColor(Request $request) {
-        $new_product = New_product::whereNotNull('new_tag_product')->pluck('new_tag_product');
+
+        $new_product = New_product::whereNotNull('new_tag_product')->whereNot('new_status_product', 'migrate')->pluck('new_tag_product');
         $countByColor = $new_product->countBy(function ($item) {
             return $item;
         });

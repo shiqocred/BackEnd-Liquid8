@@ -47,8 +47,8 @@ class ProductQcdController extends Controller
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
                 'total_product_bundle' => $request->total_product_bundle,
                 'barcode_bundle' => $request->barcode_bundle,
-                'category' => $request->category,
-                'name_color' => $request->name_color,
+                // 'category' => $request->category,
+                // 'name_color' => $request->name_color,
             ]);
 
             $insertData = $product_filters->map(function ($product) use ($bundle) {

@@ -33,9 +33,9 @@ class MigrateController extends Controller
         $codeDocumentMigrate = codeDocumentMigrate();
 
         $validator = Validator::make($request->all(), [
-            'product_color' => 'required',
+            'product_color' => 'nullable',
             'product_total' => 'required|numeric',
-            'destiny_document_migrate' => 'required',
+            'destiny_document_migrate' => 'nullable',
         ]);
 
         if ($validator->fails()) {
