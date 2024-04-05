@@ -23,14 +23,17 @@ class SaleController extends Controller
         if ($saleDocument == null) {
             $codeDocumentSale = codeDocumentSale();
             $saleBuyerName = '';
+            $saleBuyerId = '';
         } else {
             $codeDocumentSale = $saleDocument->code_document_sale;
             $saleBuyerName = $saleDocument->buyer_name_document_sale;
+            $saleBuyerId = $saleDocument->buyer_id_document_sale;
         }
         $totalSale = $sale->sum('product_price_sale');
         $data = [
             'code_document_sale' => $codeDocumentSale,
             'sale_buyer_name' => $saleBuyerName,
+            'sale_buyer_id' => $saleBuyerId,
             'total_sale' => $totalSale,
         ];
         $data += $sale->toArray();
@@ -87,6 +90,7 @@ class SaleController extends Controller
 
             if ($saleDocument == null) {
                 $saleDocumentRequest['code_document_sale'] = codeDocumentSale();
+                $saleDocumentRequest['buyer_id_document_sale'] = $buyer->id;
                 $saleDocumentRequest['buyer_name_document_sale'] = $buyer->name_buyer;
                 $saleDocumentRequest['buyer_phone_document_sale'] = $buyer->phone_buyer;
                 $saleDocumentRequest['buyer_address_document_sale'] = $buyer->address_buyer;
@@ -180,8 +184,8 @@ class SaleController extends Controller
                 ->paginate(10);
         } else {
             $products = New_product::whereJsonContains('new_quality', ['damaged' => null])
-            ->whereJsonContains('new_quality', ['abnormal' => null])
-            ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
+                ->whereJsonContains('new_quality', ['abnormal' => null])
+                ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
                 ->union(Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date'))
                 ->orderBy('created_date', 'desc')
                 ->paginate(10);
