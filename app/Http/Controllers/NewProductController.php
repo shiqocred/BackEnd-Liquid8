@@ -335,8 +335,7 @@ class NewProductController extends Controller
                 $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
-            })->whereJsonContains('new_quality', ['damaged' => null])
-                ->whereJsonContains('new_quality', ['abnormal' => null])
+            })->whereJsonContains('new_quality', ['lolos' => 'lolos'])                
                 ->paginate(50);
 
             foreach ($productExpDisplay as &$product) {
