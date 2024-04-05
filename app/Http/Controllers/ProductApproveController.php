@@ -166,13 +166,12 @@ class ProductApproveController extends Controller
 
     private function deleteOldProduct($old_barcode_product)
     {
-        $oldProduct = Product_old::where('old_barcode_product', $old_barcode_product)->first();
+        $affectedRows = DB::table('product_olds')->where('old_barcode_product', $old_barcode_product)->delete();
 
-        if ($oldProduct) {
-            $oldProduct->delete();
+        if ($affectedRows > 0) {
+            return true;
         } else {
-
-            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", $oldProduct);
+            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
         }
     }
 

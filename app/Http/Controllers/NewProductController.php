@@ -981,20 +981,6 @@ class NewProductController extends Controller
                 // $inputData['new_price_product'] = null;
             }
 
-        //     if($inputData['new_price_product'] > 99999) {
-        //         $newprice = $inputData['new_price_product'];
-        //         $inputData['old_price_product'] = $inputData['new_price_product'];
-        //         $inputData['new_price_product'] = $inputData['price_discount'];
-        //         $newProduct = New_product::create($inputData);
-        //        $inputData['new_price_product'] = $newprice;
-                
-        //     }else {
-        //         $tagwarna = Color_tag::where('min_price_color', '<=', $totalNewPrice)
-        //         ->where('max_price_color', '>=', $totalNewPrice)
-        //         ->select('fixed_price_color', 'name_color')->first();
-
-        //     return new ResponseResource(true, "tag warna", $tagwarna);
-        // }
         
         $newProduct = New_product::create($inputData);
 
