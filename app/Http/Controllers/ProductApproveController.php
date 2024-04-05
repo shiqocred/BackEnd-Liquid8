@@ -174,6 +174,16 @@ class ProductApproveController extends Controller
             return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
         }
     }
+    private function deleteOldProduct22($old_barcode_product)
+    {
+        $affectedRows = DB::table('product_olds')->where('old_barcode_product', $old_barcode_product)->delete();
+
+        if ($affectedRows > 0) {
+            return true;
+        } else {
+            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
+        }
+    }
 
     /**
      * Display the specified resource.
