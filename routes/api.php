@@ -122,8 +122,9 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-   Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
-   Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
+
+   // Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
+   // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
 
    //=========================================== storage ==========================================================
@@ -267,3 +268,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+
+
+Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
+Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
