@@ -7,14 +7,20 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## Installation
+## Installation Back-end Liquid8 (Untuk Testing di Local)
 
-Dillinger requires [Node.js](https://nodejs.org/) v10+ to run.
+1. Clone project
+```sh
+git clone https://github.com/NRayaa/BackEnd-Liquid8.git
+```
 
-Install the dependencies and devDependencies and start the server.
+2. Open file then use command prompt "powerShell, gitbash, etc". Install the dependencies and devDependencies.
 
 ```sh
-cd dillinger
-npm i
-node app
+composer install
+```
+
+3. Copy .env.example file to .env on the root folder. If using command prompt Windows you can type  
+```sh
+copy .env.example .env
 ```
