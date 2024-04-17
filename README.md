@@ -14,7 +14,7 @@
 git clone https://github.com/NRayaa/BackEnd-Liquid8.git
 ```
 
-2. Open file then use command prompt "powerShell, gitbash, etc". Install the dependencies and devDependencies.
+2. Open folder then use command prompt "powerShell, gitbash, etc". Install the dependencies and devDependencies.
 
 ```sh
 composer install
@@ -23,4 +23,29 @@ composer install
 3. Copy .env.example file to .env on the root folder. If using command prompt Windows you can type  
 ```sh
 copy .env.example .env
+```
+
+4. Open file .env and setup your own database. Then scroll to this line ...
+```sh
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=(database name)
+DB_USERNAME=(database username)
+DB_PASSWORD=
+```
+
+5. Open command prompt again. Run
+```sh
+php artisan key: generate
+```
+
+6. Run (for migrate design database => in folder migration)
+```sh
+php artisan migrate
+```
+
+7. Run (starting builtin server for testing)
+```sh
+php artisan serve
 ```
