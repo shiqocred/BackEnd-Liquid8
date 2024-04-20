@@ -976,7 +976,6 @@ class NewProductController extends Controller
 
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
-                // $inputData['new_price_product'] = null;
             }
 
         
