@@ -213,6 +213,34 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
 
+   //slow moving products 
+   //filters product bundle
+   Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
+   Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
+   Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+
+   //bundle
+   Route::get('bundle', [BundleController::class, 'index']);
+   Route::get('bundle/{bundle}', [BundleController::class, 'show']);
+   Route::post('bundle', [ProductBundleController::class, 'store']);
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+
+   Route::get('bundle/product', [ProductBundleController::class, 'index']);
+   Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+
+
+   //palet filter
+   Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
+   Route::post('palet/filter_product/{id}/add', [PaletFilterController::class, 'store']);
+   Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
+
+   //palet
+   Route::get('palet/display', [PaletController::class, 'display']);
+   Route::get('palet', [PaletController::class, 'index']);
+   Route::get('palet/{palet}', [PaletController::class, 'show']);
+   Route::post('palet', [PaletProductController::class, 'store']);
+   Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
+
 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);

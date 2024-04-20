@@ -335,8 +335,8 @@ class NewProductController extends Controller
                 $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
-            })->whereJsonContains('new_quality', ['lolos' => 'lolos'])                
-                ->paginate(50);
+            })->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL")
+            ->paginate(50);
 
             foreach ($productExpDisplay as &$product) {
                 if ($product['new_tag_product'] !== null) {
@@ -805,7 +805,7 @@ class NewProductController extends Controller
                         ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
-                ->paginate(50);
+                ->paginate(51);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
