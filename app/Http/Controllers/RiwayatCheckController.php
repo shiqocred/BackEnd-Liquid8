@@ -70,7 +70,6 @@ class RiwayatCheckController extends Controller
 
             $totalLolos = $totalDamaged = $totalAbnormal = 0;
 
-
             foreach ($newProducts as $product) {
                 $newQualityData = json_decode($product->new_quality, true);
 
