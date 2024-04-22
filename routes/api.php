@@ -296,4 +296,3 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
-Route::delete2('deleteAll', [GenerateController::class, 'deleteAllData']);
