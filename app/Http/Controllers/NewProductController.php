@@ -334,6 +334,7 @@ class NewProductController extends Controller
             })->where(function ($subBuilder) use ($query) {
                 $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
+                    ->orWhere('old_barcode_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
             })->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL")
             ->paginate(50);

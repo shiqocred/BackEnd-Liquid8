@@ -117,7 +117,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 
 Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {
 
-
    //=========================================== inbound ==========================================================
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
