@@ -529,7 +529,12 @@ class RiwayatCheckController extends Controller
         foreach ($data as $item) {
             // Pindah ke baris berikutnya untuk setiap item
             $currentRow++;
-            $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
+            // $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
+            if ($item->old_price_product != 0) {
+                $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
+            } else {
+                $diskon = 0;
+            }
 
             $sheet->setCellValueByColumnAndRow(1, $currentRow, $item->code_document);
             $sheet->setCellValueByColumnAndRow(2, $currentRow, $item->old_barcode_product);
