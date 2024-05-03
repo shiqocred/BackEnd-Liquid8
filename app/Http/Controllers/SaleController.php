@@ -18,8 +18,8 @@ class SaleController extends Controller
      */
     public function index()
     {
-        $sale = Sale::where('status_sale', 'proses')->latest()->paginate(10);
-        $saleDocument = SaleDocument::where('status_document_sale', 'proses')->first();
+        $sale = Sale::where('status_sale', 'proses')->where('user_id', auth()->id())->latest()->paginate(10);
+        $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', auth()->id())->first();
         if ($saleDocument == null) {
             $codeDocumentSale = codeDocumentSale();
             $saleBuyerName = '';
@@ -107,6 +107,7 @@ class SaleController extends Controller
 
             $sale = Sale::create(
                 [
+                    'user_id' => auth()->id(),
                     'code_document_sale' => $saleDocument->code_document_sale,
                     'product_name_sale' => $data[0],
                     'product_barcode_sale' => $data[1],
@@ -147,15 +148,16 @@ class SaleController extends Controller
     public function destroy(Sale $sale)
     {
         try {
-            $sale = Sale::where('status_sale', 'proses')->first();
-            if ($sale == null) {
+            $checkSale = Sale::where('status_sale', 'proses')->where('user_id', auth()->id())->first();
+            if ($checkSale == null) {
                 return response()->json(['status' => false, 'message' => 'sale not found'], 404);
             }
             $allSale = Sale::where('code_document_sale', $sale->code_document_sale)
+                ->where('user_id', auth()->id())
                 ->where('status_sale', 'proses')
                 ->get();
             if ($allSale->count() <= 1) {
-                $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->first();
+                $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->where('user_id', auth()->id())->first();
                 $saleDocument->delete();
             }
             $sale->delete();
