@@ -19,7 +19,7 @@ class SaleDocumentController extends Controller
      */
     public function index()
     {
-        $saleDocument = SaleDocument::where('status_document_sale', 'selesai')->latest()->paginate(10);
+        $saleDocument = SaleDocument::with('users')->where('status_document_sale', 'selesai')->latest()->paginate(10);
         $resource = new ResponseResource(true, "list document sale", $saleDocument);
         return $resource->response();
     }
@@ -44,6 +44,7 @@ class SaleDocumentController extends Controller
             return $resource->response()->setStatusCode(422);
         }
         try {
+            $request['user_id'] = auth()->id();
             $saleDocument = SaleDocument::create($request->all());
             $resource = new ResponseResource(true, "Data berhasil ditambahkan!", $saleDocument);
         } catch (\Exception $e) {
@@ -57,7 +58,7 @@ class SaleDocumentController extends Controller
      */
     public function show(SaleDocument $saleDocument)
     {
-        $resource = new ResponseResource(true, "data document sale", $saleDocument->load('sales'));
+        $resource = new ResponseResource(true, "data document sale", $saleDocument->load('sales', 'users'));
         return $resource->response();
     }
 
