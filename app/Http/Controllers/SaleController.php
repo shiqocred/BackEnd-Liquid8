@@ -18,10 +18,11 @@ class SaleController extends Controller
      */
     public function index()
     {
+        $userId = auth()->id();
         $sale = Sale::where('status_sale', 'proses')->where('user_id', auth()->id())->latest()->paginate(10);
         $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', auth()->id())->first();
         if ($saleDocument == null) {
-            $codeDocumentSale = codeDocumentSale();
+            $codeDocumentSale = codeDocumentSale($userId);
             $saleBuyerName = '';
             $saleBuyerId = '';
         } else {
@@ -46,6 +47,7 @@ class SaleController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = auth()->id();
         $validator = Validator::make(
             $request->all(),
             [
@@ -86,10 +88,10 @@ class SaleController extends Controller
                 return $resource->response()->setStatusCode(404);
             }
 
-            $saleDocument = SaleDocument::where('status_document_sale', 'proses')->first();
+            $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
 
             if ($saleDocument == null) {
-                $saleDocumentRequest['code_document_sale'] = codeDocumentSale();
+                $saleDocumentRequest['code_document_sale'] = codeDocumentSale($userId);
                 $saleDocumentRequest['buyer_id_document_sale'] = $buyer->id;
                 $saleDocumentRequest['buyer_name_document_sale'] = $buyer->name_buyer;
                 $saleDocumentRequest['buyer_phone_document_sale'] = $buyer->phone_buyer;
