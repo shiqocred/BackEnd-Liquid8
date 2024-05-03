@@ -19,7 +19,7 @@ class SaleDocumentController extends Controller
      */
     public function index()
     {
-        $saleDocument = SaleDocument::with('users')->where('status_document_sale', 'selesai')->latest()->paginate(10);
+        $saleDocument = SaleDocument::with('user:id,name')->where('status_document_sale', 'selesai')->latest()->paginate(10);
         $resource = new ResponseResource(true, "list document sale", $saleDocument);
         return $resource->response();
     }
@@ -58,7 +58,7 @@ class SaleDocumentController extends Controller
      */
     public function show(SaleDocument $saleDocument)
     {
-        $resource = new ResponseResource(true, "data document sale", $saleDocument->load('sales', 'users'));
+        $resource = new ResponseResource(true, "data document sale", $saleDocument->load('sales', 'user'));
         return $resource->response();
     }
 
