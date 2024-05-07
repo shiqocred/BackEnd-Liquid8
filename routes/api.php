@@ -227,7 +227,6 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
 
-
    //palet filter
    Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
    Route::post('palet/filter_product/{id}/add', [PaletFilterController::class, 'store']);

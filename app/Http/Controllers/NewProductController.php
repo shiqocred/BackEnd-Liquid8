@@ -201,8 +201,8 @@ class NewProductController extends Controller
     public function update(Request $request, New_product $new_product)
     {
         $validator = Validator::make($request->all(), [
-            'code_document' => 'required',
-            'old_barcode_product' => 'required',
+            'code_document' => 'nullable',
+            'old_barcode_product' => 'nullable',
             'new_barcode_product' => 'required',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
