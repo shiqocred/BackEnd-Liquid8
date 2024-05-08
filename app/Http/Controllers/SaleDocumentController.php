@@ -139,12 +139,12 @@ class SaleDocumentController extends Controller
         }
 
         $categoryReport = $this->generateCategoryReport($saleDocument);
-        $barcodeReport = $this->generateBarcodeReport($saleDocument);
+        // $barcodeReport = $this->generateBarcodeReport($saleDocument);
 
         return response()->json([
             'data' => [
                 'category_report' => $categoryReport,
-                'NameBarcode_report' => $barcodeReport,
+                // 'NameBarcode_report' => $barcodeReport,
             ],
             'message' => 'Laporan penjualan',
             'buyer' => $saleDocument
@@ -153,37 +153,44 @@ class SaleDocumentController extends Controller
 
     private function generateCategoryReport($saleDocument)
     {
+        $totalPrice = 0;
+        $categoryReport = [];
         $products = collect();
 
         foreach ($saleDocument->sales as $sale) {
             $product = New_product::where('new_name_product', $sale->product_name_sale)
                 ->where('new_status_product', 'sale')
                 ->first();
-        
+
             if ($product) {
                 $product->new_quantity_product = $sale->product_qty_sale;
                 $products->push($product);
             }
         }
-                
 
         if ($products->count() > 0) {
-            $result = $products->groupBy('new_category_product')
-                ->map(function ($group) {
+            $categoryReport = $products->groupBy('new_category_product')
+                ->map(function ($group) use (&$totalPrice) {
+                    $totalPricePerCategory = $group->sum(function ($item) {
+                        return $item->new_quantity_product * $item->new_price_product;
+                    });
+                    $totalPrice += $totalPricePerCategory;
+
                     return [
                         'category' => $group->first()->new_category_product,
                         'total_quantity' => $group->sum('new_quantity_product'),
-                        'total_price' => $group->sum(function ($item) {
-                            return $item->new_quantity_product * $item->new_price_product;
-                        }),
+                        'total_price' => $totalPricePerCategory,
                     ];
-                })->values();
+                })->values()->all();
 
-            return $result;
-        } else {
-            return null;
+            // Insert Total Harga to the first element of the category report
+            array_unshift($categoryReport, ['Total Harga' => $totalPrice]);
         }
+
+        return $categoryReport;
     }
+
+
 
     private function generateBarcodeReport($saleDocument)
     {
@@ -200,9 +207,9 @@ class SaleDocumentController extends Controller
 
             $report[] = [
                 $index + 1,
-               $productName,
-               $productBarcode,
-               $subtotalPrice,
+                $productName,
+                $productBarcode,
+                $subtotalPrice,
             ];
 
             $totalPrice += $subtotalPrice;
