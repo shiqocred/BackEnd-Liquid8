@@ -144,7 +144,7 @@ class SaleDocumentController extends Controller
         return response()->json([
             'data' => [
                 'category_report' => $categoryReport
-                // 'NameBarcode_report' => $barcodeReport,
+                'NameBarcode_report' => $barcodeReport,
             ],
             'message' => 'Laporan penjualan',
             'buyer' => $saleDocument
