@@ -139,11 +139,11 @@ class SaleDocumentController extends Controller
         }
 
         $categoryReport = $this->generateCategoryReport($saleDocument);
-        // $barcodeReport = $this->generateBarcodeReport($saleDocument);
+        $barcodeReport = $this->generateBarcodeReport($saleDocument);
 
         return response()->json([
             'data' => [
-                'category_report' => $categoryReport
+                'category_report' => $categoryReport,
                 'NameBarcode_report' => $barcodeReport,
             ],
             'message' => 'Laporan penjualan',
