@@ -125,12 +125,11 @@ class SaleDocumentController extends Controller
         return $resource->response();
     }
 
-
-
     public function combinedReport(Request $request)
     {
         $codeDocument = $request->input('code_document_sale');
         $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
+
 
         if (!$saleDocument) {
             return response()->json([
@@ -157,12 +156,16 @@ class SaleDocumentController extends Controller
         $products = collect();
 
         foreach ($saleDocument->sales as $sale) {
-            $products = $products->merge(
-                New_product::where('new_name_product', $sale->product_name_sale)
-                    ->where('new_status_product', 'sale')
-                    ->get()
-            );
+            $product = New_product::where('new_name_product', $sale->product_name_sale)
+                ->where('new_status_product', 'sale')
+                ->first();
+        
+            if ($product) {
+                $product->new_quantity_product = $sale->product_qty_sale;
+                $products->push($product);
+            }
         }
+                
 
         if ($products->count() > 0) {
             $result = $products->groupBy('new_category_product')
@@ -174,13 +177,14 @@ class SaleDocumentController extends Controller
                             return $item->new_quantity_product * $item->new_price_product;
                         }),
                     ];
-                })->values(); // Mengubah associative array ke indexed array
+                })->values();
 
             return $result;
         } else {
             return null;
         }
     }
+
 
 
     private function generateBarcodeReport($saleDocument)
