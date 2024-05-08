@@ -139,12 +139,12 @@ class SaleDocumentController extends Controller
         }
 
         $categoryReport = $this->generateCategoryReport($saleDocument);
-        $barcodeReport = $this->generateBarcodeReport($saleDocument);
+        // $barcodeReport = $this->generateBarcodeReport($saleDocument);
 
         return response()->json([
             'data' => [
-                'category_report' => $categoryReport,
-                'NameBarcode_report' => $barcodeReport,
+                'category_report' => $categoryReport
+                // 'NameBarcode_report' => $barcodeReport,
             ],
             'message' => 'Laporan penjualan',
             'buyer' => $saleDocument
@@ -185,8 +185,6 @@ class SaleDocumentController extends Controller
         }
     }
 
-
-
     private function generateBarcodeReport($saleDocument)
     {
         $report = [];
@@ -201,10 +199,10 @@ class SaleDocumentController extends Controller
             $subtotalPrice = $productPrice * $productQty;
 
             $report[] = [
-                'Barang ' . ($index + 1),
-                'Nama Produk: ' . $productName,
-                'Barcode: ' . $productBarcode,
-                'Total Harga: ' . $subtotalPrice,
+                $index + 1,
+               $productName,
+               $productBarcode,
+               $subtotalPrice,
             ];
 
             $totalPrice += $subtotalPrice;
