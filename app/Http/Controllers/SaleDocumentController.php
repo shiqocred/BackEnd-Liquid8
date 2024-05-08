@@ -184,7 +184,7 @@ class SaleDocumentController extends Controller
                 })->values()->all();
 
             // Insert Total Harga to the first element of the category report
-            array_unshift($categoryReport, ['Total Harga' => $totalPrice]);
+            array_unshift($categoryReport, ['total_harga' => $totalPrice]);
         }
 
         return $categoryReport;
