@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
-use App\Models\Bundle;
-use App\Models\Buyer;
-use App\Models\New_product;
 use App\Models\Sale;
+use App\Models\Buyer;
+use App\Models\Bundle;
+use App\Models\New_product;
 use App\Models\SaleDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 
 class SaleController extends Controller
@@ -59,6 +60,16 @@ class SaleController extends Controller
         if ($validator->fails()) {
             $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
             return $resource->response()->setStatusCode(422);
+        }
+
+        try {
+            $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->first();
+            if ($productSale) {
+                $resource = new ResponseResource(false, "Data sudah dimasukkan", $productSale);
+                return $resource->setStatusCode(409);
+            }
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "data sudah dimasukkan!", $e->getMessage());
         }
 
         try {
@@ -141,7 +152,7 @@ class SaleController extends Controller
      */
     public function update(Request $request, Sale $sale)
     {
-        //
+        
     }
 
     /**
@@ -196,5 +207,35 @@ class SaleController extends Controller
         }
         $resource = new ResponseResource(true, "list data product", $products);
         return $resource->response();
+    }
+
+    public function updatePriceSale(Request $request, Sale $sale){
+      
+        $validator = Validator::make($request->all(), [
+            'product_price_sale' => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+
+        try{
+            DB::beginTransaction();
+            // $product = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
+            // $product->new_price_product = $request->input('product_price_sale');
+            // $product->save();
+            $sale->product_price_sale = $request->input('product_price_sale');
+            $sale->save();
+            DB::commit();
+            return new ResponseResource(true, "data berhasil di update", $sale);
+        }catch(\Exception $e){
+            DB::rollBack();
+
+            return (new ResponseResource(false, "Data gagal ditambahkan", $e->getMessage()))
+            ->setStatusCode(500);
+            
+        }
+
     }
 }
