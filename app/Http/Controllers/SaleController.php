@@ -48,6 +48,7 @@ class SaleController extends Controller
      */
     public function store(Request $request)
     {
+        DB::beginTransaction();
         $userId = auth()->id();
         $validator = Validator::make(
             $request->all(),
@@ -62,15 +63,17 @@ class SaleController extends Controller
             return $resource->response()->setStatusCode(422);
         }
 
-        try {
-            $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->first();
-            if ($productSale) {
-                $resource = new ResponseResource(false, "Data sudah dimasukkan", $productSale);
-                return $resource->setStatusCode(409);
-            }
-        } catch (\Exception $e) {
-            return new ResponseResource(false, "data sudah dimasukkan!", $e->getMessage());
-        }
+        // try {
+        //     $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->first();
+        //     // 
+
+        //     if ($productSale) {
+        //         $resource = new ResponseResource(false, "Data sudah dimasukkan", $productSale);
+        //         return $resource->setStatusCode(409);
+        //     }
+        // } catch (\Exception $e) {
+        //     return new ResponseResource(false, "data sudah dimasukkan!", $e->getMessage());
+        // }
 
         try {
             $buyer = Buyer::find($request->buyer_id);
@@ -118,6 +121,14 @@ class SaleController extends Controller
                 $saleDocument = $createSaleDocument->getData()->data->resource;
             }
 
+            try {
+                $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->where('status_sale', 'proses')->first();
+                if ($productSale == true) {
+                    return new ResponseResource(false, "data sudah dimasukkan!", $productSale);
+                }
+            } catch (\Exception $e) {
+                return new ResponseResource(false, "data sudah dimasukkan!", $e->getMessage());
+            }
             $sale = Sale::create(
                 [
                     'user_id' => auth()->id(),
@@ -129,10 +140,12 @@ class SaleController extends Controller
                     'status_sale' => 'proses'
                 ]
             );
+            DB::commit();
 
             $resource = new ResponseResource(true, "data berhasil di tambahkan!", $sale);
         } catch (\Exception $e) {
             $resource = new ResponseResource(false, "data gagal di tambahkan!", $e->getMessage());
+            DB::rollBack();
         }
 
         return $resource->response();
@@ -152,7 +165,6 @@ class SaleController extends Controller
      */
     public function update(Request $request, Sale $sale)
     {
-        
     }
 
     /**
@@ -209,8 +221,11 @@ class SaleController extends Controller
         return $resource->response();
     }
 
-    public function updatePriceSale(Request $request, Sale $sale){
-      
+    public function updatePriceSale(Request $request, Sale $sale)
+    {
+
+
+
         $validator = Validator::make($request->all(), [
             'product_price_sale' => 'required|numeric'
         ]);
@@ -220,22 +235,24 @@ class SaleController extends Controller
             return $resource->response()->setStatusCode(422);
         }
 
-        try{
+        try {
             DB::beginTransaction();
             // $product = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
             // $product->new_price_product = $request->input('product_price_sale');
             // $product->save();
-            $sale->product_price_sale = $request->input('product_price_sale');
+            $persentage_diskon = $request->input('product_price_sale');
+            $current_price = $sale->product_price_sale;
+            $diskon = $current_price * ($persentage_diskon / 100);
+            $sale->product_price_sale = $diskon;
             $sale->save();
+
             DB::commit();
             return new ResponseResource(true, "data berhasil di update", $sale);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
 
             return (new ResponseResource(false, "Data gagal ditambahkan", $e->getMessage()))
-            ->setStatusCode(500);
-            
+                ->setStatusCode(500);
         }
-
     }
 }
