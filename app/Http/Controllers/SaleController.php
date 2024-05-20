@@ -242,7 +242,7 @@ class SaleController extends Controller
             // $product->save();
             $persentage_diskon = $request->input('product_price_sale');
             $current_price = $sale->product_price_sale;
-            $diskon = $current_price * ($persentage_diskon / 100);
+            $diskon = $current_price-($current_price * ($persentage_diskon / 100));
             $sale->product_price_sale = $diskon;
             $sale->save();
 
