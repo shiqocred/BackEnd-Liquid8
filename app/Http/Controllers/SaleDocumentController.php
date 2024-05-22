@@ -125,12 +125,11 @@ class SaleDocumentController extends Controller
         return $resource->response();
     }
 
-
-
     public function combinedReport(Request $request)
     {
         $codeDocument = $request->input('code_document_sale');
         $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
+
 
         if (!$saleDocument) {
             return response()->json([
@@ -140,12 +139,12 @@ class SaleDocumentController extends Controller
         }
 
         $categoryReport = $this->generateCategoryReport($saleDocument);
-        $barcodeReport = $this->generateBarcodeReport($saleDocument);
+        // $barcodeReport = $this->generateBarcodeReport($saleDocument);
 
         return response()->json([
             'data' => [
                 'category_report' => $categoryReport,
-                'NameBarcode_report' => $barcodeReport,
+                // 'NameBarcode_report' => $barcodeReport,
             ],
             'message' => 'Laporan penjualan',
             'buyer' => $saleDocument
@@ -154,33 +153,44 @@ class SaleDocumentController extends Controller
 
     private function generateCategoryReport($saleDocument)
     {
+        $totalPrice = 0;
+        $categoryReport = [];
         $products = collect();
 
         foreach ($saleDocument->sales as $sale) {
-            $products = $products->merge(
-                New_product::where('new_name_product', $sale->product_name_sale)
-                    ->where('new_status_product', 'sale')
-                    ->get()
-            );
+            $product = New_product::where('new_name_product', $sale->product_name_sale)
+                ->where('new_status_product', 'sale')
+                ->first();
+
+            if ($product) {
+                $product->new_quantity_product = $sale->product_qty_sale;
+                $products->push($product);
+            }
         }
 
         if ($products->count() > 0) {
-            $result = $products->groupBy('new_category_product')
-                ->map(function ($group) {
+            $categoryReport = $products->groupBy('new_category_product')
+                ->map(function ($group) use (&$totalPrice) {
+                    $totalPricePerCategory = $group->sum(function ($item) {
+                        return $item->new_quantity_product * $item->new_price_product;
+                    });
+                    $totalPrice += $totalPricePerCategory;
+
                     return [
                         'category' => $group->first()->new_category_product,
                         'total_quantity' => $group->sum('new_quantity_product'),
-                        'total_price' => $group->sum(function ($item) {
-                            return $item->new_quantity_product * $item->new_price_product;
-                        }),
+                        'total_price' => $totalPricePerCategory,
                     ];
-                })->values(); // Mengubah associative array ke indexed array
+                })->values()->all();
 
-            return $result;
-        } else {
-            return null;
+            // Insert Total Harga to the first element of the category report
+            // array_unshift($categoryReport, ['total_harga' => $totalPrice]);
+
         }
+
+        return ["category_list" => $categoryReport, 'total_harga' => $totalPrice];
     }
+
 
 
     private function generateBarcodeReport($saleDocument)
@@ -197,10 +207,10 @@ class SaleDocumentController extends Controller
             $subtotalPrice = $productPrice * $productQty;
 
             $report[] = [
-                'Barang ' . ($index + 1),
-                'Nama Produk: ' . $productName,
-                'Barcode: ' . $productBarcode,
-                'Total Harga: ' . $subtotalPrice,
+                $index + 1,
+                $productName,
+                $productBarcode,
+                $subtotalPrice,
             ];
 
             $totalPrice += $subtotalPrice;

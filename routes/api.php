@@ -104,6 +104,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 
    //sale
    Route::resource('sales', SaleController::class);
+   Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
    Route::resource('sale-documents', SaleDocumentController::class);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
@@ -226,7 +227,6 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
-
 
    //palet filter
    Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
