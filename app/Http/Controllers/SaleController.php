@@ -74,12 +74,14 @@ class SaleController extends Controller
             if ($newProduct != null) {
                 $data = [
                     $newProduct->new_name_product,
+                    $newProduct->new_category_product,
                     $newProduct->new_barcode_product,
                     $newProduct->new_price_product
                 ];
             } else if ($bundle != null) {
                 $data = [
                     $bundle->name_bundle,
+                    $bundle->category,
                     $bundle->barcode_bundle,
                     $bundle->total_price_custom_bundle
                 ];
@@ -112,8 +114,9 @@ class SaleController extends Controller
                     'user_id' => auth()->id(),
                     'code_document_sale' => $saleDocument->code_document_sale,
                     'product_name_sale' => $data[0],
-                    'product_barcode_sale' => $data[1],
-                    'product_price_sale' => $data[2],
+                    'product_category_sale' => $data[1],
+                    'product_barcode_sale' => $data[2],
+                    'product_price_sale' => $data[3],
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses'
                 ]
