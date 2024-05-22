@@ -50,7 +50,7 @@ class SaleController extends Controller
     {
         DB::beginTransaction();
         $userId = auth()->id();
-    
+
         $validator = Validator::make(
             $request->all(),
             [
@@ -58,11 +58,11 @@ class SaleController extends Controller
                 'buyer_id' => 'required|numeric'
             ]
         );
-    
+
         if ($validator->fails()) {
             return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
         }
-    
+
         try {
             $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->where('status_sale', 'proses')->first();
             if ($productSale) {
@@ -71,35 +71,37 @@ class SaleController extends Controller
                     return new ResponseResource(false, "Data sudah dimasukkan!", $productSale);
                 }
             }
-    
+
             // Cari data buyer
             $buyer = Buyer::find($request->buyer_id);
             if (!$buyer) {
                 return (new ResponseResource(false, "Data Buyer tidak ditemukan!", []))->response()->setStatusCode(404);
             }
-    
+
             // Cari product atau bundle berdasarkan barcode
             $newProduct = New_product::where('new_barcode_product', $request->sale_barcode)->first();
             $bundle = Bundle::where('barcode_bundle', $request->sale_barcode)->first();
-    
+
             if ($newProduct) {
                 $data = [
                     $newProduct->new_name_product,
+                    $newProduct->new_category_product,
                     $newProduct->new_barcode_product,
                     $newProduct->new_price_product
                 ];
             } elseif ($bundle) {
                 $data = [
                     $bundle->name_bundle,
+                    $bundle->category,
                     $bundle->barcode_bundle,
                     $bundle->total_price_custom_bundle
                 ];
             } else {
                 return (new ResponseResource(false, "Barcode tidak ditemukan!", []))->response()->setStatusCode(404);
             }
-    
+
             $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
-    
+
             if (!$saleDocument) {
                 $saleDocumentRequest = [
                     'code_document_sale' => codeDocumentSale($userId),
@@ -111,32 +113,34 @@ class SaleController extends Controller
                     'total_product_document_sale' => 0,
                     'status_document_sale' => 'proses',
                 ];
-    
+
                 $createSaleDocument = (new SaleDocumentController)->store(new Request($saleDocumentRequest));
                 if ($createSaleDocument->getStatusCode() != 201) {
                     return $createSaleDocument;
                 }
                 $saleDocument = $createSaleDocument->getData()->data->resource;
             }
-    
-            $sale = Sale::create([
-                'user_id' => $userId,
-                'code_document_sale' => $saleDocument->code_document_sale,
-                'product_name_sale' => $data[0],
-                'product_barcode_sale' => $data[1],
-                'product_price_sale' => $data[2],
-                'product_qty_sale' => 1,
-                'status_sale' => 'proses'
-            ]);
-    
-            DB::commit();
-            return (new ResponseResource(true, "Data berhasil ditambahkan!", $sale))->response();
+
+            $sale = Sale::create(
+                [
+                    'user_id' => auth()->id(),
+                    'code_document_sale' => $saleDocument->code_document_sale,
+                    'product_name_sale' => $data[0],
+                    'product_category_sale' => $data[1],
+                    'product_barcode_sale' => $data[2],
+                    'product_price_sale' => $data[3],
+                    'product_qty_sale' => 1,
+                    'status_sale' => 'proses'
+                ]
+            );
+
+            $resource = new ResponseResource(true, "data berhasil di tambahkan!", $sale);
         } catch (\Exception $e) {
             DB::rollBack();
             return (new ResponseResource(false, "Data gagal ditambahkan!", $e->getMessage()))->response()->setStatusCode(500);
         }
     }
-    
+
 
     /**
      * Display the specified resource.
@@ -229,7 +233,7 @@ class SaleController extends Controller
             // $product->save();
             $persentage_diskon = $request->input('product_price_sale');
             $current_price = $sale->product_price_sale;
-            $diskon = $current_price-($current_price * ($persentage_diskon / 100));
+            $diskon = $current_price - ($current_price * ($persentage_diskon / 100));
             $sale->product_price_sale = $diskon;
             $sale->save();
 
