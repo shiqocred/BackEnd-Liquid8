@@ -157,11 +157,13 @@ class SaleDocumentController extends Controller
         $categoryReport = [];
         $products = collect();
 
+
+
         foreach ($saleDocument->sales as $sale) {
             $product = New_product::where('new_name_product', $sale->product_name_sale)
-                ->where('new_status_product', 'sale')
+                ->where('new_status_product', 'sale')->where('new_barcode_product', $sale->product_barcode_sale)
                 ->first();
-
+            
             if ($product) {
                 $product->new_quantity_product = $sale->product_qty_sale;
                 $products->push($product);
@@ -183,8 +185,7 @@ class SaleDocumentController extends Controller
                     ];
                 })->values()->all();
 
-            // Insert Total Harga to the first element of the category report
-            // array_unshift($categoryReport, ['total_harga' => $totalPrice]);
+
 
         }
 
