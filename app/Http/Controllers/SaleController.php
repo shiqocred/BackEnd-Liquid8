@@ -134,7 +134,8 @@ class SaleController extends Controller
                 ]
             );
 
-            $resource = new ResponseResource(true, "data berhasil di tambahkan!", $sale);
+            DB::commit();
+            return new ResponseResource(true, "data berhasil di tambahkan!", $sale);
         } catch (\Exception $e) {
             DB::rollBack();
             return (new ResponseResource(false, "Data gagal ditambahkan!", $e->getMessage()))->response()->setStatusCode(500);
