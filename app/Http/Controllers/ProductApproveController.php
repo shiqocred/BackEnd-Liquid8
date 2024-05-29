@@ -145,6 +145,10 @@ class ProductApproveController extends Controller
             'new_tag_product'
         ]);
 
+        if($inputData['old_price_product'] < 100000) {
+            $inputData['new_barcode_product'] = $inputData['old_barcode_product'];
+        }
+
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
         $inputData['new_quality'] = json_encode($qualityData);
 
