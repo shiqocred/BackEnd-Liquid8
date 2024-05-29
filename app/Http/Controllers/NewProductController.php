@@ -245,7 +245,7 @@ class NewProductController extends Controller
         $indonesiaTime = Carbon::now('Asia/Jakarta');
         $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
 
-
+       
         if ($inputData['old_price_product'] > 100000) {
             $inputData['new_tag_product'] = null;
         }
@@ -266,6 +266,11 @@ class NewProductController extends Controller
         }
 
         $inputData['new_quality'] = json_encode($qualityData);
+
+        if($new_product->new_category_product != null){
+            $inputData['new_barcode_product'] = $new_product->new_barcode_product;
+        }
+
 
         $new_product->update($inputData);
 
