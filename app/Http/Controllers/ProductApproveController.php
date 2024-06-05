@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
 
@@ -73,7 +74,7 @@ class ProductApproveController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
-            'old_barcode_product' => 'required|unique:new_products,old_barcode_product|exists:product_olds,old_barcode_product',
+            'old_barcode_product' => 'required',
             'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
@@ -86,7 +87,6 @@ class ProductApproveController extends Controller
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.unique' => 'product sudah di scan',
             'old_barcode_product.exists' => 'barcode tidak ada '
 
         ]);
@@ -105,8 +105,18 @@ class ProductApproveController extends Controller
             $qualityData = $this->prepareQualityData($status, $description);
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
+            $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
 
-            $newProduct = ProductApprove::create($inputData);
+            if ($oldBarcode) {
+                return response()->json([
+                    'needConfirmation' => true,
+                    'message' => 'Product dengan barcode ini sudah ada. Apakah Anda yakin ingin melanjutkan?',
+                    'inputData' => $inputData
+                ]);
+            } else{
+                $newProduct = ProductApprove::create($inputData);
+            }
+
 
             $this->updateDocumentStatus($request->input('code_document'));
 

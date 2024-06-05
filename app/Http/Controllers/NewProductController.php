@@ -74,7 +74,7 @@ class NewProductController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
-            'old_barcode_product' => 'required|unique:new_products,old_barcode_product|exists:product_olds,old_barcode_product',
+            'old_barcode_product' => 'required',
             'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
@@ -87,8 +87,6 @@ class NewProductController extends Controller
             'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.unique' => 'product sudah di scan',
-            'old_barcode_product.exists' => 'barcode tidak ada '
 
         ]);
 
@@ -107,7 +105,15 @@ class NewProductController extends Controller
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
 
+
             $newProduct = New_product::create($inputData);
+
+
+            $this->updateDocumentStatus($request->input('code_document'));
+
+            $this->deleteOldProduct($request->input('old_barcode_product'));
+
+            DB::commit();
 
             $this->updateDocumentStatus($request->input('code_document'));
 
@@ -245,7 +251,7 @@ class NewProductController extends Controller
         $indonesiaTime = Carbon::now('Asia/Jakarta');
         $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
 
-       
+
         if ($inputData['old_price_product'] > 100000) {
             $inputData['new_tag_product'] = null;
         }
@@ -267,7 +273,7 @@ class NewProductController extends Controller
 
         $inputData['new_quality'] = json_encode($qualityData);
 
-        if($new_product->new_category_product != null){
+        if ($new_product->new_category_product != null) {
             $inputData['new_barcode_product'] = $new_product->new_barcode_product;
         }
 
@@ -342,7 +348,7 @@ class NewProductController extends Controller
                     ->orWhere('old_barcode_product', 'LIKE', '%' . $query  . '%')
                     ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
             })->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL")
-            ->paginate(50);
+                ->paginate(50);
 
             foreach ($productExpDisplay as &$product) {
                 if ($product['new_tag_product'] !== null) {
@@ -625,7 +631,7 @@ class NewProductController extends Controller
             $quality['lolos'] = 'lolos';
             $inputData['new_quality'] = json_encode($quality);
 
-            if($inputData['new_price_product'] > 100000){
+            if ($inputData['new_price_product'] > 100000) {
                 $inputData['new_category_product'] = null;
             }
 
@@ -850,37 +856,37 @@ class NewProductController extends Controller
     public function exportDumpToExcel(Request $request, $id)
     {
         set_time_limit(300);
-    
+
         $bundleQcds = BundleQcd::find($id)->load(['product_qcds']);
-    
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-    
+
         $headers = [
             'Name bundle', 'total_price_bundle', 'total price custom bundle', 'total product bundle', 'barcode_bundle',
         ];
-    
+
         $headers2 = [
             'Name', 'New Price', 'Old Price', 'Qty', 'Category', 'Harga Tag Warna', 'New Barcode'
         ];
-    
+
         $columnIndex = 1;
         foreach ($headers as $header) {
             $sheet->setCellValueByColumnAndRow($columnIndex++, 1, $header);
         }
-    
+
         $currentRow = 2;
         $sheet->setCellValueByColumnAndRow(1, $currentRow, $bundleQcds->name_bundle);
         $sheet->setCellValueByColumnAndRow(2, $currentRow, $bundleQcds->total_price_bundle);
         $sheet->setCellValueByColumnAndRow(3, $currentRow, $bundleQcds->total_price_custom_bundle);
         $sheet->setCellValueByColumnAndRow(4, $currentRow, $bundleQcds->total_product_bundle);
         $sheet->setCellValueByColumnAndRow(5, $currentRow, $bundleQcds->barcode_bundle);
-    
+
         $currentRow++;
-    
+
         // Menambahkan baris kosong antara data headers dan headers2
         $currentRow++;
-    
+
         $columnIndex = 1;
         foreach ($headers2 as $header) {
             $sheet->setCellValueByColumnAndRow($columnIndex++, $currentRow, $header);
@@ -895,24 +901,24 @@ class NewProductController extends Controller
             $sheet->setCellValueByColumnAndRow(6, $currentRow, $product->new_tag_product);
             $sheet->setCellValueByColumnAndRow(7, $currentRow, $product->new_barcode_product);
         }
-    
+
         $fileName = "bundleQcd.xlsx";
-    
+
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
-    
+
         if (!file_exists(public_path($publicPath))) {
             mkdir(public_path($publicPath), 0777, true);
         }
-    
+
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
-    
+
         $downloadUrl = url($publicPath . '/' . $fileName);
-    
+
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
     }
-    
+
 
     public function getLatestPrice(Request $request)
     {
@@ -984,8 +990,8 @@ class NewProductController extends Controller
                 $inputData['new_category_product'] = null;
             }
 
-        
-        $newProduct = New_product::create($inputData);
+
+            $newProduct = New_product::create($inputData);
 
             // $this->deleteOldProduct($request->input('old_barcode_product'));
 
@@ -1011,17 +1017,17 @@ class NewProductController extends Controller
         }
     }
 
-    public function totalPerColor(Request $request) {
+    public function totalPerColor(Request $request)
+    {
 
         $new_product = New_product::whereNotNull('new_tag_product')->whereNot('new_status_product', 'migrate')->pluck('new_tag_product');
         $countByColor = $new_product->countBy(function ($item) {
             return $item;
         });
 
-        if(count($countByColor) < 1) {
+        if (count($countByColor) < 1) {
             return new ResponseResource(false, "tidak ada data data color", null);
         }
         return new ResponseResource(true, "list data product by color", $countByColor);
     }
-    
 }
