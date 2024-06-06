@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Http\Resources\ProductapproveResource;
 use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
@@ -108,11 +109,13 @@ class ProductApproveController extends Controller
             $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
 
             if ($oldBarcode) {
-                return response()->json([
-                    'needConfirmation' => true,
-                    'message' => 'Product dengan barcode ini sudah ada. Apakah Anda yakin ingin melanjutkan?',
-                    'inputData' => $inputData
-                ]);
+                // return response()->json([
+                //     'needConfirmation' => true,
+                //     'message' => 'Product dengan barcode ini sudah ada. Apakah Anda yakin ingin melanjutkan?',
+                //     'inputData' => $inputData
+                // ]);
+                return new ProductapproveResource(true, false, "The old barcode already exists", $inputData);
+
             } else{
                 $newProduct = ProductApprove::create($inputData);
             }
@@ -124,7 +127,7 @@ class ProductApproveController extends Controller
 
             DB::commit();
 
-            return new ResponseResource(true, "New Produk Berhasil ditambah", $newProduct);
+            return new ProductapproveResource(false, true, "New Produk Berhasil ditambah", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
