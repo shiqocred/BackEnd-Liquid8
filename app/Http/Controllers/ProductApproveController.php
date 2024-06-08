@@ -73,33 +73,32 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'code_document' => 'required',
-            'old_barcode_product' => 'required',
-            'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
-            'new_name_product' => 'required',
-            'new_quantity_product' => 'required|integer',
-            'new_price_product' => 'required|numeric',
-            'old_price_product' => 'required|numeric',
-            // 'new_date_in_product' => 'required|date',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
-            'condition' => 'required|in:lolos,damaged,abnormal',
-            'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
-        ],  [
-            'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.exists' => 'barcode tidak ada '
+        // Cek jika request berisi 'needConfirmation' dan 'needConfirmation' bernilai true
+        if ($request->input('needConfirmation') === true) {
+            $inputData = $request->input('resource');
+        } else {
+            $validator = Validator::make($request->all(), [
+                'code_document' => 'required',
+                'old_barcode_product' => 'required',
+                'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
+                'new_name_product' => 'required',
+                'new_quantity_product' => 'required|integer',
+                'new_price_product' => 'required|numeric',
+                'old_price_product' => 'required|numeric',
+                // 'new_date_in_product' => 'required|date',
+                'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+                'condition' => 'required|in:lolos,damaged,abnormal',
+                'new_category_product' => 'nullable|exists:categories,name_category',
+                'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            ], [
+                'new_barcode_product.unique' => 'barcode sudah ada',
+                'old_barcode_product.exists' => 'barcode tidak ada'
+            ]);
 
-        ]);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        DB::beginTransaction();
-
-        try {
-            // Logika untuk memproses data
             $status = $request->input('condition');
             $description = $request->input('deskripsi', '');
 
@@ -109,17 +108,16 @@ class ProductApproveController extends Controller
             $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
 
             if ($oldBarcode) {
-                // return response()->json([
-                //     'needConfirmation' => true,
-                //     'message' => 'Product dengan barcode ini sudah ada. Apakah Anda yakin ingin melanjutkan?',
-                //     'inputData' => $inputData
-                // ]);
-                return new ProductapproveResource(true, false, "The old barcode already exists", $inputData);
+                return new ProductapproveResource(false, true, false, "The old barcode already exists", $inputData);
+            }
+        }
 
-            } else{
+        DB::beginTransaction();
+
+        try {
+            if (!isset($newProduct)) {
                 $newProduct = ProductApprove::create($inputData);
             }
-
 
             $this->updateDocumentStatus($request->input('code_document'));
 
@@ -127,7 +125,7 @@ class ProductApproveController extends Controller
 
             DB::commit();
 
-            return new ProductapproveResource(false, true, "New Produk Berhasil ditambah", $newProduct);
+            return new ProductapproveResource(false, false, true, "New Produk Berhasil ditambah", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -158,7 +156,7 @@ class ProductApproveController extends Controller
             'new_tag_product'
         ]);
 
-        if($inputData['old_price_product'] < 100000) {
+        if ($inputData['old_price_product'] < 100000) {
             $inputData['new_barcode_product'] = $inputData['old_barcode_product'];
         }
 
@@ -191,16 +189,7 @@ class ProductApproveController extends Controller
             return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
         }
     }
-    private function deleteOldProduct22($old_barcode_product)
-    {
-        $affectedRows = DB::table('product_olds')->where('old_barcode_product', $old_barcode_product)->delete();
 
-        if ($affectedRows > 0) {
-            return true;
-        } else {
-            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
-        }
-    }
 
     /**
      * Display the specified resource.
@@ -293,15 +282,15 @@ class ProductApproveController extends Controller
             'old_name_product' => $productApprove->new_name_product,
             'old_quantity_product' => $productApprove->new_quantity_product,
             'old_price_product' => $productApprove->old_price_product,
-          
+
             // Tambahkan kolom lainnya sesuai kebutuhan
         ]);
-    
+
         $newProduct->save(); // Simpan data baru ke New_product
-    
+
         // Hapus data dari ProductApprove setelah data baru tersimpan
         $productApprove->delete();
-    
+
         return new ResponseResource(true, "Data berhasil dihapus dan ditambahkan ke New_product", $newProduct);
     }
 
