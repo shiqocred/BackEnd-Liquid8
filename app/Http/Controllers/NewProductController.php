@@ -72,7 +72,7 @@ class NewProductController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [ 
             'code_document' => 'required',
             'old_barcode_product' => 'required',
             'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
