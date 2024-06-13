@@ -73,9 +73,12 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        // Cek jika request berisi 'needConfirmation' dan 'needConfirmation' bernilai true
-        if ($request->input('needConfirmation') === true) {
-            $inputData = $request->input('resource');
+        // dd($request['data.resource']);
+        if ($request['data.isMultiple'] === true) {
+            $inputData = $request['data.resource'];
+            $newProduct = ProductApprove::create($inputData);
+            return new ProductapproveResource(true, true, true, "New Produk Berhasil ditambah", $newProduct);
+
         } else {
             $validator = Validator::make($request->all(), [
                 'code_document' => 'required',
@@ -100,6 +103,7 @@ class ProductApproveController extends Controller
             }
 
             $status = $request->input('condition');
+            // dd($status);
             $description = $request->input('deskripsi', '');
 
             $qualityData = $this->prepareQualityData($status, $description);
@@ -153,7 +157,9 @@ class ProductApproveController extends Controller
             'old_price_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product'
+            'new_tag_product',
+            'condition',
+            'deskripsi'
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
