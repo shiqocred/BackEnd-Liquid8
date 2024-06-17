@@ -105,6 +105,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
    //sale
    Route::resource('sales', SaleController::class);
    Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
+   Route::put('/update_price_sales/{sale}', [SaleController::class, 'livePriceUpdates']);
    Route::resource('sale-documents', SaleDocumentController::class);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);

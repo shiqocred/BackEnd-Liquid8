@@ -73,11 +73,10 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        // dd($request['data.resource']);
-        if ($request['data.isMultiple'] === true) {
+        if ($request['data.needConfirmation'] === true) {
             $inputData = $request['data.resource'];
             $newProduct = ProductApprove::create($inputData);
-            return new ProductapproveResource(true, true, true, "New Produk Berhasil ditambah", $newProduct);
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
 
         } else {
             $validator = Validator::make($request->all(), [
@@ -103,7 +102,6 @@ class ProductApproveController extends Controller
             }
 
             $status = $request->input('condition');
-            // dd($status);
             $description = $request->input('deskripsi', '');
 
             $qualityData = $this->prepareQualityData($status, $description);
@@ -112,7 +110,7 @@ class ProductApproveController extends Controller
             $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
 
             if ($oldBarcode) {
-                return new ProductapproveResource(false, true, false, "The old barcode already exists", $inputData);
+                return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
             }
         }
 
@@ -129,7 +127,7 @@ class ProductApproveController extends Controller
 
             DB::commit();
 
-            return new ProductapproveResource(false, false, true, "New Produk Berhasil ditambah", $newProduct);
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);

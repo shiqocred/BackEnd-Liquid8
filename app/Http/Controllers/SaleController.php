@@ -64,21 +64,25 @@ class SaleController extends Controller
         }
 
         try {
-            $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->where('status_sale', 'proses')->first();
+            // $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->where('status_sale', 'proses')->first();
+            // if ($productSale) {
+            //     $saleDocumentCheck = SaleDocument::where('code_document_sale', $productSale->code_document_sale)->first();
+            //     if ($saleDocumentCheck && $saleDocumentCheck->buyer_id_document_sale == $request->input('buyer_id')) {
+            //         return new ResponseResource(false, "Data sudah dimasukkan!", $productSale);
+            //     }
+            // }
+
+            $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->first();
             if ($productSale) {
-                $saleDocumentCheck = SaleDocument::where('code_document_sale', $productSale->code_document_sale)->first();
-                if ($saleDocumentCheck && $saleDocumentCheck->buyer_id_document_sale == $request->input('buyer_id')) {
-                    return new ResponseResource(false, "Data sudah dimasukkan!", $productSale);
-                }
+                $resource = new ResponseResource(false, "Data sudah dimasukkan!", $productSale);
+                return $resource->response()->setStatusCode(422);
             }
 
-            // Cari data buyer
             $buyer = Buyer::find($request->buyer_id);
             if (!$buyer) {
                 return (new ResponseResource(false, "Data Buyer tidak ditemukan!", []))->response()->setStatusCode(404);
             }
 
-            // Cari product atau bundle berdasarkan barcode
             $newProduct = New_product::where('new_barcode_product', $request->sale_barcode)->first();
             $bundle = Bundle::where('barcode_bundle', $request->sale_barcode)->first();
 
@@ -152,6 +156,8 @@ class SaleController extends Controller
         return $resource->response();
     }
 
+
+
     /**
      * Update the specified resource in storage.
      */
@@ -187,36 +193,47 @@ class SaleController extends Controller
 
     public function products()
     {
-        if (request()->has('q')) {
-            $searchQuery = request()->q;
-            $products = New_product::whereJsonContains('new_quality', ['damaged' => null])
-                ->whereJsonContains('new_quality', ['abnormal' => null])
-                ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
-                ->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
-                ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
-                ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%')
-                ->union(Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date')
-                    ->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('category', 'like', '%' . $searchQuery . '%'))
-                ->orderBy('created_date', 'desc')
-                ->paginate(10);
-        } else {
-            $products = New_product::whereJsonContains('new_quality', ['damaged' => null])
-                ->whereJsonContains('new_quality', ['abnormal' => null])
-                ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date')
-                ->union(Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date'))
-                ->orderBy('created_date', 'desc')
-                ->paginate(10);
+        $productSaleBarcodes = Sale::where('status_sale', 'proses')->pluck('product_barcode_sale')->toArray();
+
+        $searchQuery = request()->has('q') ? request()->q : null;
+
+        $newProductsQuery = New_product::whereNotIn('new_barcode_product', $productSaleBarcodes)
+            ->whereJsonContains('new_quality', ['damaged' => null])
+            ->whereJsonContains('new_quality', ['abnormal' => null])
+            ->whereNotNull('new_category_product')
+            ->where('new_status_product', '!=', 'sale')
+            ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date');
+
+        if ($searchQuery) {
+            $newProductsQuery->where(function ($query) use ($searchQuery) {
+                $query->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%');
+            });
         }
+
+        $bundleQuery = Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date');
+
+        if ($searchQuery) {
+            $bundleQuery->where(function ($query) use ($searchQuery) {
+                $query->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('category', 'like', '%' . $searchQuery . '%');
+            });
+        }
+
+        $products = $newProductsQuery->union($bundleQuery)
+            ->orderBy('created_date', 'desc')
+            ->paginate(10);
+
         $resource = new ResponseResource(true, "list data product", $products);
         return $resource->response();
     }
 
+
+
     public function updatePriceSale(Request $request, Sale $sale)
     {
-
-
 
         $validator = Validator::make($request->all(), [
             'product_price_sale' => 'required|numeric'
@@ -246,5 +263,20 @@ class SaleController extends Controller
             return (new ResponseResource(false, "Data gagal ditambahkan", $e->getMessage()))
                 ->setStatusCode(500);
         }
+    }
+
+    public function livePriceUpdates(Request $request, Sale $sale)
+    {
+        $validator = Validator::make($request->all(), [
+            'update_price_sale' => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+        $sale->product_price_sale = $request->input('update_price_sale');
+        $sale->save();
+        return new ResponseResource(true, "data berhasil di update", $sale);
     }
 }

@@ -7,11 +7,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class     ProductapproveResource extends JsonResource
 {
-    protected $status, $message, $needConfirmation, $isMultiple;
+    protected $status, $message, $needConfirmation;
 
-    public function __construct($isMultiple, $needConfirmation, $status, $message, $resource)
+    public function __construct($needConfirmation, $status, $message, $resource)
     {
-        $this->isMultiple = $isMultiple;
         $this->needConfirmation = $needConfirmation;
         $this->status = $status;
         $this->message = $message;
@@ -22,7 +21,6 @@ class     ProductapproveResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            "isMultiple" => $this->isMultiple,
             "needConfirmation" => $this->needConfirmation,
             "status" => $this->status,
             "message" => $this->message,
