@@ -147,9 +147,7 @@ class SaleController extends Controller
     }
 
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(Sale $sale)
     {
         $resource = new ResponseResource(true, "data sale", $sale);
@@ -275,6 +273,7 @@ class SaleController extends Controller
             $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
             return $resource->response()->setStatusCode(422);
         }
+        
         $sale->product_price_sale = $request->input('update_price_sale');
         $sale->save();
         return new ResponseResource(true, "data berhasil di update", $sale);

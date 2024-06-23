@@ -157,6 +157,10 @@ class RiwayatCheckController extends Controller
 
     public function show(RiwayatCheck $history)
     {
+        $getProduct = New_product::where('code_document', $history->code_document)->get();
+        $productCategoryCount = $getProduct->whereNotNull('new_category_product')->count();
+        $productColorCount = $getProduct->whereNotNull('new_tag_product')->count();
+
         $getProductDamaged = New_product::where('code_document', $history->code_document)
             ->where('new_quality->damaged', '!=', null)
             ->select(
@@ -238,6 +242,8 @@ class RiwayatCheckController extends Controller
             'user_id' => $history->user_id,
             'code_document' => $history->code_document,
             'base_document' => $history->base_document,
+            'total_product_category' => $productCategoryCount,
+            'total_product_color' => $productColorCount,
             'total_data' => $history->total_data,
             'total_data_in' => $history->total_data_in,
             'total_data_lolos' => $history->total_data_lolos,
