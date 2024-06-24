@@ -163,7 +163,7 @@ class SaleDocumentController extends Controller
             $product = New_product::where('new_name_product', $sale->product_name_sale)
                 ->where('new_status_product', 'sale')->where('new_barcode_product', $sale->product_barcode_sale)
                 ->first();
-            $category = Category::where('name_category', $sale->product_category_sale)->first();
+            $category = Category::where('name_category', $product->new_category_product)->first();
 
             if ($product) {
                 $product->new_quantity_product = $sale->product_qty_sale;
