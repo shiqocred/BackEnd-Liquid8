@@ -85,18 +85,21 @@ class SaleDocumentController extends Controller
         return $resource->response();
     }
 
-    public function saleFinish()
+    public function saleFinish(Request $request)
     {
         try {
-            $saleDocument = SaleDocument::where('status_document_sale', 'proses')->first();
+            $userId = $request->user()->id; 
+            $saleDocument = SaleDocument::where('status_document_sale', 'proses')
+                                        ->where('user_id', $userId) 
+                                        ->first();
             if ($saleDocument == null) {
-                throw new Exception("data sale belum dibuat!");
+                throw new Exception("Data sale belum dibuat!");
             }
-            $sale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
-
-            foreach ($sale as $val) {
-                $newProduct = New_product::where('new_barcode_product', $val->product_barcode_sale)->first();
-                $bundle = Bundle::where('barcode_bundle', $val->product_barcode_sale)->first();
+            $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
+    
+            foreach ($sales as $sale) {
+                $newProduct = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
+                $bundle = Bundle::where('barcode_bundle', $sale->product_barcode_sale)->first();
                 if (!$newProduct && !$bundle) {
                     return response()->json(['error' => 'Both new product and bundle not found'], 404);
                 } elseif (!$newProduct) {
@@ -107,24 +110,23 @@ class SaleDocumentController extends Controller
                     $newProduct->update(['new_status_product' => 'sale']);
                     $bundle->update(['product_status' => 'sale']);
                 }
-                $val->update(['status_sale' => 'selesai']);
+                $sale->update(['status_sale' => 'selesai']);
             }
-
-            $saleDocument->update(
-                [
-                    'total_product_document_sale' => count($sale),
-                    'total_price_document_sale' => $sale->sum('product_price_sale'),
-                    'status_document_sale' => 'selesai'
-                ]
-            );
-
-            $resource = new ResponseResource(true, "data berhasil di simpan!", $saleDocument);
+    
+            $saleDocument->update([
+                'total_product_document_sale' => count($sales),
+                'total_price_document_sale' => $sales->sum('product_price_sale'),
+                'status_document_sale' => 'selesai'
+            ]);
+    
+            $resource = new ResponseResource(true, "Data berhasil disimpan!", $saleDocument);
         } catch (\Exception $e) {
-            $resource = new ResponseResource(false, "data gagal di simpan!", $e->getMessage());
+            $resource = new ResponseResource(false, "Data gagal disimpan!", $e->getMessage());
         }
-
+    
         return $resource->response();
     }
+    
 
     public function combinedReport(Request $request)
     {
