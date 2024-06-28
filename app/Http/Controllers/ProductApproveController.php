@@ -4,14 +4,15 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\Document;
+use App\Models\New_product;
+use App\Models\Product_old;
 use Illuminate\Http\Request;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
-use App\Http\Resources\ProductapproveResource;
-use App\Models\New_product;
-use App\Models\Product_old;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\ProductapproveResource;
 
 class ProductApproveController extends Controller
 {
@@ -77,7 +78,6 @@ class ProductApproveController extends Controller
             $inputData = $request['data.resource'];
             $newProduct = ProductApprove::create($inputData);
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
-
         } else {
             $validator = Validator::make($request->all(), [
                 'code_document' => 'required',
@@ -145,6 +145,9 @@ class ProductApproveController extends Controller
 
     private function prepareInputData($request, $status, $qualityData)
     {
+        // Log input request data
+        Log::info('Request data: ', $request->all());
+
         $inputData = $request->only([
             'code_document',
             'old_barcode_product',

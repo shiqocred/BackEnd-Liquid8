@@ -196,8 +196,7 @@ class SaleController extends Controller
         $searchQuery = request()->has('q') ? request()->q : null;
 
         $newProductsQuery = New_product::whereNotIn('new_barcode_product', $productSaleBarcodes)
-            ->whereJsonContains('new_quality', ['damaged' => null])
-            ->whereJsonContains('new_quality', ['abnormal' => null])
+            ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
             ->whereNotNull('new_category_product')
             ->where('new_status_product', '!=', 'sale')
             ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date');
