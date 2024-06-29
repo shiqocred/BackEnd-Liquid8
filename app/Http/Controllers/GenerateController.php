@@ -29,30 +29,30 @@ class GenerateController extends Controller
     {
         set_time_limit(300); // Extend max execution time
         ini_set('memory_limit', '512M'); // Increase memory limit
-    
+
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
         ], [
             'file.unique' => 'Nama file sudah ada di database.',
         ]);
-    
+
         $file = $request->file('file');
         $filePath = $file->getPathname();
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $file->hashName());
-    
+
         DB::beginTransaction(); // Start transaction
-    
+
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $header = $this->getHeadersFromSheet($sheet);
             $rowCount = $this->processRowsFromSheet($sheet, $header);
-    
+
             $code_document = $this->createDocumentEntry($fileName, count($header), $rowCount);
-    
+
             DB::commit(); // Commit the transaction
-    
+
             return new ResponseResource(true, "Berhasil mengimpor data", [
                 'code_document' => $code_document,
                 'headers' => $header,
@@ -70,7 +70,7 @@ class GenerateController extends Controller
             return response()->json(['error' => 'Unexpected error occurred.'], 500);
         }
     }
-    
+
     private function getHeadersFromSheet($sheet)
     {
         $header = [];
@@ -86,34 +86,34 @@ class GenerateController extends Controller
         }
         return $header;
     }
-    
+
     private function processRowsFromSheet($sheet, $header)
     {
         $rowCount = 0;
         $dataToInsert = [];
-    
+
         foreach ($sheet->getRowIterator(2) as $row) {
             $rowData = [];
             $cellIterator = $row->getCellIterator();
             $cellIterator->setIterateOnlyExistingCells(false);
-    
+
             foreach ($cellIterator as $cell) {
                 $rowData[] = $cell->getValue() ?? '';
             }
-    
+
             $rowData = array_slice(array_pad($rowData, count($header), ''), 0, count($header));
             $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
         }
-    
+
         $chunkSize = 500;
         foreach (array_chunk($dataToInsert, $chunkSize) as $chunk) {
             Generate::insert($chunk);
             $rowCount += count($chunk);
         }
-    
+
         return $rowCount;
     }
-    
+
     private function createDocumentEntry($fileName, $columnCount, $rowCount)
     {
         $latestDocument = Document::latest()->first();
@@ -122,7 +122,7 @@ class GenerateController extends Controller
         $month = date('m');
         $year = date('Y');
         $code_document = $id_document . '/' . $month . '/' . $year;
-    
+
         Document::create([
             'code_document' => $code_document,
             'base_document' => $fileName,
@@ -130,40 +130,37 @@ class GenerateController extends Controller
             'total_column_in_document' => $rowCount,
             'date_document' => Carbon::now('Asia/Jakarta')->toDateString(),
         ]);
-    
+
         return $code_document;
     }
 
     public function mapAndMergeHeaders(Request $request)
     {
-
         set_time_limit(300);
         ini_set('memory_limit', '512M');
         try {
-            // Validasi input request
             $validator = Validator::make($request->all(), [
                 'headerMappings' => 'required|array',
                 'code_document' => 'required'
             ]);
-
+    
             if ($validator->fails()) {
                 return response()->json(['errors' => $validator->errors()], 422);
             }
-
+    
             $headerMappings = $request->input('headerMappings');
-
+    
             $mergedData = [
                 'old_barcode_product' => [],
                 'old_name_product' => [],
                 'old_quantity_product' => [],
                 'old_price_product' => []
             ];
-
+    
             $ekspedisiData = Generate::all()->map(function ($item) {
                 return json_decode($item->data, true);
             });
-
-
+    
             foreach ($headerMappings as $templateHeader => $selectedHeaders) {
                 foreach ($selectedHeaders as $userSelectedHeader) {
                     $ekspedisiData->each(function ($dataItem) use ($userSelectedHeader, &$mergedData, $templateHeader) {
@@ -173,17 +170,23 @@ class GenerateController extends Controller
                     });
                 }
             }
-
+    
             $dataToInsert = [];
             foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
                 $nama = $mergedData['old_name_product'][$index] ?? null;
                 $qty = is_numeric($mergedData['old_quantity_product'][$index]) ? (int)$mergedData['old_quantity_product'][$index] : 0;
-
+    
                 // Memastikan bahwa harga adalah desimal yang valid atau diatur ke nol
                 $harga = isset($mergedData['old_price_product'][$index]) && is_numeric($mergedData['old_price_product'][$index])
                     ? (float)$mergedData['old_price_product'][$index]
                     : 0.0;
-
+    
+                // Validasi panjang old_name_product
+                if ($nama !== null && strlen($nama) > 512) {
+                    Log::error("Nama produk terlalu panjang: {$nama}");
+                    return response()->json(['error' => "Nama produk terlalu panjang: {$nama}"], 422);
+                }
+    
                 $dataToInsert[] = [
                     'code_document' => $request['code_document'],
                     'old_barcode_product' => $noResi,
@@ -192,12 +195,13 @@ class GenerateController extends Controller
                     'old_price_product' => $harga,
                 ];
             }
-
+    
+            Log::info('Data to insert', $dataToInsert);
+    
             $chunkSize = 500;
             $totalInsertedRows = 0;
-
+    
             foreach (array_chunk($dataToInsert, $chunkSize) as $chunkIndex => $chunk) {
-
                 $insertResult = Product_old::insert($chunk);
                 if ($insertResult) {
                     $insertedRows = count($chunk);
@@ -207,18 +211,19 @@ class GenerateController extends Controller
                 }
             }
             Generate::query()->delete();
-
+    
             return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => $totalInsertedRows]);
         } catch (\Illuminate\Database\QueryException $qe) {
             DB::rollBack();
-
             return response()->json(['error' => 'Database query error: ' . $qe->getMessage()], 500);
         } catch (\Exception $e) {
-
             Log::error('Exception in mapAndMergeHeaders: ' . $e->getMessage());
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
+    
+    
+
 
     public function deleteAll()
     {
