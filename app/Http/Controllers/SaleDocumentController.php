@@ -176,24 +176,30 @@ class SaleDocumentController extends Controller
             }
         }
 
-        if ($products->count() > 0) {
-            $categoryReport = $products->groupBy('new_category_product')
-                ->map(function ($group) use (&$totalPrice, $categories) {
-                    $totalPricePerCategory = $group->sum(function ($item) {
-                        return $item->new_quantity_product * $item->new_price_product;
-                    });
-                    $totalPrice += $totalPricePerCategory;
-                    $category = $categories->firstWhere('name_category', $group->first()->new_category_product);
-
-                    return [
-                        'category' => $group->first()->new_category_product,
-                        'total_quantity' => $group->sum('new_quantity_product'),
-                        'total_price' => $totalPricePerCategory,
-                        'total_discount' => $category ? $category->discount_category : null,
-                    ];
-                })->values()->all();
+        if ($saleDocument->sales->count() > 0) {
+            $categoryReport = $saleDocument->sales->groupBy(function ($sale) {
+                $product = New_product::where('new_name_product', $sale->product_name_sale)
+                    ->where('new_status_product', 'sale')
+                    ->where('new_barcode_product', $sale->product_barcode_sale)
+                    ->first();
+                return $product ? $product->new_category_product : 'Unknown';
+            })->map(function ($group) use (&$totalPrice, $categories) {
+                $totalPricePerCategory = $group->sum(function ($sale) {
+                    return $sale->product_qty_sale * $sale->product_price_sale;
+                });
+                $totalPrice += $totalPricePerCategory;
+                $categoryName = $group->first()->product_name_sale;
+                $category = $categories->firstWhere('name_category', $categoryName);
+        
+                return [
+                    'category' => $categoryName,
+                    'total_quantity' => $group->sum('product_qty_sale'),
+                    'total_price' => $totalPricePerCategory,
+                    'total_discount' => $category ? $category->discount_category : null,
+                ];
+            })->values()->all();
         }
-
+        
         return ["category_list" => $categoryReport, 'total_harga' => $totalPrice];
     }
 
