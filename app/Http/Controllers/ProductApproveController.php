@@ -108,8 +108,12 @@ class ProductApproveController extends Controller
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
             $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
+            $newBarcode = New_product::where('new_barcode_product', $request->input('new_barcode_product'))->first();
 
             if ($oldBarcode) {
+                return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
+            }
+            if ($newBarcode) {
                 return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
             }
         }

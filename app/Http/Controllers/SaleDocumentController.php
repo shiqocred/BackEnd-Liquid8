@@ -204,7 +204,6 @@ class SaleDocumentController extends Controller
     }
 
 
-
     private function generateBarcodeReport($saleDocument)
     {
         $report = [];
