@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Document;
 use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Support\Str;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
@@ -398,4 +400,46 @@ class ProductApproveController extends Controller
             return new ResponseResource(false, "code document tidak ada", null);
         }
     }
+
+    public function documentsApprove(Request $request)
+    {
+        $query = $request->input('q');
+        $user = User::with('role')->find(auth()->id());
+    
+        if ($user) {
+            $notifQuery = Notification::with('riwayat_check')->latest();
+    
+            if (!empty($query)) {
+                $notifQuery->whereHas('riwayat_check', function($q) use ($query){
+                    $q->where('status_approve', $query);
+                });
+            } else {
+                $notifQuery->whereHas('riwayat_check', function ($q) {
+                    $q->where('status_approve', 'pending');
+                });
+            }
+    
+            $documents = $notifQuery->get();
+           
+            return new ResponseResource(true, "Document Approves", $documents);
+        } else {
+            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+        }
+    }
+
+    public function productsApproveByDoc(Request $request, $code_document){
+        $query = $request->input('q');
+        $user = User::with('role')->find(auth()->id());
+        if ($user) {
+            $products = ProductApprove::where('code_document', $code_document)->get();
+            if(!empty($query)){
+                $products->where('new_name_product', $query);
+            }
+            return new ResponseResource(true, 'products', $products);
+        }else {
+            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+        }
+      
+    }
+    
 }

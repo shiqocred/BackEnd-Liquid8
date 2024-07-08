@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\Document;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -104,15 +105,15 @@ class NotificationController extends Controller
 
     public function approveTransaction($notificationId)
     {
-        set_time_limit(300); 
-        ini_set('memory_limit', '512M'); 
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
         $user = User::with('role')->find(auth()->id());
 
         DB::beginTransaction();
 
         try {
             if ($user) {
-                if ($user->role && $user->role->role_name == 'Spv') {
+                if ($user->role && ($user->role->role_name == 'Spv' ||  $user->role->role_name = 'Admin')) {
                     $notification = Notification::where('id', $notificationId)->first();
 
                     if (!$notification) {
@@ -127,20 +128,20 @@ class NotificationController extends Controller
                         'notification_name' => 'Approved',
                         'status' => 'done',
                     ]);
-                    
+
                     if ($notification->riwayat_check_id !== null) {
                         $riwayatCheck = RiwayatCheck::find($notification->riwayat_check_id);
-                    
+
                         if ($riwayatCheck) {
                             $riwayatCheck->update(['status_approve' => 'done']);
-                    
+
                             $productApproves = ProductApprove::where('code_document', $riwayatCheck->code_document)->get();
-                    
-                            $chunkedProductApproves = $productApproves->chunk(200); 
-                    
+
+                            $chunkedProductApproves = $productApproves->chunk(200);
+
                             foreach ($chunkedProductApproves as $chunk) {
                                 $dataToInsert = [];
-                    
+
                                 foreach ($chunk as $productApprove) {
                                     $dataToInsert[] = [
                                         'code_document' => $productApprove->code_document,
@@ -156,7 +157,7 @@ class NotificationController extends Controller
                                         'new_category_product' => $productApprove->new_category_product,
                                         'new_tag_product' => $productApprove->new_tag_product,
                                     ];
-                    
+
                                     $productApprove->delete();
                                 }
 
@@ -164,16 +165,16 @@ class NotificationController extends Controller
                             }
                         }
                     }
-                    
+
 
                     //ini untuk orang yang ngirim product repair
-                    $repairCheck = Repair::where('user_id', $notification->user_id )->first();
+                    $repairCheck = Repair::where('user_id', $notification->user_id)->first();
 
                     if ($repairCheck) {
                         $repairCheck->update(['status_approve' => 'done']);
-                    
+
                         $productFilter = $repairCheck->repair_products;
-                    
+
                         foreach ($productFilter as $product) {
                             New_product::create([
                                 'code_document' => $product->code_document,
@@ -188,15 +189,15 @@ class NotificationController extends Controller
                                 'new_category_product' => $product->new_category_product,
                                 'new_tag_product' => $product->new_tag_product
                             ]);
-                    
+
                             // Hapus produk terkait dari repair_products sebelum menghapus repairCheck
                             $product->delete();
                         }
-                    
+
                         // Setelah memastikan semua produk terkait dihapus, barulah repairCheck dihapus
                         $repairCheck->delete();
                     }
-                    
+
                     DB::commit();
                     return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
                 } else {
@@ -222,33 +223,32 @@ class NotificationController extends Controller
             } elseif ($user->role && $user->role->role_name == 'Crew') {
                 $notifQuery->where('user_id', $user->id);
             } else {
-                $notifQuery->where('user_id', $user->id); 
+                $notifQuery->where('user_id', $user->id);
             }
-    
+
             if (!empty($query)) {
                 $notifQuery->where('status', 'LIKE', '%' . $query . '%');
             }
-    
+
             $notifPaginated = $notifQuery->paginate(50);
-    
+
             $userIds = $notifPaginated->pluck('user_id')->unique();
-    
+
             $roles = User::whereIn('id', $userIds)->with('role')->get()->pluck('role.role_name', 'id');
-    
-            $role_id = $user->role->id;  
-    
+
+            $role_id = $user->role->id;
+
             $notifPaginated->getCollection()->transform(function ($notification) use ($roles, $role_id) {
                 $notification->role_name = $roles[$notification->user_id] ?? null;
-                $notification->role_id = $role_id;  
+                $notification->role_id = $role_id;
                 return $notification;
             });
-    
+
             return new ResponseResource(true, "Notifications", $notifPaginated);
-            
         } else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
-    
 
+   
 }

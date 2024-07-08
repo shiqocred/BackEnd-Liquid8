@@ -33,6 +33,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
 use App\Models\New_product;
+use App\Models\ProductApprove;
 use App\Models\Repair;
 use App\Models\RiwayatCheck;
 use App\Models\SpecialTransaction;
@@ -286,9 +287,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::resource('roles', RoleController::class);
 });
 
-
 Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group(function () {
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
+   Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
+   Route::get('product-approveByDoc/{code_document}', [ProductApproveController::class, 'productsApproveByDoc'])
+   ->where('code_document', '.*');
+
 });
 
 Route::post('login', [AuthController::class, 'login']);
