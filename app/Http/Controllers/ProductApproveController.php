@@ -103,11 +103,13 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        if ($request['data.needConfirmation'] === true) {
-            $inputData = $request['data.resource'];
+        if ($request->input('data.needConfirmation') === true) {
+            $inputData = $request->input('data.resource');
+            $newBarcode = $this->generateNewBarcode($inputData['new_category_product']);
+            $inputData['new_barcode_product'] = $newBarcode;
             $newProduct = ProductApprove::create($inputData);
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
-        } else {
+        }else {
             $validator = Validator::make($request->all(), [
                 'code_document' => 'required',
                 'old_barcode_product' => 'required',
@@ -153,7 +155,7 @@ class ProductApproveController extends Controller
             if (!isset($newProduct)) {
                 $generate = $this->generateNewBarcode($inputData['new_category_product']); 
                 $inputData['new_barcode_product'] = $generate;
-                $newProduct = ProductApprove::create($inputData); // Buat produk baru dengan data yang telah dimodifikasi
+                $newProduct = ProductApprove::create($inputData); 
             }
 
             $this->updateDocumentStatus($request->input('code_document'));
