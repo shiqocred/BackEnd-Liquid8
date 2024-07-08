@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Document;
 use App\Models\New_product;
 use App\Models\Product_old;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,9 @@ use App\Http\Resources\ProductapproveResource;
 
 class ProductApproveController extends Controller
 {
-    /**
+    // Array bulan dalam bahasa Indonesia
+     
+     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -72,6 +75,30 @@ class ProductApproveController extends Controller
      * Store a newly created resource in storage.
      */
 
+    private function generateNewBarcode($category)
+    {
+        $bulanIndo = [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember'
+        ];   
+        $categoryInitial = strtoupper(substr($category, 0, 1));
+        $currentMonth = $bulanIndo[date('n')];
+        $currentMonth = strtoupper(substr($currentMonth, 0, 1));
+        $randomString = strtoupper(Str::random(5));
+
+        return "L{$categoryInitial}{$currentMonth}{$randomString}";
+    }
+
     public function store(Request $request)
     {
         if ($request['data.needConfirmation'] === true) {
@@ -122,7 +149,9 @@ class ProductApproveController extends Controller
 
         try {
             if (!isset($newProduct)) {
-                $newProduct = ProductApprove::create($inputData);
+                $generate = $this->generateNewBarcode($inputData['new_category_product']); 
+                $inputData['new_barcode_product'] = $generate;
+                $newProduct = ProductApprove::create($inputData); // Buat produk baru dengan data yang telah dimodifikasi
             }
 
             $this->updateDocumentStatus($request->input('code_document'));
