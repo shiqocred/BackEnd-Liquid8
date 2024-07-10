@@ -56,7 +56,7 @@ class MigrateController extends Controller
         }
 
         try {
-            $migrateDocument = MigrateDocument::where('status_document_migrate', 'proses')->first();
+            $migrateDocument = MigrateDocument::where('user_id', $userId)->where('status_document_migrate', 'proses')->first();
             if ($migrateDocument == null) {
                 $migrateDocumentStore = (new MigrateDocumentController)->store(new Request([
                     'code_document_migrate' => $codeDocumentMigrate,
