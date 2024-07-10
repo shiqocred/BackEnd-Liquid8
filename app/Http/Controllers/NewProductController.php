@@ -3,21 +3,22 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use App\Models\Sale;
+use App\Models\Bundle;
 use App\Models\Category;
 use App\Models\Document;
 use App\Models\ExcelOld;
+use App\Models\BundleQcd;
 use App\Models\Color_tag;
 use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
 use App\Models\ListProductBP;
+use App\Models\RepairProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\BundleQcd;
-use App\Models\RepairProduct;
-use App\Models\Sale;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -72,7 +73,7 @@ class NewProductController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [ 
+        $validator = Validator::make($request->all(), [
             'code_document' => 'required',
             'old_barcode_product' => 'required',
             'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
@@ -1030,4 +1031,238 @@ class NewProductController extends Controller
         }
         return new ResponseResource(true, "list data product by color", $countByColor);
     }
+
+    public function exportNewProducts()
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        // Membuat spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Menentukan headers berdasarkan nama kolom di tabel new_products
+        $headers = [
+            'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
+            'New Name Product', 'New Quantity Product', 'New Price Product',
+            'Old Price Product', 'New Date In Product', 'New Status Product',
+            'New Quality', 'New Category Product', 'New Tag Product', 'Created At', 'Updated At'
+        ];
+
+        // Menuliskan headers ke sheet
+        $columnIndex = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        // Variabel untuk melacak baris
+        $rowIndex = 2;
+
+        // Mengambil data dalam batch
+        New_product::where('new_status_product', '!=', 'sale')
+            ->where('new_status_product', '!=', 'migrate')
+            ->whereNull('new_tag_product')
+            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
+                foreach ($products as $product) {
+                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
+                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
+                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
+                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
+                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
+                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
+                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
+                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
+                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
+                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
+                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
+                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
+                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
+                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
+                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
+                    $rowIndex++;
+                }
+            });
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'new_products_export.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "file diunduh", $downloadUrl);
+    }
+    public function exportNewProducts2()
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        // Membuat spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Menentukan headers berdasarkan nama kolom di tabel new_products
+        $headers = [
+            'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
+            'New Name Product', 'New Quantity Product', 'New Price Product',
+            'Old Price Product', 'New Date In Product', 'New Status Product',
+            'New Quality', 'New Category Product', 'New Tag Product', 'Created At', 'Updated At'
+        ];
+
+        // Menuliskan headers ke sheet
+        $columnIndex = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        // Variabel untuk melacak baris
+        $rowIndex = 2;
+
+        // Mengambil data dalam batch
+        New_product::where('new_status_product', '!=', 'sale')
+            ->where('new_status_product', '!=', 'migrate')
+            ->whereNull('new_tag_product')
+            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
+                foreach ($products as $product) {
+                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
+                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
+                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
+                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
+                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
+                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
+                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
+                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
+                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
+                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
+                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
+                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
+                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
+                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
+                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
+                    $rowIndex++;
+                }
+            });
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'new_products_export.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "file diunduh", $downloadUrl);
+    }
+
+
+    public function exportBundles()
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+    
+        // Membuat spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+    
+        // Headers untuk bundle
+        $bundleHeaders = [
+            'name_bundle', 'total_price_bundle', 'total_price_custom_bundle',
+            'total_product_bundle', 'product_status', 'barcode_bundle',
+            'category', 'name_color', 'id'
+        ];
+    
+        // Headers untuk product_bundles
+        $productBundleHeaders = [
+            'bundle_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
+            'new_name_product', 'new_quantity_product', 'new_price_product',
+            'old_price_product', 'new_date_in_product', 'new_status_product',
+            'new_quality', 'new_category_product', 'new_tag_product'
+        ];
+    
+        // Menuliskan headers ke sheet
+        $columnIndex = 1;
+        foreach ($bundleHeaders as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+    
+        // Menuliskan header product_bundles di bawah data bundle
+        $rowIndex = 2; // Mulai dari baris kedua
+    
+        // Mengambil data bundle terbaru dengan relasi product_bundles
+        $bundles = Bundle::latest()->with('product_bundles')->get();
+        foreach ($bundles as $bundle) {
+            $columnIndex = 1;
+    
+            // Menuliskan data bundle ke sheet
+            foreach ($bundleHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($columnIndex, $rowIndex, $bundle->$header);
+                $columnIndex++;
+            }
+            $rowIndex++;
+    
+            // Menuliskan header product_bundles
+            $productColumnIndex = 1;
+            foreach ($productBundleHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $header);
+                $productColumnIndex++;
+            }
+            $rowIndex++;
+    
+            // Menuliskan data product_bundles ke sheet
+            if ($bundle->product_bundles) {
+                foreach ($bundle->product_bundles as $productBundle) {
+                    $productColumnIndex = 1; // Mulai dari kolom pertama
+                    foreach ($productBundleHeaders as $header) {
+                        $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $productBundle->$header);
+                        $productColumnIndex++;
+                    }
+                    $rowIndex++;
+                }
+            }
+            $rowIndex++; // Baris kosong setelah setiap bundle
+        }
+    
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'bundles_export.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+    
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+    
+        $writer->save($filePath);
+    
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+    
+        return new ResponseResource(true, "unduh", $downloadUrl);
+    }
+    
+    
 }
