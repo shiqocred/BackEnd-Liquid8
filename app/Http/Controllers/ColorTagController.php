@@ -15,9 +15,13 @@ class ColorTagController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $tags = Color_tag::latest()->where(function($queryBuilder) use ($query) {
-            $queryBuilder->where('name_color', 'LIKE', '%' . $query . '%');
-        })->paginate(50);
+        $tags = Color_tag::latest();
+        if($query){
+           $tags = $tags->where('name_color', 'LIKE', '%' . $query . '%');
+        }
+
+        $tags = $tags->get();
+
         return new ResponseResource(true, "list tag warna", $tags);
     }
 

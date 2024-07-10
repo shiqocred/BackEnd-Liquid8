@@ -25,7 +25,6 @@ use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class NewProductController extends Controller
 {
-
     public function index(Request $request)
     {
         $query = $request->input('q');

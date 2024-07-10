@@ -13,11 +13,25 @@ class CategoryController extends Controller
      * Display a listing of the resource.
      */
 
-    public function index()
-    {
-        $categories = Category::all();
-        return new ResponseResource(true, "data category", $categories);
-    }
+     public function index(Request $request)
+     {
+       
+         $query = $request->input('q');
+         $categories = Category::query();
+     
+         if ($query) {
+             $categories = $categories->where(function($search) use ($query) {
+                 $search->where('name_category', 'LIKE', '%' . $query . '%')
+                        ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
+                        ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
+             });
+         }
+     
+         $categories = $categories->get();
+     
+         return new ResponseResource(true, "data category", $categories);
+     }
+     
 
     /**
      * Show the form for creating a new resource.
