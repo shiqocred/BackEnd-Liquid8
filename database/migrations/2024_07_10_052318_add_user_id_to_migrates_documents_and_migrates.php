@@ -12,13 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('migrates_documents_and_migrates', function (Blueprint $table) {
-            Schema::table('migrates', function (Blueprint $table) {
-                $table->foreignId('user_id')->constrained('users')->after('id');
-            });
     
             Schema::table('migrate_documents', function (Blueprint $table) {
                 $table->foreignId('user_id')->constrained('users')->after('id');
             });
+
         });
     }
 
