@@ -101,8 +101,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 
    //migrate
    Route::resource('migrates', MigrateController::class);
-   Route::post('backupMigrates', [MigrateController::class, 'backupStoreMigrate']);
-   Route::get('get-migrate-byDoc', [MigrateController::class, 'codeDocumentMigrate']);
+   Route::get('displayMigrate', [MigrateController::class, 'displayMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
    Route::resource('migrate-documents', MigrateDocumentController::class);
 
@@ -300,7 +299,8 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group
 });
 
 Route::post('login', [AuthController::class, 'login']);
-Route::post('exportNp1', [NewProductController::class, 'exportNewProducts']);
+
+Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
 Route::post('exportNp2', [NewProductController::class, 'exportNewProducts2']);
 Route::post('exportBundles', [NewProductController::class, 'exportBundles']);
 
