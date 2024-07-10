@@ -95,38 +95,47 @@ class MigrateDocumentController extends Controller
 
     public function MigrateDocumentFinish()
     {
-
         try {
             DB::beginTransaction();
+            $total = 0;
             $userId = auth()->id();
-            $migrateDocument = MigrateDocument::where([
+            $migrateDocuments = MigrateDocument::with('migrates')->where([
                 ['user_id', '=', $userId],
                 ['status_document_migrate', '=', 'proses']
-            ])->first();
-
-            if ($migrateDocument == null) {
-                $resource = new ResponseResource(false, "Data migrate tidak ditemukan!", []);
-                return $resource->response()->setStatusCode(404);
-            }
-            if ($migrateDocument) {
-                $migrate = Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->get();
-                foreach ($migrate as $m) {
-                    New_product::where('new_tag_product', $m->product_color)
-                        ->take($m->product_total)
+            ])->get();
+    
+            // Iterasi melalui setiap MigrateDocument dalam koleksi
+            foreach ($migrateDocuments as $migrateDocument) {
+                $relatedMigrates = $migrateDocument->migrates;
+    
+                foreach ($relatedMigrates as $m) {
+                    $productTotal = $m->product_total;
+    
+                    // Mengambil sejumlah data tertentu dan mengupdate statusnya
+                    $updatedCount = New_product::where('new_tag_product', $m->product_color)
+                        ->where('new_status_product', 'display')
+                        ->limit($productTotal)
                         ->update(['new_status_product' => 'migrate']);
+                    
+                    // Tambahkan jumlah produk yang berhasil diupdate ke total
+                    $total += $updatedCount;
                 }
+    
+                // Mengupdate status migrates dan migrate document setelah loop selesai
+                Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->update(['status_migrate' => 'selesai']);
+                $migrateDocument->update([
+                    'total_product_document_migrate' => $relatedMigrates->sum('product_total'),
+                    'status_document_migrate' => 'selesai'
+                ]);
             }
-            Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->update(['status_migrate' => 'selesai']);
-            $migrateDocument->update([
-                'total_product_document_migrate' => $migrate->sum('product_total'),
-                'status_document_migrate' => 'selesai'
-            ]);
+    
             DB::commit();
-            $resource = new ResponseResource(true, 'Data berhasil di merge', $migrateDocument);
+            $resource = new ResponseResource(true, 'Data berhasil di merge', $migrateDocuments);
         } catch (\Exception $e) {
             DB::rollBack();
             $resource = new ResponseResource(false, 'Data gagal di merge', [$e->getMessage()]);
         }
         return $resource->response();
     }
+    
 }
