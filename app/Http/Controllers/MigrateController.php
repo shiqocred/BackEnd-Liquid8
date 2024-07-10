@@ -185,7 +185,10 @@ class MigrateController extends Controller
             ['status_document_migrate', '=', 'proses']
         ])->first();
 
-        $resource = new ResponseResource(true, "data berhasil disimpan!", $migrateDocument);
-        return $resource->response();
+        if(empty($migrateDocument)){
+           return new ResponseResource(true, "data berhasil disimpan!", ["destionation" => "aktif", "data" => []]);
+        }else {
+            return new ResponseResource(true, "data berhasil disimpan!", ["destionation" => "disable", "data" => $migrateDocument]);
+        }
     }
 }
