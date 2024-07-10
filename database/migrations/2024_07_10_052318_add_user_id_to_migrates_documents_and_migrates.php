@@ -15,6 +15,10 @@ return new class extends Migration
             // Menambahkan kolom user_id dan foreign key constraint
             $table->foreignId('user_id')->constrained('users');
         });
+        Schema::table('migrates', function (Blueprint $table) {
+            // Menambahkan kolom user_id dan foreign key constraint
+            $table->foreignId('user_id')->constrained('users');
+        });
     }
 
     /**
@@ -23,6 +27,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('migrate_documents', function (Blueprint $table) {
+            // Menghapus foreign key constraint dan kolom user_id
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
+        });
+        Schema::table('migrates', function (Blueprint $table) {
             // Menghapus foreign key constraint dan kolom user_id
             $table->dropForeign(['user_id']);
             $table->dropColumn('user_id');
