@@ -300,9 +300,9 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group
 
 Route::post('login', [AuthController::class, 'login']);
 
-Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
-Route::post('exportNp2', [NewProductController::class, 'exportNewProducts2']);
-Route::post('exportBundles', [NewProductController::class, 'exportBundles']);
+// Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
+// Route::post('exportNp2', [NewProductController::class, 'exportNewProducts2']);
+// Route::post('exportBundles', [NewProductController::class, 'exportBundles']);
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
