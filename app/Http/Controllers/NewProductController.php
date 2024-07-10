@@ -1021,7 +1021,7 @@ class NewProductController extends Controller
     public function totalPerColor(Request $request)
     {
 
-        $new_product = New_product::whereNotNull('new_tag_product')->whereNot('new_status_product', 'migrate')->pluck('new_tag_product');
+        $new_product = New_product::whereNotNull('new_tag_product')->where('new_status_product', 'display')->pluck('new_tag_product');
         $countByColor = $new_product->countBy(function ($item) {
             return $item;
         });

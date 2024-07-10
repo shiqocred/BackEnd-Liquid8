@@ -9,4 +9,9 @@ class Migrate extends Model
 {
     protected $guarded = ['id'];
     use HasFactory;
+
+    public function migrateDocument()
+    {
+        return $this->belongsTo(MigrateDocument::class, 'code_document_migrate', 'code_document_migrate');
+    }
 }

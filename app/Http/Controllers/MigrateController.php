@@ -180,7 +180,7 @@ class MigrateController extends Controller
     public function displayMigrate(Request $request)
     {
         $userId = auth()->id();
-        $migrateDocument = MigrateDocument::where([
+        $migrateDocument = MigrateDocument::with('migrates')->where([
             ['user_id', '=', $userId],
             ['status_document_migrate', '=', 'proses']
         ])->first();
