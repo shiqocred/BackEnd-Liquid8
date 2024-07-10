@@ -7,6 +7,7 @@ use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FilterQcdController;
 use App\Http\Controllers\GenerateController;
@@ -100,6 +101,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
 
    //migrate
    Route::resource('migrates', MigrateController::class);
+   Route::get('get-migrate-byDoc', [MigrateController::class, 'codeDocumentMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
    Route::resource('migrate-documents', MigrateDocumentController::class);
 
@@ -279,6 +281,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader,Admin kasir
 Route::middleware(['auth:sanctum', 'check.role:Spv,Admin'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
+   Route::resource('destinations', DestinationController::class);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {

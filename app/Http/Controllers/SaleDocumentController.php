@@ -18,10 +18,18 @@ class SaleDocumentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $saleDocument = SaleDocument::with('user:id,name')->where('status_document_sale', 'selesai')->latest()->paginate(10);
-        $resource = new ResponseResource(true, "list document sale", $saleDocument);
+        $query = $request->input('q');
+        $saleDocuments = SaleDocument::with('user:id,name')->where('status_document_sale', 'selesai')->latest();
+        if($query){
+            $saleDocuments= $saleDocuments->where(function($data) use ($query){
+                $data->where('code_document_sale', 'LIKE', '%' . $query . '%')
+                ->orWhere('buyer_name_document_sale', 'LIKE', '%' . $query . '%');
+            });
+        }
+        $saleDocuments = $saleDocuments->paginate(10);
+        $resource = new ResponseResource(true, "list document sale", $saleDocuments);
         return $resource->response();
     }
 

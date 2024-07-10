@@ -13,7 +13,7 @@ use App\Mail\AdminNotification;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\Notification;
-use App\Models\Product_old;
+use App\Models\Product_old; 
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -24,9 +24,14 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class RiwayatCheckController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $riwayats = RiwayatCheck::latest()->paginate(50);
+        $query = $request->input('q');
+
+        $riwayats = RiwayatCheck::latest()->where(function ($search) use ($query){
+            $search->where('code_document', 'LIKE', '%' . $query .'%')
+           ->orWhere('base_document', 'LIKE', '%' . $query . '%');
+        })->paginate(50);
         return new ResponseResource(true, "list riwayat", $riwayats);
     }
 

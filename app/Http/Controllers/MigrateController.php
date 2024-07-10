@@ -172,4 +172,10 @@ class MigrateController extends Controller
             return $resource->response()->setStatusCode(404);
         }
     }
+
+    public function codeDocumentMigrate(Request $request){
+        $query = $request->input('q');
+        $migrate = Migrate::where('code_document_migrate', $query)->get();
+        return new ResponseResource(true, "list migrate by document", $migrate);
+    }
 }
