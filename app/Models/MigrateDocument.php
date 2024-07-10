@@ -15,4 +15,9 @@ class MigrateDocument extends Model
     {
         return $this->hasMany(Migrate::class, 'code_document_migrate', 'code_document_migrate');
     }
+
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
+    
 }

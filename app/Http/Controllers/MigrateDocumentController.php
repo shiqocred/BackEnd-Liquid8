@@ -95,16 +95,26 @@ class MigrateDocumentController extends Controller
 
     public function MigrateDocumentFinish()
     {
+
         try {
             DB::beginTransaction();
-            $migrateDocument = MigrateDocument::where('status_document_migrate', 'proses')->first();
+            $userId = auth()->id();
+            $migrateDocument = MigrateDocument::where([
+                ['user_id', '=', $userId],
+                ['status_document_migrate', '=', 'proses']
+            ])->first();
+
             if ($migrateDocument == null) {
                 $resource = new ResponseResource(false, "Data migrate tidak ditemukan!", []);
                 return $resource->response()->setStatusCode(404);
             }
-            $migrate = Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->get();
-            foreach ($migrate as $m) {
-                New_product::where('new_tag_product', $m->product_color)->take($m->product_total)->delete();
+            if ($migrateDocument) {
+                $migrate = Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->get();
+                foreach ($migrate as $m) {
+                    New_product::where('new_tag_product', $m->product_color)
+                        ->take($m->product_total)
+                        ->update(['new_status_product' => 'migrate']);
+                }
             }
             Migrate::where('code_document_migrate', $migrateDocument->code_document_migrate)->update(['status_migrate' => 'selesai']);
             $migrateDocument->update([

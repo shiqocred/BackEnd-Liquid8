@@ -30,6 +30,7 @@ class MigrateController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = auth()->id();
         $codeDocumentMigrate = codeDocumentMigrate();
 
         $validator = Validator::make($request->all(), [
@@ -61,7 +62,8 @@ class MigrateController extends Controller
                     'code_document_migrate' => $codeDocumentMigrate,
                     'destiny_document_migrate' => $request->destiny_document_migrate,
                     'total_product_document_migrate' => 0,
-                    'status_document_migrate' => 'proses'
+                    'status_document_migrate' => 'proses',
+                    'user_id' => $userId,
                 ]));
 
                 if ($migrateDocumentStore->getStatusCode() != 201) {
@@ -76,6 +78,7 @@ class MigrateController extends Controller
                 'product_color' => $request->product_color,
                 'product_total' => $request->product_total,
                 'status_migrate' => 'proses',
+                'user_id' => $userId
             ]);
 
             $resource = new ResponseResource(true, "data berhasil disimpan!", $migrate);
@@ -177,5 +180,67 @@ class MigrateController extends Controller
         $query = $request->input('q');
         $migrate = Migrate::where('code_document_migrate', $query)->get();
         return new ResponseResource(true, "list migrate by document", $migrate);
+    }
+
+
+    public function backupStoreMigrate(Request $request)
+    {
+        $userId = auth()->id();
+        $codeDocumentMigrate = codeDocumentMigrate();
+
+        $validator = Validator::make($request->all(), [
+            'product_color' => 'nullable',
+            'product_total' => 'required|numeric',
+            'destiny_document_migrate' => 'nullable',
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+
+        $productByTagColor = New_product::where('new_tag_product', $request->product_color)->get();
+        if ($productByTagColor->isEmpty()) {
+            $resource = new ResponseResource(false, "Data tidak di temukan!", ["product_color" => "product not found!"]);
+            return $resource->response()->setStatusCode(404);
+        }
+
+        if ($productByTagColor->count() < $request->product_total) {
+            $resource = new ResponseResource(false, "Input tidak valid!", ["product_total" => "the product is less than the quantity requested!"]);
+            return $resource->response()->setStatusCode(422);
+        }
+
+        try {
+            $migrateDocument = MigrateDocument::where('status_document_migrate', 'proses')->first();
+            if ($migrateDocument == null) {
+                $migrateDocumentStore = (new MigrateDocumentController)->store(new Request([
+                    'code_document_migrate' => $codeDocumentMigrate,
+                    'destiny_document_migrate' => $request->destiny_document_migrate,
+                    'total_product_document_migrate' => 0,
+                    'status_document_migrate' => 'proses',
+                    'user_id' => $userId,
+                ]));
+
+                if ($migrateDocumentStore->getStatusCode() != 201) {
+                    return $migrateDocumentStore;
+                }
+
+                $migrateDocument = $migrateDocumentStore->getData()->data->resource;
+            }
+
+            $migrate = Migrate::create([
+                'code_document_migrate' => $migrateDocument->code_document_migrate,
+                'product_color' => $request->product_color,
+                'product_total' => $request->product_total,
+                'status_migrate' => 'proses',
+                'user_id' => $userId
+            ]);
+
+            $resource = new ResponseResource(true, "data berhasil disimpan!", $migrate);
+            return $resource->response();
+        } catch (\Exception $e) {
+            $resource = new ResponseResource(false, "Data gagal di simpan!", [$e->getMessage()]);
+            return $resource->response()->setStatusCode(422);
+        }
     }
 }
