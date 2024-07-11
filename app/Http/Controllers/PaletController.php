@@ -81,7 +81,9 @@ class PaletController extends Controller
                 ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             }
         }]);
-        return new ResponseResource(true, "list product", $palet);
+        $palet->total_harga_lama = $palet->paletProducts->sum('old_price_product');
+      
+        return new ResponseResource(true, "list product", $palet );
     }
 
 
