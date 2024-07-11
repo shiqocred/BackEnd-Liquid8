@@ -5,6 +5,7 @@ use App\Http\Controllers\BundleController;
 use App\Http\Controllers\BundleQcdController;
 use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CheckConnectionController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DestinationController;
@@ -126,7 +127,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-   
+
    Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
@@ -294,8 +295,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
    Route::get('product-approveByDoc/{code_document}', [ProductApproveController::class, 'productsApproveByDoc'])
-   ->where('code_document', '.*');
-
+      ->where('code_document', '.*');
 });
 
 Route::post('login', [AuthController::class, 'login']);
@@ -307,3 +307,6 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+
+// route untuk cek koneksi
+Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
