@@ -410,7 +410,8 @@ class ProductApproveController extends Controller
     
         if ($user) {
             $notifQuery = Notification::with('riwayat_check')->latest();
-    
+            // $documents = Document::where('status_document', 'in progress');
+            
             if (!empty($query)) {
                 $notifQuery->whereHas('riwayat_check', function($q) use ($query){
                     $q->where('status_approve', $query);

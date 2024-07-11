@@ -20,8 +20,14 @@ class SaleController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        $sale = Sale::where('status_sale', 'proses')->where('user_id', auth()->id())->latest()->paginate(10);
-        $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', auth()->id())->first();
+        
+        $allSales = Sale::where('status_sale', 'proses')->where('user_id', $userId)->get();
+        
+        $totalSale = $allSales->sum('product_price_sale');
+        
+        $sale = Sale::where('status_sale', 'proses')->where('user_id', $userId)->latest()->paginate(50);
+        
+        $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
         if ($saleDocument == null) {
             $codeDocumentSale = codeDocumentSale($userId);
             $saleBuyerName = '';
@@ -31,17 +37,20 @@ class SaleController extends Controller
             $saleBuyerName = $saleDocument->buyer_name_document_sale;
             $saleBuyerId = $saleDocument->buyer_id_document_sale;
         }
-        $totalSale = $sale->sum('product_price_sale');
+    
         $data = [
             'code_document_sale' => $codeDocumentSale,
             'sale_buyer_name' => $saleBuyerName,
             'sale_buyer_id' => $saleBuyerId,
             'total_sale' => $totalSale,
         ];
+        
         $data += $sale->toArray();
+        
         $resource = new ResponseResource(true, "list data sale", $data);
         return $resource->response();
     }
+    
 
     /**
      * Store a newly created resource in storage.
