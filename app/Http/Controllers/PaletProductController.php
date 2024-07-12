@@ -36,13 +36,14 @@ class PaletProductController extends Controller
     {
         DB::beginTransaction();
         try {
-            $product_filters = PaletFilter::all();
+            $userId = auth()->id();
+            $product_filters = PaletFilter::where('user_id', $userId)->get();
 
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
 
-            $palet = Palet::create([
+            $palet = Palet::create([ 
                 'name_palet' => $request->name_palet,
                 'category_palet' => $request->category_palet,
                 'total_price_palet' => $request->total_price_palet,
@@ -71,7 +72,7 @@ class PaletProductController extends Controller
     
             PaletProduct::insert($insertData);
     
-            PaletFilter::query()->delete();
+            PaletFilter::where('user_id', $userId)->delete();
              
             DB::commit();
             return new ResponseResource(true, "Palet berhasil dibuat", $palet);

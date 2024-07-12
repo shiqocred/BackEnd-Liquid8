@@ -11,4 +11,8 @@ class Product_Filter extends Model
 
     protected 
     $guarded = ['id'];
+
+    public function user(){
+        return $this->belongsTo(User::class);
+    }
 }

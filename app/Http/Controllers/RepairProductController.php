@@ -40,17 +40,17 @@ class RepairProductController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-        $user = User::find(auth()->id());
+        $userId = User::find(auth()->id());
 
         DB::beginTransaction();
         try {
-            $product_filters = RepairFilter::all();
+            $product_filters = RepairFilter::where('user_id', $userId)->get();
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
 
             $repair = Repair::create([
-                'user_id' => $user->id,
+                'user_id' => $userId->id,
                 'repair_name' => $request->repair_name,
                 'total_price' => $request->total_price,
                 'total_custom_price' => $request->total_custom_price,
@@ -79,10 +79,10 @@ class RepairProductController extends Controller
 
             RepairProduct::insert($insertData);
 
-            RepairFilter::query()->delete();
+            RepairFilter::where('user_id', $userId)->delete();
 
             $keterangan = Notification::create([
-                'user_id' => $user->id,
+                'user_id' => $userId->id,
                 'notification_name' => 'Butuh Approvement untuk Repair',
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),

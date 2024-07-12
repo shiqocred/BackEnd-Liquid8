@@ -16,19 +16,20 @@ class RepairFilterController extends Controller
      */
     public function index()
     {
-        $product_filters = RepairFilter::latest()->paginate(100);
-        $totalNewPrice = RepairFilter::sum('new_price_product');
+        $userId = auth()->id();
+        $product_filtersByuser = RepairFilter::where('user_id', $userId)->get();
+        $totalNewPrice = $product_filtersByuser->sum('new_price_product');
 
-        $totalNewPriceWithCategory = RepairFilter::whereNotNull('new_category_product')->sum('new_price_product');
-        $totalOldPriceWithoutCategory = RepairFilter::whereNull('new_category_product')->sum('old_price_product');
-        $totalNewPriceWithoutCtgrTagColor = RepairFilter::whereNull('new_category_product')
-        ->whereNull('new_tag_product')->whereNull('old_price_product')->sum('new_price_product');
-        $totalOldPriceWithoutCtgrTagColor = RepairFilter::whereNull('new_category_product')
-        ->whereNull('new_tag_product')->whereNull('new_price_product')->sum('old_price_product');
-       
-    
-        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory + $totalNewPriceWithoutCtgrTagColor + $totalOldPriceWithoutCtgrTagColor ;
+        $totalNewPriceWithCategory = $product_filtersByuser->whereNotNull('new_category_product')->sum('new_price_product');
+        $totalOldPriceWithoutCategory = $product_filtersByuser->whereNull('new_category_product')->sum('old_price_product');
+        $totalNewPriceWithoutCtgrTagColor = $product_filtersByuser
+            ->whereNull('new_category_product')->whereNull('new_tag_product')->whereNull('old_price_product')->sum('new_price_product');
+        $totalOldPriceWithoutCtgrTagColor = $product_filtersByuser->whereNull('new_category_product')
+            ->whereNull('new_tag_product')->whereNull('new_price_product')->sum('old_price_product');
 
+
+        $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory + $totalNewPriceWithoutCtgrTagColor + $totalOldPriceWithoutCtgrTagColor;
+        $product_filters = RepairFilter::where('user_id', $userId)->paginate(100);
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'data' => $product_filters,
@@ -49,8 +50,10 @@ class RepairFilterController extends Controller
     public function store($id)
     {
         DB::beginTransaction();
+        $userId = auth()->id();
         try {
             $product = New_product::findOrFail($id);
+            $product->user_id = $userId;
             $productFilter = RepairFilter::create($product->toArray());
             $product->delete();
             DB::commit();
