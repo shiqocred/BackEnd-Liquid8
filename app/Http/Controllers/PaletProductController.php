@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use App\Models\New_product;
 
 class PaletProductController extends Controller
 {
@@ -43,15 +44,15 @@ class PaletProductController extends Controller
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
 
-            $palet = Palet::create([ 
+            $palet = Palet::create([
                 'name_palet' => $request->name_palet,
                 'category_palet' => $request->category_palet,
                 'total_price_palet' => $request->total_price_palet,
                 'total_product_palet' => $request->total_product_palet,
                 'palet_barcode' => $request->palet_barcode,
             ]);
-    
-    
+
+
             $insertData = $product_filters->map(function ($product) use ($palet) {
                 return [
                     'palet_id' => $palet->id,
@@ -69,14 +70,14 @@ class PaletProductController extends Controller
                     'new_tag_product' => $product->new_tag_product
                 ];
             })->toArray();
-    
+
             PaletProduct::insert($insertData);
-    
+
             PaletFilter::where('user_id', $userId)->delete();
-             
+
             DB::commit();
             return new ResponseResource(true, "Palet berhasil dibuat", $palet);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal membuat palet: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke palet', 'error' => $e->getMessage()], 500);
@@ -112,6 +113,74 @@ class PaletProductController extends Controller
      */
     public function destroy(PaletProduct $paletProduct)
     {
-        //
+        DB::beginTransaction();
+        try {
+            New_product::create([
+                'code_document' => $paletProduct->code_document,
+                'old_barcode_product' => $paletProduct->old_barcode_product,
+                'new_barcode_product' => $paletProduct->new_barcode_product,
+                'new_name_product' => $paletProduct->new_name_product,
+                'new_quantity_product' => $paletProduct->new_quantity_product,
+                'new_price_product' => $paletProduct->new_price_product,
+                'old_price_product' => $paletProduct->old_price_product,
+                'new_date_in_product' => $paletProduct->new_date_in_product,
+                'new_status_product' => $paletProduct->new_status_product,
+                'new_quality' => $paletProduct->new_quality,
+                'new_category_product' => $paletProduct->new_category_product,
+                'new_tag_product' => $paletProduct->new_tag_product
+            ]);
+
+
+            $palet = Palet::findOrFail($paletProduct->palet_id);
+            $palet->update([
+                'total_price_palet' => $palet->total_price_palet - $paletProduct->new_price_product
+            ]);
+
+            $paletProduct->delete();
+
+            DB::commit();
+            return new ResponseResource(true, "palet berhasil dihapus", $paletProduct);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Gagal menghapus produk palet: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus produk palet', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function addProductPalet(New_product $new_product, Palet $palet)
+    {
+
+        DB::beginTransaction();
+        try {
+
+            $productPalet = PaletProduct::create([
+                'palet_id' => $palet->id,
+                'code_document' => $new_product->code_document,
+                'old_barcode_product' => $new_product->old_barcode_product,
+                'new_barcode_product' => $new_product->new_barcode_product,
+                'new_name_product' => $new_product->new_name_product,
+                'new_quantity_product' => $new_product->new_quantity_product,
+                'new_price_product' => $new_product->new_price_product,
+                'old_price_product' => $new_product->old_price_product,
+                'new_date_in_product' => $new_product->new_date_in_product,
+                'new_status_product' => $new_product->new_status_product,
+                'new_quality' => $new_product->new_quality,
+                'new_category_product' => $new_product->new_category_product,
+                'new_tag_product' => $new_product->new_tag_product
+            ]);
+
+            $palet->update([
+                'total_price_palet' => $palet->total_price_palet + $productPalet->new_price_product
+            ]);
+
+            $new_product->delete();
+
+            DB::commit();
+            return new ResponseResource(true, "Product palet berhasil di tambahkan", $productPalet);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Gagal membuat palet: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke palet', 'error' => $e->getMessage()], 500);
+        }
     }
 }

@@ -130,6 +130,11 @@ class ProductBundleController extends Controller
                 'new_tag_product' => $productBundle->new_tag_product
             ]);
 
+            $bundle = Bundle::findOrFail($productBundle->bundle_id);
+            $bundle->update([
+                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->new_price_product
+            ]);
+
             $productBundle->delete();
 
             DB::commit();
@@ -161,6 +166,10 @@ class ProductBundleController extends Controller
                 'new_quality' => $new_product->new_quality,
                 'new_category_product' => $new_product->new_category_product,
                 'new_tag_product' => $new_product->new_tag_product
+            ]);
+
+            $bundle->update([
+                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->new_price_product
             ]);
 
             $new_product->delete();
