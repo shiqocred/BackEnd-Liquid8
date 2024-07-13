@@ -19,6 +19,7 @@ class RepairController extends Controller
      */
     public function index(Request $request)
     {
+        $userId =  auth()->id();
         $query = $request->input('q');
 
         $repairs = Repair::latest()

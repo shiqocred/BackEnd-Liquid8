@@ -18,25 +18,28 @@ class ProductFilterController extends Controller
 
     public function index()
     {
-        $product_filters = Product_Filter::latest()->paginate(100);
+        $userId = auth()->id();
+        $product_filtersByUser = Product_Filter::where('user_id', $userId)->get();
 
-        $totalNewPriceWithCategory = Product_Filter::whereNotNull('new_category_product')->sum('new_price_product');
-        $totalOldPriceWithoutCategory = Product_Filter::whereNull('new_category_product')->sum('old_price_product');
+        $totalNewPriceWithCategory = $product_filtersByUser->whereNotNull('new_category_product')->sum('new_price_product');
+        $totalOldPriceWithoutCategory = $product_filtersByUser->whereNull('new_category_product')->sum('old_price_product');
 
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
 
         $category = null;
 
         if ($totalNewPrice > 99999) {
-            $category = Category::all();
+            $category = Category::all(); 
         } else {
-            foreach ($product_filters as $product_filter) {
+            foreach ($product_filtersByUser as $product_filter) {
                 $product_filter->new_tag_product = Color_tag::where('min_price_color', '<=', $totalNewPrice)
                     ->where('max_price_color', '>=', $totalNewPrice)
                     ->select('fixed_price_color', 'name_color')->get();
 
             }
         }
+
+        $product_filters = Product_Filter::latest()->paginate(100);
 
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
@@ -57,10 +60,12 @@ class ProductFilterController extends Controller
 
 
     public function store($id)
-    {
+    { 
         DB::beginTransaction();
+        $userId = auth()->id();
         try {
             $product = New_product::findOrFail($id);
+            $product->user_id = $userId;
             $productFilter = Product_Filter::create($product->toArray());
             $product->delete();
             DB::commit();
@@ -109,7 +114,6 @@ class ProductFilterController extends Controller
             return new ResponseResource(true, "berhasil menghapus list product bundle", $product_filter);
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
