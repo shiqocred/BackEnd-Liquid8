@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Validator;
+
 
 class PaletController extends Controller
 {
@@ -103,7 +105,30 @@ class PaletController extends Controller
      */
     public function update(Request $request, Palet $palet)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_palet' => 'required',
+            'total_price_palet' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $palet->update([
+                'name_palet' => $request->nama_palet,
+                'total_price_palet' => $request->total_price_palet,
+            ]);
+
+            DB::commit();
+            return new ResponseResource(true, "palet berhasil di edit", $palet);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Palet gagal di edit" . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Palet gagal di edit', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -144,6 +169,7 @@ class PaletController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal menghapus palet', 'error' => $e->getMessage()], 500);
         }
     }
+
 
     public function exportPalletsDetail($id) 
     {
@@ -230,4 +256,5 @@ class PaletController extends Controller
 
         return new ResponseResource(true, "unduh", $downloadUrl);
     }
+
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\BundleController;
 use App\Http\Controllers\BundleQcdController;
 use App\Http\Controllers\BuyerController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CheckConnectionController;
 use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DestinationController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
 use App\Models\New_product;
+use App\Models\PaletProduct;
 use App\Models\ProductApprove;
 use App\Models\Repair;
 use App\Models\RiwayatCheck;
@@ -126,7 +128,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-   
+
    Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
 
@@ -146,7 +148,8 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
-   Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+   Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
+   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
 
    //promo
    Route::get('promo', [PromoController::class, 'index']);
@@ -166,6 +169,10 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('palet/{palet}', [PaletController::class, 'show']);
    Route::post('palet', [PaletProductController::class, 'store']);
    Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
+   Route::put('palet/{palet}', [PaletController::class, 'update']);
+
+   Route::get('product-palet/{new_product}/{palet}/add', [PaletProductController::class, 'addProductPalet']);
+   Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
 
    //categories discount
    Route::resource('categories', CategoryController::class);
@@ -294,8 +301,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
    Route::get('product-approveByDoc/{code_document}', [ProductApproveController::class, 'productsApproveByDoc'])
-   ->where('code_document', '.*');
-
+      ->where('code_document', '.*');
 });
 
 Route::post('login', [AuthController::class, 'login']);
@@ -318,3 +324,6 @@ Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+
+// route untuk cek koneksi
+Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
