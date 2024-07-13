@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Bundle;
 use Illuminate\Http\Request;
 use App\Models\Product_Bundle;
-use App\Models\Product_Filter; 
+use App\Models\Product_Filter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use App\Models\New_product;
 
 class ProductBundleController extends Controller
 {
@@ -69,7 +70,7 @@ class ProductBundleController extends Controller
                 ];
             })->toArray();
 
-            Product_Bundle::insert($insertData); 
+            Product_Bundle::insert($insertData);
 
             Product_Filter::query()->delete();
 
@@ -110,21 +111,65 @@ class ProductBundleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(Product_Bundle $productBundle)
     {
         DB::beginTransaction();
         try {
-            Product_Bundle::where('bundle_id', $id)->delete();
+            New_product::create([
+                'code_document' => $productBundle->code_document,
+                'old_barcode_product' => $productBundle->old_barcode_product,
+                'new_barcode_product' => $productBundle->new_barcode_product,
+                'new_name_product' => $productBundle->new_name_product,
+                'new_quantity_product' => $productBundle->new_quantity_product,
+                'new_price_product' => $productBundle->new_price_product,
+                'new_date_in_product' => $productBundle->new_date_in_product,
+                'new_status_product' => 'display',
+                'new_quality' => $productBundle->new_quality,
+                'new_category_product' => $productBundle->new_category_product,
+                'new_tag_product' => $productBundle->new_tag_product
+            ]);
 
-            // $bundle = Bundle::findOrFail($id);
-            // $bundle->delete();
+            $productBundle->delete();
 
             DB::commit();
-            return new ResponseResource(true, "produk bundle  berhasil dihapus", null);
+            return new ResponseResource(true, "produk bundle  berhasil dihapus", $productBundle);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal menghapus bundle: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function addProductBundle(New_product $new_product, Bundle $bundle)
+    {
+
+        DB::beginTransaction();
+        try {
+
+            $productBundle = Product_Bundle::create([
+                'bundle_id' => $bundle->id,
+                'code_document' => $new_product->code_document,
+                'old_barcode_product' => $new_product->old_barcode_product,
+                'new_barcode_product' => $new_product->new_barcode_product,
+                'new_name_product' => $new_product->new_name_product,
+                'new_quantity_product' => $new_product->new_quantity_product,
+                'new_price_product' => $new_product->new_price_product,
+                'old_price_product' => $new_product->old_price_product,
+                'new_date_in_product' => $new_product->new_date_in_product,
+                'new_status_product' => 'bundle',
+                'new_quality' => $new_product->new_quality,
+                'new_category_product' => $new_product->new_category_product,
+                'new_tag_product' => $new_product->new_tag_product
+            ]);
+
+            $new_product->delete();
+
+            DB::commit();
+            return new ResponseResource(true, "Product bundle berhasil di tambahkan", $productBundle);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Gagal membuat bundle: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke bundle', 'error' => $e->getMessage()], 500);
         }
     }
 }

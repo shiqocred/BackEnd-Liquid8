@@ -39,7 +39,7 @@ class Handler extends ExceptionHandler
             ], 404);
         }
 
-    
+
 
         if ($e instanceof RouteNotFoundException) {
             return response()->json([
@@ -49,6 +49,5 @@ class Handler extends ExceptionHandler
         }
 
         return parent::render($request, $e);
-
     }
 }
