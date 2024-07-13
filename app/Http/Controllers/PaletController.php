@@ -8,13 +8,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class PaletController extends Controller
 {
     public function display(Request $request)
     {
         $query = $request->input('q');
-    
+
         $new_products = New_product::query()
             ->where('new_status_product', 'display')
             ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
@@ -26,15 +28,15 @@ class PaletController extends Controller
             })
             ->where('new_tag_product', null)
             ->paginate(50);
-    
+
         return new ResponseResource(true, "Data produk dengan status display.", $new_products);
     }
-    
+
 
 
     public function index(Request $request)
     {
-       
+
         $query = $request->input('q');
         $palets = Palet::latest()
             ->with('paletProducts')
@@ -73,18 +75,18 @@ class PaletController extends Controller
     public function show(Request $request, Palet $palet)
     {
         $query = $request->input('q');
-        $palet->load(['paletProducts' => function($productPalet) use ($query) {
-            if(!empty($query)){
+        $palet->load(['paletProducts' => function ($productPalet) use ($query) {
+            if (!empty($query)) {
                 $productPalet->where('new_name_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             }
         }]);
         $palet->total_harga_lama = $palet->paletProducts->sum('old_price_product');
-      
-        return new ResponseResource(true, "list product", $palet );
+
+        return new ResponseResource(true, "list product", $palet);
     }
 
 
@@ -143,5 +145,89 @@ class PaletController extends Controller
         }
     }
 
+    public function exportPalletsDetail($id) 
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
 
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+
+        $paletHeaders = [
+            'id', 'name_palet', 'category_palet', 'total_price_palet',
+            'total_product_palet', 'palet_barcode', 'total_harga_lama',
+        ];
+
+        $paletProductsHeaders = [
+            'palet_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
+            'new_name_product', 'new_quantity_product', 'new_price_product',
+            'old_price_product', 'new_date_in_product', 'new_status_product',
+            'new_quality', 'new_category_product', 'new_tag_product'
+        ];
+
+        $columnIndex = 1;
+        foreach ($paletHeaders as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        $rowIndex = 2;
+
+        $palet = Palet::with('paletProducts')->where('id', $id)->first();
+        if ($palet) {
+            $columnIndex = 1;
+
+            // Menuliskan data bundle ke sheet
+            foreach ($paletHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($columnIndex, $rowIndex, $palet->$header);
+                $columnIndex++;
+            }
+            $rowIndex++;
+
+            $rowIndex++;
+            // Menuliskan header product_bundles
+            $productColumnIndex = 1;
+            foreach ($paletProductsHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $header);
+                $productColumnIndex++;
+            }
+            $rowIndex++;
+
+            // Menuliskan data product_bundles ke sheet
+            if ($palet->paletProducts->isNotEmpty()) {
+                foreach ($palet->paletProducts as $productPalet) {
+                    $productColumnIndex = 1; // Mulai dari kolom pertama
+                    foreach ($paletProductsHeaders as $header) {
+                        $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $productPalet->$header);
+                        $productColumnIndex++;
+                    }
+                    $rowIndex++;
+                }
+            }
+            $rowIndex++; // Baris kosong setelah setiap bundle
+        } else {
+            // Jika tidak ada bundle ditemukan
+            $sheet->setCellValueByColumnAndRow(1, 1, 'No data found');
+        }
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'exportPalet_'.$palet->name_palet.'.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "unduh", $downloadUrl);
+    }
 }

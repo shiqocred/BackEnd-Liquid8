@@ -17,4 +17,6 @@ class Repair extends Model
     public function notifications(){
         return $this->hasMany(Notification::class);
     }
+
+
 }
