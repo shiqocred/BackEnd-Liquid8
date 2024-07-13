@@ -8,13 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\Validator;
 
 class PaletController extends Controller
 {
     public function display(Request $request)
     {
         $query = $request->input('q');
-    
+
         $new_products = New_product::query()
             ->where('new_status_product', 'display')
             ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
@@ -26,15 +27,15 @@ class PaletController extends Controller
             })
             ->where('new_tag_product', null)
             ->paginate(50);
-    
+
         return new ResponseResource(true, "Data produk dengan status display.", $new_products);
     }
-    
+
 
 
     public function index(Request $request)
     {
-       
+
         $query = $request->input('q');
         $palets = Palet::latest()
             ->with('paletProducts')
@@ -73,18 +74,18 @@ class PaletController extends Controller
     public function show(Request $request, Palet $palet)
     {
         $query = $request->input('q');
-        $palet->load(['paletProducts' => function($productPalet) use ($query) {
-            if(!empty($query)){
+        $palet->load(['paletProducts' => function ($productPalet) use ($query) {
+            if (!empty($query)) {
                 $productPalet->where('new_name_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             }
         }]);
         $palet->total_harga_lama = $palet->paletProducts->sum('old_price_product');
-      
-        return new ResponseResource(true, "list product", $palet );
+
+        return new ResponseResource(true, "list product", $palet);
     }
 
 
@@ -101,7 +102,30 @@ class PaletController extends Controller
      */
     public function update(Request $request, Palet $palet)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_palet' => 'required',
+            'total_price_palet' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $palet->update([
+                'name_palet' => $request->nama_palet,
+                'total_price_palet' => $request->total_price_palet,
+            ]);
+
+            DB::commit();
+            return new ResponseResource(true, "palet berhasil di edit", $palet);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Palet gagal di edit" . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Palet gagal di edit', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -142,6 +166,4 @@ class PaletController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal menghapus palet', 'error' => $e->getMessage()], 500);
         }
     }
-
-
 }

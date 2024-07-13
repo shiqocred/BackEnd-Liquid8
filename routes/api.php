@@ -35,6 +35,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
 use App\Models\New_product;
+use App\Models\PaletProduct;
 use App\Models\ProductApprove;
 use App\Models\Repair;
 use App\Models\RiwayatCheck;
@@ -168,6 +169,10 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::get('palet/{palet}', [PaletController::class, 'show']);
    Route::post('palet', [PaletProductController::class, 'store']);
    Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
+   Route::put('palet/{palet}', [PaletController::class, 'update']);
+
+   Route::get('product-palet/{new_product}/{palet}/add', [PaletProductController::class, 'addProductPalet']);
+   Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
 
    //categories discount
    Route::resource('categories', CategoryController::class);
