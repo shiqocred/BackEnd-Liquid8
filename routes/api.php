@@ -309,11 +309,14 @@ Route::post('login', [AuthController::class, 'login']);
 //export-task anas
 Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
 Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
-Route::post('exportBundles', [BundleController::class, 'exportBundles']);
+Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
+Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
+Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
 
 
 
 //export urgent
+Route::post('exportBundles', [BundleController::class, 'exportBundles']);
 Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
 
 

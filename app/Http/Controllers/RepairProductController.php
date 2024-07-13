@@ -40,7 +40,7 @@ class RepairProductController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-        $userId = User::find(auth()->id());
+        $userId = auth()->id();
 
         DB::beginTransaction();
         try {
@@ -50,7 +50,7 @@ class RepairProductController extends Controller
             }
 
             $repair = Repair::create([
-                'user_id' => $userId->id,
+                'user_id' => $userId,
                 'repair_name' => $request->repair_name,
                 'total_price' => $request->total_price,
                 'total_custom_price' => $request->total_custom_price,
@@ -82,7 +82,7 @@ class RepairProductController extends Controller
             RepairFilter::where('user_id', $userId)->delete();
 
             $keterangan = Notification::create([
-                'user_id' => $userId->id,
+                'user_id' => $userId,
                 'notification_name' => 'Butuh Approvement untuk Repair',
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),

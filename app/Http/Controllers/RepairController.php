@@ -10,6 +10,8 @@ use App\Models\New_product;
 use App\Models\Color_tag;
 use App\Models\Product_old;
 use App\Models\Notification;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 
 class RepairController extends Controller
@@ -165,5 +167,91 @@ class RepairController extends Controller
         } while (New_product::where('new_barcode_product', $barcode)->exists());
 
         return $barcode;
+    }
+
+    public function exportRepairDetail($id)
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+
+        $repairHeaders = [
+            'id', 'repair_name', 'total_price', 'total_custom_price',
+            'total_products', 'product_status', 'barcode',
+        ];
+
+        $repairProductHeaders = [
+            'repair_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
+            'new_name_product', 'new_quantity_product', 'new_price_product',
+            'old_price_product', 'new_date_in_product', 'new_status_product',
+            'new_quality', 'new_category_product', 'new_tag_product'
+        ];
+
+        $columnIndex = 1;
+        foreach ($repairHeaders as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        $rowIndex = 2;
+
+        $repair = Repair::with('repair_products')->where('id', $id)->first();
+        if ($repair) {
+            $columnIndex = 1;
+
+            // Menuliskan data bundle ke sheet
+            foreach ($repairHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($columnIndex, $rowIndex, $repair->$header);
+                $columnIndex++;
+            }
+            $rowIndex++;
+
+            $rowIndex++;
+            // Menuliskan header product_bundles
+            $productColumnIndex = 1;
+            foreach ($repairProductHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $header);
+                $productColumnIndex++;
+            }
+            $rowIndex++;
+
+            // Menuliskan data product_bundles ke sheet
+            if ($repair->repair_products->isNotEmpty()) {
+                foreach ($repair->repair_products as $productPalet) {
+                    $productColumnIndex = 1; // Mulai dari kolom pertama
+                    foreach ($repairProductHeaders as $header) {
+                        $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $productPalet->$header);
+                        $productColumnIndex++;
+                    }
+                    $rowIndex++;
+                }
+            }
+            $rowIndex++; // Baris kosong setelah setiap bundle
+        } else {
+            // Jika tidak ada bundle ditemukan
+            $sheet->setCellValueByColumnAndRow(1, 1, 'No data found');
+        }
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'exportRepair_'.$repair->repair_name.'.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "unduh", $downloadUrl);
     }
 }
