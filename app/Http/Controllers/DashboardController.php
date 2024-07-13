@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ResponseResource;
 use App\Models\Document;
 use App\Models\New_product;
+use App\Models\SaleDocument;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -15,52 +17,65 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $thisYear = date('Y');
 
-        $countInboundOutbound = New_Product::select(
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('SUM(CASE WHEN new_status_product IN ("sale", "migrate") THEN 1 ELSE 0 END) AS outbound_count'),
-            DB::raw('COUNT(*) AS inbound_count')
-        )
-            ->whereYear('created_at', $thisYear)
-            ->groupBy(DB::raw('MONTH(created_at)'))
+        $currentYear = now()->year;
+        $factor = 100; // Faktor pengali untuk mengubah decimal menjadi bilangan bulat
+
+        // Ambil semua transaksi selesai di tahun ini
+        $allTransactions = SaleDocument::with('sales')
+            ->where('status_document_sale', 'selesai')
+            ->whereHas('sales', function ($query) {
+                $query->where('status_sale', 'selesai');
+            })
+            ->whereYear('created_at', $currentYear)
             ->get();
 
-        //Sale Category
-        $totalNewProductSaleByCategory = New_product::select('new_category_product', DB::raw('COUNT(*) as total'))
-            ->where('new_status_product', 'sale')
-            ->groupBy('new_category_product')
-            ->get();
-        $totalNewProductSaleByCategory[] = ['all_total' => $totalNewProductSaleByCategory->sum('total')];
+        // Hitung total nilai transaksi sepanjang tahun dalam bentuk bilangan bulat
+        $totalTransactionValueYear = $allTransactions->sum(function ($transaction) use ($factor) {
+            return intval($transaction->total_price_document_sale * $factor);
+        });
 
-        //Inbound Data
-        $document = Document::select('base_document', 'created_at', 'total_column_in_document')->latest()->paginate(8);
+        // Kelompokkan transaksi berdasarkan bulan
+        $summaryTransactionCustomer = $allTransactions->groupBy(function ($date) {
+            return Carbon::parse($date->created_at)->format('F'); // Mengelompokkan berdasarkan nama bulan
+        });
 
-        //Expired Product
-        $totalNewProductExpiredByCategory = New_product::select('new_category_product', DB::raw('COUNT(*) as total'))
-            ->where('new_status_product', 'expired')
-            ->groupBy('new_category_product')
-            ->get();
-        $totalNewProductExpiredByCategory[] = ['all_total' => $totalNewProductExpiredByCategory->sum('total')];
+        $resultSummaryTransactionCustomer = [];
 
-        //Product by Category
-        $totalNewProductByCategory = New_product::select('new_category_product', DB::raw('COUNT(*) as total'))
-            ->whereIn('new_status_product', ['display', 'promo', 'bundle'])
-            ->groupBy('new_category_product')
-            ->get();
-        $totalNewProductByCategory[] = ['all_total' => $totalNewProductByCategory->sum('total')];
+        foreach ($summaryTransactionCustomer as $month => $data) {
+            $total_transactions = $data->count();
+            $total_customers = $data->unique('buyer_id_document_sale')->count();
+            $total_transaction_value = $data->sum(function ($transaction) use ($factor) {
+                return intval($transaction->total_price_document_sale * $factor);
+            });
+
+            // Hitung persentase transaksi bulan ini terhadap total nilai transaksi sepanjang tahun
+            $transaction_percentage = $totalTransactionValueYear > 0 ? ($total_transaction_value / $totalTransactionValueYear) * 100 : 0;
+
+            // Konversi kembali nilai total transaksi ke bentuk decimal
+            $total_transaction_value_decimal = $total_transaction_value / $factor;
+
+            // Rata-rata transaksi menggunakan nilai desimal
+            $average_transaction_value = $data->avg('total_price_document_sale');
+
+            $resultSummaryTransactionCustomer[] = [
+                'month' => $month,
+                'total_transactions' => $total_transactions,
+                'total_customers' => $total_customers,
+                'total_transaction_value' => $total_transaction_value_decimal, // Konversi kembali ke decimal
+                'transaction_percentage' => round($transaction_percentage, 2), // Dibulatkan ke dua desimal
+                'average_transaction_value' => $average_transaction_value,
+            ];
+        }
 
         $resource = new ResponseResource(
             true,
             "Data dashboard analytic",
             [
-                "chart_inbound_outbound" => $countInboundOutbound,
-                "product_sales" => $totalNewProductSaleByCategory,
-                "inbound_data" => $document,
-                "expired_data" => $totalNewProductExpiredByCategory,
-                "product_data" => $totalNewProductByCategory
+                "summary_transaction_customer" => $resultSummaryTransactionCustomer,
             ]
         );
+
         return $resource->response();
     }
 

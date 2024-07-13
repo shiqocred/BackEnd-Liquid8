@@ -147,7 +147,8 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
-   Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+   Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
+   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
 
    //promo
    Route::get('promo', [PromoController::class, 'index']);
