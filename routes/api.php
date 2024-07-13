@@ -301,9 +301,17 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group
 
 Route::post('login', [AuthController::class, 'login']);
 
-// Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
-// Route::post('exportNp2', [NewProductController::class, 'exportNewProducts2']);
-// Route::post('exportBundles', [NewProductController::class, 'exportBundles']);
+//export-task anas
+Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
+Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
+Route::post('exportBundles', [BundleController::class, 'exportBundles']);
+
+
+
+//export urgent
+Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
+
+
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 

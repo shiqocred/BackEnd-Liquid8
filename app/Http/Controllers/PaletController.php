@@ -34,6 +34,7 @@ class PaletController extends Controller
 
     public function index(Request $request)
     {
+       
         $query = $request->input('q');
         $palets = Palet::latest()
             ->with('paletProducts')
@@ -141,4 +142,6 @@ class PaletController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal menghapus palet', 'error' => $e->getMessage()], 500);
         }
     }
+
+
 }

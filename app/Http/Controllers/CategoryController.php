@@ -6,6 +6,9 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class CategoryController extends Controller
 {
@@ -114,5 +117,63 @@ class CategoryController extends Controller
     {
         $category->delete();
         return new ResponseResource(true, "berhasil di hapus", $category);
+    }
+
+    public function exportCategory(Request $request)
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        // Membuat spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Menentukan headers berdasarkan nama kolom di tabel new_products
+        $headers = [
+            'ID', 'Nama Category', 'Discount', 'Max Price Discount',
+            'Created At', 'Updated At'
+        ];
+
+        // Menuliskan headers ke sheet
+        $columnIndex = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        // Variabel untuk melacak baris
+        $rowIndex = 2;
+
+        // Mengambil data dalam batch
+        Category::chunk(1000, function ($categories) use ($sheet, &$rowIndex) {
+                foreach ($categories as $category) {
+                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $category->id);
+                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $category->name_category);
+                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $category->discount_category);
+                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $category->max_price_category);
+                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $category->created_at);
+                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $category->updated_at);
+                    $rowIndex++;
+                }
+            });
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'categories.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 }

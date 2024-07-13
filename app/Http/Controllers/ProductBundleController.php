@@ -36,8 +36,9 @@ class ProductBundleController extends Controller
     public function store(Request $request)
     {
         DB::beginTransaction();
+        $userId = auth()->id();
         try {
-            $product_filters = Product_Filter::all();
+            $product_filters = Product_Filter::where('user_id', $userId)->get();
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
@@ -72,7 +73,7 @@ class ProductBundleController extends Controller
 
             Product_Bundle::insert($insertData);
 
-            Product_Filter::query()->delete();
+            Product_Filter::where('user_id', $userId)->delete();
 
             DB::commit();
             return new ResponseResource(true, "Bundle berhasil dibuat", $bundle);

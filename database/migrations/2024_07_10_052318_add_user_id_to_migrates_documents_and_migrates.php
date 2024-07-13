@@ -21,9 +21,7 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
+
     public function down(): void
     {
         Schema::table('migrate_documents', function (Blueprint $table) {

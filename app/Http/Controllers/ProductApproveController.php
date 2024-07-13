@@ -406,11 +406,8 @@ class ProductApproveController extends Controller
     public function documentsApprove(Request $request)
     {
         $query = $request->input('q');
-        $user = User::with('role')->find(auth()->id());
-    
-        if ($user) {
+
             $notifQuery = Notification::with('riwayat_check')->latest();
-            // $documents = Document::where('status_document', 'in progress');
             
             if (!empty($query)) {
                 $notifQuery->whereHas('riwayat_check', function($q) use ($query){
@@ -418,16 +415,14 @@ class ProductApproveController extends Controller
                 });
             } else {
                 $notifQuery->whereHas('riwayat_check', function ($q) {
-                    $q->where('status_approve', 'pending');
+                    $q->where('status_approve', 'pending')->orWhere('status_approve', 'done');
                 });
             }
     
             $documents = $notifQuery->get();
            
             return new ResponseResource(true, "Document Approves", $documents);
-        } else {
-            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
-        }
+        
     }
 
     public function productsApproveByDoc(Request $request, $code_document){
