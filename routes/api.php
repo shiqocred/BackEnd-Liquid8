@@ -43,13 +43,14 @@ use App\Models\SpecialTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+//patokan urutan role : Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,
 
 // Route ini berfungsi jika route nya tidak di temukan. maka, akan ke muncul pesan 404
 Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi'])->group(function () {
    // =========================================== repair station ==================================================
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -98,7 +99,7 @@ Route::middleware(['auth:sanctum', 'check.role:Reparasi,Spv,Admin,Admin Kasir'])
    Route::get('getProductRepair', [RepairController::class, 'getProductRepair']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(function () {
    //=========================================== outbound ==========================================================
 
    //migrate
@@ -122,7 +123,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin kasir,Admin'])->group(funct
    Route::get('new_products', [NewProductController::class, 'index']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
 
    //=========================================== inbound ==========================================================
    //generates file excel -> input data ekspedisi 
@@ -194,8 +195,7 @@ Route::middleware(['auth:sanctum', 'check.role:Spv,Team leader,Admin'])->group(f
    Route::resource('migrate-documents', MigrateDocumentController::class);
 });
 
-
-Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
@@ -280,15 +280,33 @@ Route::middleware(['auth:sanctum', 'check.role:Crew,Team leader,Spv,Admin'])->gr
    Route::resource('notifications', NotificationController::class);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Team leader,Admin kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin kasir'])->group(function () {
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
    Route::get('new_products', [NewProductController::class, 'index']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Spv,Admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::resource('destinations', DestinationController::class);
+
+   //export data by menu
+   Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
+   Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
+   Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
+   Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
+   Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
+   Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
+   Route::post('exportMigrateDetail/{id}', [MigrateDocumentController::class, 'exportMigrateDetail']);
+   Route::post('exportBuyers', [BuyerController::class, 'exportBuyers']);
+   Route::post('exportUsers', [UserController::class, 'exportUsers']);
+});
+
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi'])->group(function () {
+   Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
+   Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
+   Route::get('product-approveByDoc/{code_document}', [ProductApproveController::class, 'productsApproveByDoc'])
+      ->where('code_document', '.*');
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
@@ -297,29 +315,14 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::resource('roles', RoleController::class);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Spv,Admin,Crew,Reparasi'])->group(function () {
-   Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
-   Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
-   Route::get('product-approveByDoc/{code_document}', [ProductApproveController::class, 'productsApproveByDoc'])
-      ->where('code_document', '.*');
-});
 
+
+//login
 Route::post('login', [AuthController::class, 'login']);
-
-//export-task anas
-Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
-Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
-Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
-Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
-Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
-
-
 
 //export urgent
 Route::post('exportBundles', [BundleController::class, 'exportBundles']);
 Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
-
-
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
