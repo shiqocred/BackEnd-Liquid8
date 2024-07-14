@@ -205,7 +205,6 @@ class PaletController extends Controller
         if ($palet) {
             $columnIndex = 1;
 
-            // Menuliskan data bundle ke sheet
             foreach ($paletHeaders as $header) {
                 $sheet->setCellValueByColumnAndRow($columnIndex, $rowIndex, $palet->$header);
                 $columnIndex++;
@@ -213,7 +212,6 @@ class PaletController extends Controller
             $rowIndex++;
 
             $rowIndex++;
-            // Menuliskan header product_bundles
             $productColumnIndex = 1;
             foreach ($paletProductsHeaders as $header) {
                 $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $header);
@@ -221,7 +219,6 @@ class PaletController extends Controller
             }
             $rowIndex++;
 
-            // Menuliskan data product_bundles ke sheet
             if ($palet->paletProducts->isNotEmpty()) {
                 foreach ($palet->paletProducts as $productPalet) {
                     $productColumnIndex = 1; // Mulai dari kolom pertama
@@ -232,9 +229,8 @@ class PaletController extends Controller
                     $rowIndex++;
                 }
             }
-            $rowIndex++; // Baris kosong setelah setiap bundle
+            $rowIndex++;
         } else {
-            // Jika tidak ada bundle ditemukan
             $sheet->setCellValueByColumnAndRow(1, 1, 'No data found');
         }
 

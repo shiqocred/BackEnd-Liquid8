@@ -9,6 +9,8 @@ use App\Models\New_product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class MigrateDocumentController extends Controller
 {
@@ -136,6 +138,86 @@ class MigrateDocumentController extends Controller
             $resource = new ResponseResource(false, 'Data gagal di merge', [$e->getMessage()]);
         }
         return $resource->response();
+    }
+
+    public function exportMigrateDetail($id)
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+
+        $migrateHeaders = [
+            'id', 'code_document_migrate', 'destiny_document_migrate', 'total_product_document_migrate',
+            'status_document_migrate'
+        ];
+
+        $migrateProductHeaders = [
+            'code_document_migrate', 'product_color', 'product_total',
+            'status_migrate'
+        ];
+
+        $columnIndex = 1;
+        foreach ($migrateHeaders as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        $rowIndex = 2;
+
+        $migrate = MigrateDocument::with('migrates')->where('id', $id)->first();
+        if ($migrate) {
+            $columnIndex = 1;
+
+            foreach ($migrateHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($columnIndex, $rowIndex, $migrate->$header);
+                $columnIndex++;
+            }
+            $rowIndex++;
+
+            $rowIndex++;
+            $productColumnIndex = 1;
+            foreach ($migrateProductHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $header);
+                $productColumnIndex++;
+            }
+            $rowIndex++;
+
+            if ($migrate->migrates->isNotEmpty()) {
+                foreach ($migrate->migrates as $productMigrate) {
+                    $productColumnIndex = 1; // Mulai dari kolom pertama
+                    foreach ($migrateProductHeaders as $header) {
+                        $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $productMigrate->$header);
+                        $productColumnIndex++;
+                    }
+                    $rowIndex++;
+                }
+            }
+            $rowIndex++; // Baris kosong 
+        } else {
+            $sheet->setCellValueByColumnAndRow(1, 1, 'No data found');
+        }
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'exportRepair_'.$migrate->repair_name.'.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "unduh", $downloadUrl);
     }
     
 }

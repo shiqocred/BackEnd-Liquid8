@@ -203,7 +203,6 @@ class RepairController extends Controller
         if ($repair) {
             $columnIndex = 1;
 
-            // Menuliskan data bundle ke sheet
             foreach ($repairHeaders as $header) {
                 $sheet->setCellValueByColumnAndRow($columnIndex, $rowIndex, $repair->$header);
                 $columnIndex++;
@@ -211,7 +210,6 @@ class RepairController extends Controller
             $rowIndex++;
 
             $rowIndex++;
-            // Menuliskan header product_bundles
             $productColumnIndex = 1;
             foreach ($repairProductHeaders as $header) {
                 $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $header);
@@ -219,7 +217,6 @@ class RepairController extends Controller
             }
             $rowIndex++;
 
-            // Menuliskan data product_bundles ke sheet
             if ($repair->repair_products->isNotEmpty()) {
                 foreach ($repair->repair_products as $productPalet) {
                     $productColumnIndex = 1; // Mulai dari kolom pertama
@@ -230,9 +227,8 @@ class RepairController extends Controller
                     $rowIndex++;
                 }
             }
-            $rowIndex++; // Baris kosong setelah setiap bundle
+            $rowIndex++; 
         } else {
-            // Jika tidak ada bundle ditemukan
             $sheet->setCellValueByColumnAndRow(1, 1, 'No data found');
         }
 
