@@ -132,7 +132,8 @@ class ProductBundleController extends Controller
 
             $bundle = Bundle::findOrFail($productBundle->bundle_id);
             $bundle->update([
-                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->new_price_product
+                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->new_price_product,
+                'total_product_bundle' => $bundle->total_product_bundle - 1,
             ]);
 
             $productBundle->delete();
@@ -169,7 +170,8 @@ class ProductBundleController extends Controller
             ]);
 
             $bundle->update([
-                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->new_price_product
+                'total_price_custom_bundle' => $bundle->total_price_custom_bundle + $productBundle->new_price_product,
+                'total_product_bundle' => $bundle->total_product_bundle + 1,
             ]);
 
             $new_product->delete();
