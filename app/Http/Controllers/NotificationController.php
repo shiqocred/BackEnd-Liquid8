@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\Document;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 
 class NotificationController extends Controller
@@ -120,9 +121,9 @@ class NotificationController extends Controller
                         return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
                     }
 
-                    // if ($notification->status == 'done') {
-                    //     return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
-                    // }
+                    if ($notification->status == 'done') {
+                        return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 200);
+                    }
 
                     $notification->update([
                         'notification_name' => 'Approved',
@@ -151,11 +152,13 @@ class NotificationController extends Controller
                                         'new_quantity_product' => $productApprove->new_quantity_product,
                                         'new_price_product' => $productApprove->new_price_product,
                                         'old_price_product' => $productApprove->old_price_product,
-                                        'new_date_in_product' => $productApprove->new_date_in_product,
+                                        'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
                                         'new_status_product' => $productApprove->new_status_product,
                                         'new_quality' => $productApprove->new_quality,
                                         'new_category_product' => $productApprove->new_category_product,
                                         'new_tag_product' => $productApprove->new_tag_product,
+                                        'created_at' => now(),  
+                                        'updated_at' => now(),
                                     ];
 
                                     $productApprove->delete();
@@ -187,7 +190,9 @@ class NotificationController extends Controller
                                 'new_status_product' => 'display',
                                 'new_quality' => $product->new_quality,
                                 'new_category_product' => $product->new_category_product,
-                                'new_tag_product' => $product->new_tag_product
+                                'new_tag_product' => $product->new_tag_product,
+                                'created_at' => now(),  
+                                'updated_at' => now(),
                             ]);
 
                             // Hapus produk terkait dari repair_products sebelum menghapus repairCheck
@@ -249,6 +254,4 @@ class NotificationController extends Controller
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
-
-   
 }

@@ -82,7 +82,7 @@ class ProductApproveController extends Controller
     {
         if ($request->input('data.needConfirmation') === true) {
             $inputData = $request->input('data.resource');
-            $newBarcode = $this->generateNewBarcode($inputData['new_category_product']);
+            $newBarcode = generateNewBarcode($inputData['new_category_product']);
             $inputData['new_barcode_product'] = $newBarcode;
             $newProduct = ProductApprove::create($inputData);
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
