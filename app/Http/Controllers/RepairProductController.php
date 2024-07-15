@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 use App\Models\New_product;
+use Illuminate\Support\Facades\Validator;
 
 class RepairProductController extends Controller
 {
@@ -120,7 +121,34 @@ class RepairProductController extends Controller
      */
     public function update(Request $request, RepairProduct $repairProduct)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'new_barcode_product' => 'required',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
+            'new_category_product' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
+            return $resource->response()->setStatusCode(422);
+        }
+
+        try {
+            $repairProduct->update([
+                'new_barcode_product' => $request->new_barcode_product,
+                'new_name_product' => $request->new_name_product,
+                'new_quantity_product' => $request->new_quantity_product,
+                'old_price_product' => $request->old_price_product,
+                'new_category_product' => $request->new_category_product,
+            ]);
+
+            $resource = new ResponseResource(true, "Data berhasil di ganti!", $repairProduct);
+            return $resource->response();
+        } catch (\Exception $e) {
+            $resource = new ResponseResource(false, "Data gagal di simpan!", [$e->getMessage()]);
+            return $resource->response()->setStatusCode(500);
+        }
     }
 
     /**
@@ -128,7 +156,36 @@ class RepairProductController extends Controller
      */
     public function destroy(RepairProduct $repairProduct)
     {
-        //
+        DB::beginTransaction();
+        try {
+            New_product::create([
+                'code_document' => $repairProduct->code_document,
+                'old_barcode_product' => $repairProduct->old_barcode_product,
+                'new_barcode_product' => $repairProduct->new_barcode_product,
+                'new_name_product' => $repairProduct->new_name_product,
+                'new_quantity_product' => $repairProduct->new_quantity_product,
+                'new_price_product' => $repairProduct->new_price_product,
+                'old_price_product' => $repairProduct->new_price_product,
+                'new_date_in_product' => $repairProduct->new_date_in_product,
+                'new_status_product' => 'display',
+                'new_quality' => $repairProduct->new_quality,
+                'new_category_product' => $repairProduct->new_category_product,
+                'new_tag_product' => $repairProduct->new_tag_product
+            ]);
+
+            $repair = Repair::findOrFail($repairProduct->repair_id);
+            $repair->update([
+                'total_products' => $repair->total_products - 1,
+            ]);
+
+            $repairProduct->delete();
+
+            DB::commit();
+            return new ResponseResource(true, "Produk repair berhasil dihapus", $repairProduct);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus produk repair', 'error' => $e->getMessage()], 500);
+        }
     }
 
     public function updateRepair($id)

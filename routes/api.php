@@ -93,6 +93,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi'])
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
    Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
 
+   Route::put('product-repair/{repairProduct}', [RepairProductController::class, 'update']);
+   Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
+
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::get('new_products', [NewProductController::class, 'index']);
 
