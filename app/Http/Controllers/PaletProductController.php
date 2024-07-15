@@ -133,7 +133,8 @@ class PaletProductController extends Controller
 
             $palet = Palet::findOrFail($paletProduct->palet_id);
             $palet->update([
-                'total_price_palet' => $palet->total_price_palet - $paletProduct->new_price_product
+                'total_price_palet' => $palet->total_price_palet - $paletProduct->new_price_product,
+                'total_product_palet' => $palet->total_product_palet - 1,
             ]);
 
             $paletProduct->delete();
@@ -170,7 +171,8 @@ class PaletProductController extends Controller
             ]);
 
             $palet->update([
-                'total_price_palet' => $palet->total_price_palet + $productPalet->new_price_product
+                'total_price_palet' => $palet->total_price_palet + $productPalet->new_price_product,
+                'total_product_palet' => $palet->total_product_palet + 1,
             ]);
 
             $new_product->delete();
