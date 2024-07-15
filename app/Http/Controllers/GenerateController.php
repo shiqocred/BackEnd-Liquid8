@@ -183,7 +183,6 @@ class GenerateController extends Controller
     
                 // Validasi panjang old_name_product
                 if ($nama !== null && strlen($nama) > 512) {
-                    Log::error("Nama produk terlalu panjang: {$nama}");
                     return response()->json(['error' => "Nama produk terlalu panjang: {$nama}"], 422);
                 }
     
@@ -193,10 +192,11 @@ class GenerateController extends Controller
                     'old_name_product' => $nama,
                     'old_quantity_product' => $qty,
                     'old_price_product' => $harga,
+                    'created_at' => now(),  
+                    'updated_at' => now(),
                 ];
             }
     
-            Log::info('Data to insert', $dataToInsert);
     
             $chunkSize = 500;
             $totalInsertedRows = 0;

@@ -361,7 +361,7 @@ class NewProductController extends Controller
                     }
                     $product['fixed_price'] = $fixedPrice->fixed_price_color;
                 }
-            }
+            }            
 
             return new ResponseResource(true, "List product expired", $productExpDisplay);
         } catch (\Exception $e) {

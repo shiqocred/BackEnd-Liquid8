@@ -74,7 +74,9 @@ class RepairProductController extends Controller
                     'new_status_product' => 'repair',
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product
+                    'new_tag_product' => $product->new_tag_product,
+                    'created_at' => now(),  
+                    'updated_at' => now(),
                 ];
             })->toArray();
 

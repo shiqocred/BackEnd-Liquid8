@@ -284,7 +284,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin kasir'])->group(function () {
-   Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
+   // Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
    Route::get('new_products', [NewProductController::class, 'index']);
 });
 
@@ -292,6 +292,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::resource('destinations', DestinationController::class);
+   Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
 
    //export data by menu
    Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);

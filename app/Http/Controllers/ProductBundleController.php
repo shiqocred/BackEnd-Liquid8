@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 use App\Models\New_product;
+use Carbon\Carbon;
 
 class ProductBundleController extends Controller
 {
@@ -67,7 +68,9 @@ class ProductBundleController extends Controller
                     'new_status_product' => 'bundle',
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product
+                    'new_tag_product' => $product->new_tag_product,
+                    'created_at' => now(),  
+                    'updated_at' => now(),
                 ];
             })->toArray();
 
