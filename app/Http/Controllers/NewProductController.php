@@ -327,7 +327,8 @@ class NewProductController extends Controller
             $query = $request->input('q');
             $productExpired = New_product::where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_status_product', 'expired')
-                    ->where('new_name_product', 'LIKE', '%' . $query  . '%');
+                    ->whereNull('new_tag_product')
+                    ->where('new_name_product', 'LIKE', '%' . $query . '%');
             })->paginate(50);
 
             return new ResponseResource(true, "list product expired", $productExpired);

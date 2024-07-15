@@ -6,7 +6,7 @@ use App\Http\Resources\ResponseResource;
 use App\Models\Migrate;
 use App\Models\MigrateDocument;
 use App\Models\New_product;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
