@@ -1,9 +1,10 @@
 <?php
 
-use App\Models\Migrate;
-use App\Models\MigrateDocument;
 use App\Models\Sale;
+use App\Models\Migrate;
+use Illuminate\Support\Str;
 use App\Models\SaleDocument;
+use App\Models\MigrateDocument;
 use Illuminate\Support\Facades\DB;
 
 function codeDocumentMigrate()
@@ -53,4 +54,28 @@ function codeDocumentSale($userId)
     }
     $code = "LQDSLE" . $no;
     return $code;
+}
+
+function generateNewBarcode($category)
+{
+    $bulanIndo = [
+        1 => 'Januari',
+        2 => 'Februari',
+        3 => 'Maret',
+        4 => 'April',
+        5 => 'Mei',
+        6 => 'Juni',
+        7 => 'Juli',
+        8 => 'Agustus',
+        9 => 'September',
+        10 => 'Oktober',
+        11 => 'November',
+        12 => 'Desember'
+    ];
+    $categoryInitial = strtoupper(substr($category, 0, 1));
+    $currentMonth = $bulanIndo[date('n')];
+    $currentMonth = strtoupper(substr($currentMonth, 0, 1));
+    $randomString = strtoupper(Str::random(5));
+
+    return "L{$categoryInitial}{$currentMonth}{$randomString}";
 }
