@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
+use Exception;
+use Carbon\Carbon;
+use App\Models\Sale;
 use App\Models\Bundle;
 use App\Models\Category;
-use App\Models\New_product;
-use App\Models\Sale;
-use App\Models\SaleDocument;
 use Brick\Math\BigInteger;
-use Exception;
+use App\Models\New_product;
+use App\Models\SaleDocument;
 use Illuminate\Http\Request;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 
 class SaleDocumentController extends Controller
@@ -136,35 +137,43 @@ class SaleDocumentController extends Controller
     }
     
 
-    public function combinedReport(Request $request)
-    {
-        $user = auth()->user();
-        $name_user = $user->name;
-        $codeDocument = $request->input('code_document_sale');
-        $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
-        $totalTransactionsToday = SaleDocument::whereDate('created_at', today())->count();
+public function combinedReport(Request $request)
+{
+    $user = auth()->user();
+    $name_user = $user->name;
+    $codeDocument = $request->input('code_document_sale');
+    $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
 
-        if (!$saleDocument) {
-            return response()->json([
-                'data' => null,
-                'message' => 'Dokumen penjualan tidak ditemukan',
-            ], 404);
-        }
-
-        $categoryReport = $this->generateCategoryReport($saleDocument);
-        // $barcodeReport = $this->generateBarcodeReport($saleDocument);
-
+    if (!$saleDocument) {
         return response()->json([
-            'data' => [
-                'name_user' => $name_user,
-                'transactions_today' => $totalTransactionsToday,
-                'category_report' => $categoryReport,
-                // 'NameBarcode_report' => $barcodeReport,
-            ],
-            'message' => 'Laporan penjualan',
-            'buyer' => $saleDocument
-        ]);
+            'data' => null,
+            'message' => 'Dokumen penjualan tidak ditemukan',
+        ], 404);
     }
+
+    $timezone = 'Asia/Jakarta';
+    $currentTransactionTime = Carbon::parse($saleDocument->created_at)->timezone($timezone);
+
+    $totalTransactionsBeforeCurrent = SaleDocument::whereDate('created_at', $currentTransactionTime->toDateString())
+        ->where('created_at', '<', $currentTransactionTime)
+        ->count();
+
+    $pembeliKeBerapa = $totalTransactionsBeforeCurrent + 1;
+
+    $categoryReport = $this->generateCategoryReport($saleDocument);
+    // $barcodeReport = $this->generateBarcodeReport($saleDocument);
+
+    return response()->json([
+        'data' => [
+            'name_user' => $name_user,
+            'transactions_today' => $pembeliKeBerapa, 
+            'category_report' => $categoryReport,
+            // 'NameBarcode_report' => $barcodeReport,
+        ],
+        'message' => 'Laporan penjualan',
+        'buyer' => $saleDocument
+    ]);
+}
 
     private function generateCategoryReport($saleDocument)
     {
