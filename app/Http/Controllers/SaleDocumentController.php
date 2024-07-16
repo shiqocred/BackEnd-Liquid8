@@ -138,9 +138,11 @@ class SaleDocumentController extends Controller
 
     public function combinedReport(Request $request)
     {
+        $user = auth()->user();
+        $name_user = $user->name;
         $codeDocument = $request->input('code_document_sale');
         $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
-
+        $totalTransactionsToday = SaleDocument::whereDate('created_at', today())->count();
 
         if (!$saleDocument) {
             return response()->json([
@@ -154,6 +156,8 @@ class SaleDocumentController extends Controller
 
         return response()->json([
             'data' => [
+                'name_user' => $name_user,
+                'transactions_today' => $totalTransactionsToday,
                 'category_report' => $categoryReport,
                 // 'NameBarcode_report' => $barcodeReport,
             ],
