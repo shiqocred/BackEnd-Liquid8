@@ -100,7 +100,9 @@ class SaleController extends Controller
                     $newProduct->new_name_product,
                     $newProduct->new_category_product,
                     $newProduct->new_barcode_product,
-                    $newProduct->new_price_product
+                    $newProduct->display_price,
+                    $newProduct->new_price_product,
+                    $newProduct->new_discount
                 ];
             } elseif ($bundle) {
                 $data = [

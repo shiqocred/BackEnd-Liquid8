@@ -153,7 +153,9 @@ class PaletController extends Controller
                     'new_status_product' => $product->new_status_product,
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product
+                    'new_tag_product' => $product->new_tag_product,
+                    'new_discount' => $product->new_discount,
+                    'display_price' => $product->display_price
                 ]);
 
                 $product->delete();
@@ -190,7 +192,7 @@ class PaletController extends Controller
             'palet_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
             'new_name_product', 'new_quantity_product', 'new_price_product',
             'old_price_product', 'new_date_in_product', 'new_status_product',
-            'new_quality', 'new_category_product', 'new_tag_product'
+            'new_quality', 'new_category_product', 'new_tag_product', 'new_discount', 'display_price'
         ];
 
         $columnIndex = 1;

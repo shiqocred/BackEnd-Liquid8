@@ -160,6 +160,7 @@ class MigrateController extends Controller
                     'new_tag_product' => $newProduct['new_tag_product'],
                     'status_migrate' => 'proses',
                     'status_product_before' => $newProduct['new_status_product'],
+       
                 ]);
 
                 $newProduct->update(['new_status_product' => 'sale']);

@@ -75,6 +75,8 @@ class RepairProductController extends Controller
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
+                    'new_discount' => $product->new_discount,
+                    'display_price' => $product->display_price,
                     'created_at' => now(),  
                     'updated_at' => now(),
                 ];
@@ -172,7 +174,9 @@ class RepairProductController extends Controller
                 'new_status_product' => 'display',
                 'new_quality' => $repairProduct->new_quality,
                 'new_category_product' => $repairProduct->new_category_product,
-                'new_tag_product' => $repairProduct->new_tag_product
+                'new_tag_product' => $repairProduct->new_tag_product,
+                'new_discount' => $repairProduct->new_discount,
+                'display_price' => $repairProduct->display_price,
             ]);
 
             $repair = Repair::findOrFail($repairProduct->repair_id);
@@ -245,6 +249,8 @@ class RepairProductController extends Controller
                 "new_quality" => $product->new_quality,
                 "new_category_product" => $product->new_category_product,
                 "new_tag_product" => $product->new_tag_product,
+                'new_discount' => $product->new_discount,
+                'display_price' => $product->display_price,
             ]);
 
             // Hancurkan objek produk

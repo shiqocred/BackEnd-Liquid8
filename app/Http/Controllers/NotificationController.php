@@ -157,7 +157,9 @@ class NotificationController extends Controller
                                         'new_quality' => $productApprove->new_quality,
                                         'new_category_product' => $productApprove->new_category_product,
                                         'new_tag_product' => $productApprove->new_tag_product,
-                                        'created_at' => now(),  
+                                        'new_discount' => $productApprove->new_discount,
+                                        'display_price' => $productApprove->display_price,
+                                        'created_at' => now(),
                                         'updated_at' => now(),
                                     ];
 
@@ -191,7 +193,9 @@ class NotificationController extends Controller
                                 'new_quality' => $product->new_quality,
                                 'new_category_product' => $product->new_category_product,
                                 'new_tag_product' => $product->new_tag_product,
-                                'created_at' => now(),  
+                                'new_discount' => $productApprove->new_discount,
+                                'display_price' => $productApprove->display_price,
+                                'created_at' => now(),
                                 'updated_at' => now(),
                             ]);
 
