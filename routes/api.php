@@ -91,7 +91,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi'])
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
 
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
-   Route::get('repair-mv/{id}', [RepairProductController::class, 'show']);
+   Route::get('repair-product-mv/{repair}', [RepairProductController::class, 'show']);
    Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
 
    Route::put('product-repair/{repairProduct}', [RepairProductController::class, 'update']);
