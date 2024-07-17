@@ -85,7 +85,9 @@ class NewProductController extends Controller
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_discount' => 'nullable|numeric',
+            'display_price' => 'nullable|numeric',
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
 
@@ -150,7 +152,9 @@ class NewProductController extends Controller
             'old_price_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product'
+            'new_tag_product',
+            'new_discount',
+            'display_price'
         ]);
 
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
@@ -218,7 +222,9 @@ class NewProductController extends Controller
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
             'condition' => 'nullable',
             'new_category_product' => 'nullable',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_discount' => 'nullable',
+            'display_price' => 'nullable' 
         ]);
 
         if ($validator->fails()) {
@@ -246,7 +252,9 @@ class NewProductController extends Controller
             'new_date_in_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product'
+            'new_tag_product',
+            'new_discount',
+            'display_price'
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -277,7 +285,6 @@ class NewProductController extends Controller
         if ($new_product->new_category_product != null) {
             $inputData['new_barcode_product'] = $new_product->new_barcode_product;
         }
-
 
         $new_product->update($inputData);
 
@@ -607,7 +614,9 @@ class NewProductController extends Controller
                 'old_price_product' => 'required|numeric',
                 'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
                 'new_category_product' => 'nullable|exists:categories,name_category',
-                'new_tag_product' => 'nullable|exists:color_tags,name_color'
+                'new_tag_product' => 'nullable|exists:color_tags,name_color',
+                'new_discount' => 'nullable',
+                'display_price' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -624,7 +633,9 @@ class NewProductController extends Controller
                 'new_date_in_product',
                 'new_status_product',
                 'new_category_product',
-                'new_tag_product'
+                'new_tag_product',
+                'new_discount',
+                'display_price'
             ]);
 
             $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -649,10 +660,6 @@ class NewProductController extends Controller
                 $inputData['new_price_product'] = $colortag['fixed_price_color'];
                 $inputData['new_tag_product'] = $colortag['name_color'];
             }
-
-
-
-
 
             $product->update($inputData);
 
@@ -947,7 +954,9 @@ class NewProductController extends Controller
             'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_discount' => 'nullable',
+            'display_price' => 'nullable',
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada'
         ]);
@@ -980,6 +989,7 @@ class NewProductController extends Controller
                 'new_category_product',
                 'new_tag_product',
                 'price_discount',
+          
             ]);
 
             $inputData['new_status_product'] = 'display';
@@ -990,6 +1000,8 @@ class NewProductController extends Controller
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
             }
+            $inputData['new_discount'] = 0;
+            $inputData['display_price'] = $inputData['new_price_product'];
 
 
             $newProduct = New_product::create($inputData);

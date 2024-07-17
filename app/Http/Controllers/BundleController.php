@@ -111,7 +111,9 @@ class BundleController extends Controller
                     'new_status_product' => 'display',
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product
+                    'new_tag_product' => $product->new_tag_product,
+                    'display_price' => $product->display_price,
+                    'new_discount' => $product->new_discount
                 ]);
 
                 $product->delete();

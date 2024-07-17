@@ -197,7 +197,8 @@ class RiwayatCheckController extends Controller
                 'new_quantity_product',
                 'old_price_product',
                 'new_category_product',
-                'new_price_product'
+                'new_price_product',
+          
             )
             ->get();
 
@@ -218,6 +219,7 @@ class RiwayatCheckController extends Controller
                 DB::raw('JSON_UNQUOTE(JSON_EXTRACT(new_quality, "$.abnormal")) AS abnormal_value'),
                 'new_quantity_product',
                 'old_price_product',
+      
             )
             ->get();
 

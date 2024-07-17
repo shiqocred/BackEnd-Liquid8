@@ -19,8 +19,8 @@ use App\Http\Resources\ProductapproveResource;
 class ProductApproveController extends Controller
 {
     // Array bulan dalam bahasa Indonesia
-     
-     /**
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -76,7 +76,7 @@ class ProductApproveController extends Controller
      * Store a newly created resource in storage.
      */
 
-  
+
 
     public function store(Request $request)
     {
@@ -84,9 +84,12 @@ class ProductApproveController extends Controller
             $inputData = $request->input('data.resource');
             $newBarcode = generateNewBarcode($inputData['new_category_product']);
             $inputData['new_barcode_product'] = $newBarcode;
+            if ($inputData['display_price'] == 0) {
+                $inputData['display_price'] = $inputData['new_price_product'];
+            }
             $newProduct = ProductApprove::create($inputData);
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
-        }else {
+        } else {
             $validator = Validator::make($request->all(), [
                 'code_document' => 'required',
                 'old_barcode_product' => 'required',
@@ -99,7 +102,8 @@ class ProductApproveController extends Controller
                 'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
                 'condition' => 'required|in:lolos,damaged,abnormal',
                 'new_category_product' => 'nullable|exists:categories,name_category',
-                'new_tag_product' => 'nullable|exists:color_tags,name_color'
+                'new_tag_product' => 'nullable|exists:color_tags,name_color',
+
             ], [
                 'new_barcode_product.unique' => 'barcode sudah ada',
                 'old_barcode_product.exists' => 'barcode tidak ada'
@@ -130,9 +134,9 @@ class ProductApproveController extends Controller
 
         try {
             if (!isset($newProduct)) {
-                $generate = generateNewBarcode($inputData['new_category_product']); 
+                $generate = generateNewBarcode($inputData['new_category_product']);
                 $inputData['new_barcode_product'] = $generate;
-                $newProduct = ProductApprove::create($inputData); 
+                $newProduct = ProductApprove::create($inputData);
             }
 
             $this->updateDocumentStatus($request->input('code_document'));
@@ -159,8 +163,6 @@ class ProductApproveController extends Controller
 
     private function prepareInputData($request, $status, $qualityData)
     {
-        // Log input request data
-        Log::info('Request data: ', $request->all());
 
         $inputData = $request->only([
             'code_document',
@@ -174,7 +176,7 @@ class ProductApproveController extends Controller
             'new_category_product',
             'new_tag_product',
             'condition',
-            'deskripsi'
+            'deskripsi',
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -188,6 +190,10 @@ class ProductApproveController extends Controller
             $inputData['new_category_product'] = null;
             $inputData['new_price_product'] = null;
         }
+
+        $inputData['new_discount'] = 0;
+        $inputData['display_price'] = $inputData['new_price_product'];
+
 
         return $inputData;
     }
@@ -244,7 +250,9 @@ class ProductApproveController extends Controller
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_discount',
+            'display_price'
         ]);
 
         if ($validator->fails()) {
@@ -271,7 +279,9 @@ class ProductApproveController extends Controller
             'new_date_in_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product'
+            'new_tag_product',
+            'new_discount',
+            'display_price'
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -284,7 +294,6 @@ class ProductApproveController extends Controller
         }
 
         $inputData['new_quality'] = json_encode($qualityData);
-
 
         $productApprove->update($inputData);
 
@@ -384,37 +393,35 @@ class ProductApproveController extends Controller
     {
         $query = $request->input('q');
 
-            $notifQuery = Notification::with('riwayat_check')->latest();
-            
-            if (!empty($query)) {
-                $notifQuery->whereHas('riwayat_check', function($q) use ($query){
-                    $q->where('status_approve', $query);
-                });
-            } else {
-                $notifQuery->whereHas('riwayat_check', function ($q) {
-                    $q->where('status_approve', 'pending')->orWhere('status_approve', 'done');
-                });
-            }
-    
-            $documents = $notifQuery->get();
-           
-            return new ResponseResource(true, "Document Approves", $documents);
-        
+        $notifQuery = Notification::with('riwayat_check')->latest();
+
+        if (!empty($query)) {
+            $notifQuery->whereHas('riwayat_check', function ($q) use ($query) {
+                $q->where('status_approve', $query);
+            });
+        } else {
+            $notifQuery->whereHas('riwayat_check', function ($q) {
+                $q->where('status_approve', 'pending')->orWhere('status_approve', 'done');
+            });
+        }
+
+        $documents = $notifQuery->get();
+
+        return new ResponseResource(true, "Document Approves", $documents);
     }
 
-    public function productsApproveByDoc(Request $request, $code_document){
+    public function productsApproveByDoc(Request $request, $code_document)
+    {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
         if ($user) {
             $products = ProductApprove::where('code_document', $code_document)->get();
-            if(!empty($query)){
+            if (!empty($query)) {
                 $products->where('new_name_product', $query);
             }
             return new ResponseResource(true, 'products', $products);
-        }else {
+        } else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
-      
     }
-    
 }
