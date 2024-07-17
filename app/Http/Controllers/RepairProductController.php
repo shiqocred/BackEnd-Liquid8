@@ -105,9 +105,9 @@ class RepairProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(RepairProduct $repair)
+    public function show(RepairProduct $repairProduct)
     {
-        return new ResponseResource(true, "detail product repair", $repair);
+        return new ResponseResource(true, "detail product repair", $repairProduct);
     }
 
     /**
