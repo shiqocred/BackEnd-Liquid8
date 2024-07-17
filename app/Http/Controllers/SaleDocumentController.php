@@ -23,10 +23,10 @@ class SaleDocumentController extends Controller
     {
         $query = $request->input('q');
         $saleDocuments = SaleDocument::with('user:id,name')->where('status_document_sale', 'selesai')->latest();
-        if($query){
-            $saleDocuments= $saleDocuments->where(function($data) use ($query){
+        if ($query) {
+            $saleDocuments = $saleDocuments->where(function ($data) use ($query) {
                 $data->where('code_document_sale', 'LIKE', '%' . $query . '%')
-                ->orWhere('buyer_name_document_sale', 'LIKE', '%' . $query . '%');
+                    ->orWhere('buyer_name_document_sale', 'LIKE', '%' . $query . '%');
             });
         }
         $saleDocuments = $saleDocuments->paginate(10);
@@ -97,15 +97,15 @@ class SaleDocumentController extends Controller
     public function saleFinish(Request $request)
     {
         try {
-            $userId = $request->user()->id; 
+            $userId = $request->user()->id;
             $saleDocument = SaleDocument::where('status_document_sale', 'proses')
-                                        ->where('user_id', $userId) 
-                                        ->first();
+                ->where('user_id', $userId)
+                ->first();
             if ($saleDocument == null) {
                 throw new Exception("Data sale belum dibuat!");
             }
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
-    
+
             foreach ($sales as $sale) {
                 $newProduct = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
                 $bundle = Bundle::where('barcode_bundle', $sale->product_barcode_sale)->first();
@@ -121,59 +121,58 @@ class SaleDocumentController extends Controller
                 }
                 $sale->update(['status_sale' => 'selesai']);
             }
-    
+
             $saleDocument->update([
                 'total_product_document_sale' => count($sales),
                 'total_price_document_sale' => $sales->sum('product_price_sale'),
                 'status_document_sale' => 'selesai'
             ]);
-    
+
             $resource = new ResponseResource(true, "Data berhasil disimpan!", $saleDocument);
         } catch (\Exception $e) {
             $resource = new ResponseResource(false, "Data gagal disimpan!", $e->getMessage());
         }
-    
+
         return $resource->response();
     }
-    
 
-public function combinedReport(Request $request)
-{
-    $user = auth()->user();
-    $name_user = $user->name;
-    $codeDocument = $request->input('code_document_sale');
-    $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
+    public function combinedReport(Request $request)
+    {
+        $user = auth()->user();
+        $name_user = $user->name;
+        $codeDocument = $request->input('code_document_sale');
+        $saleDocument = SaleDocument::where('code_document_sale', $codeDocument)->first();
 
-    if (!$saleDocument) {
+        if (!$saleDocument) {
+            return response()->json([
+                'data' => null,
+                'message' => 'Dokumen penjualan tidak ditemukan',
+            ], 404);
+        }
+
+        $timezone = 'Asia/Jakarta';
+        $currentTransactionTime = Carbon::parse($saleDocument->created_at)->timezone($timezone);
+
+        $totalTransactionsBeforeCurrent = SaleDocument::whereDate('created_at', $currentTransactionTime->toDateString())
+            ->where('created_at', '<', $currentTransactionTime)
+            ->count();
+
+        $pembeliKeBerapa = $totalTransactionsBeforeCurrent + 1;
+
+        $categoryReport = $this->generateCategoryReport($saleDocument);
+        // $barcodeReport = $this->generateBarcodeReport($saleDocument);
+
         return response()->json([
-            'data' => null,
-            'message' => 'Dokumen penjualan tidak ditemukan',
-        ], 404);
+            'data' => [
+                'name_user' => $name_user,
+                'transactions_today' => $pembeliKeBerapa,
+                'category_report' => $categoryReport,
+                // 'NameBarcode_report' => $barcodeReport,
+            ],
+            'message' => 'Laporan penjualan',
+            'buyer' => $saleDocument
+        ]);
     }
-
-    $timezone = 'Asia/Jakarta';
-    $currentTransactionTime = Carbon::parse($saleDocument->created_at)->timezone($timezone);
-
-    $totalTransactionsBeforeCurrent = SaleDocument::whereDate('created_at', $currentTransactionTime->toDateString())
-        ->where('created_at', '<', $currentTransactionTime)
-        ->count();
-
-    $pembeliKeBerapa = $totalTransactionsBeforeCurrent + 1;
-
-    $categoryReport = $this->generateCategoryReport($saleDocument);
-    // $barcodeReport = $this->generateBarcodeReport($saleDocument);
-
-    return response()->json([
-        'data' => [
-            'name_user' => $name_user,
-            'transactions_today' => $pembeliKeBerapa, 
-            'category_report' => $categoryReport,
-            // 'NameBarcode_report' => $barcodeReport,
-        ],
-        'message' => 'Laporan penjualan',
-        'buyer' => $saleDocument
-    ]);
-}
 
     private function generateCategoryReport($saleDocument)
     {
@@ -211,7 +210,7 @@ public function combinedReport(Request $request)
                 $totalPrice += $totalPricePerCategory;
                 $categoryName = $group->first()->product_name_sale;
                 $category = $categories->firstWhere('name_category', $categoryName);
-        
+
                 return [
                     'category' => $categoryName,
                     'total_quantity' => $group->sum('product_qty_sale'),
@@ -220,7 +219,7 @@ public function combinedReport(Request $request)
                 ];
             })->values()->all();
         }
-        
+
         return ["category_list" => $categoryReport, 'total_harga' => $totalPrice];
     }
 
