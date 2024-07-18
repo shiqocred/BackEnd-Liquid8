@@ -145,7 +145,9 @@ class SaleController extends Controller
                     'product_barcode_sale' => $data[2],
                     'product_price_sale' => $data[3],
                     'product_qty_sale' => 1,
-                    'status_sale' => 'proses'
+                    'status_sale' => 'proses',
+                    'new_discount' => $data[5],
+                    'display_price' => $data[3]
                 ]
             );
 
