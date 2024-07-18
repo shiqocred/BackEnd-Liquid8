@@ -21,128 +21,175 @@ class CategoryFactory extends Factory
         return [];
     }
 
-    public function fashion()
+    public function cat1()
     {
         return $this->state(function (array $attributes) {
             return [
-                'name_category' => 'fashion',
+                'name_category' => 'TOYS HOBBIES (200-699)',
+                'discount_category' => 50,
+                'max_price_category' => 699999
+            ];
+        });
+    }
+
+    public function cat2()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'TOYS HOBBIES (>700)	',
+                'discount_category' => 40,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+
+    public function cat3()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'FMCG',
+                'discount_category' => 50,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+
+    public function cat4()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'BABY PRODUCT',
+                'discount_category' => 40,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+
+    public function cat5()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'OTOMOTIF MOTOR',
                 'discount_category' => 60,
-                'max_price_category' => 200000
+                'max_price_category' => 10000000
             ];
         });
     }
 
-    public function otomotif()
+    public function cat6()
     {
         return $this->state(function (array $attributes){
             return [
-                'name_category' => 'otomotif',
+                'name_category' => 'OTOMOTIF MOBIL',
                 'discount_category' => 60,
-                'max_price_category' => 200000
+                'max_price_category' => 10000000
             ];
         });
     }
 
-    public function toys_hobbies_a()
+    public function cat7()
     {
         return $this->state(function (array $attributes){
             return [
-                'name_category' => 'toys_hobbies_a',
+                'name_category' => 'ELEKTRONIK HV',
+                'discount_category' => 30,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+
+    public function cat8()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'ELEKTRONIK ART',
+                'discount_category' => 40,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+
+    public function cat9()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'ACC (0-499)',
                 'discount_category' => 60,
-                'max_price_category' => 200000
-            ];
-        });
-    }
-
-    public function art()
-    {
-        return $this->state(function (array $attributes){
-            return [
-                'name_category' => 'art',
-                'discount_category' => 50,
-                'max_price_category' => 200000
-            ];
-        });
-    }
-
-    public function toys_hobbies_b()
-    {
-        return $this->state(function (array $attributes){
-            return [
-                'name_category' => 'toys_hobbies_b',
-                'discount_category' => 50,
-                'max_price_category' => 200000
-            ];
-        });
-    }
-
-    public function others_fmcg()
-    {
-        return $this->state(function (array $attributes){
-            return [
-                'name_category' => 'others_fmcg',
-                'discount_category' => 50,
-                'max_price_category' => 200000
-            ];
-        });
-    }
-    public function elektronic_art()
-    {
-        return $this->state(function (array $attributes){
-            return [
-                'name_category' => 'elektronic_art',
-                'discount_category' => 50,
-                'max_price_category' => 1000000
-            ];
-        });
-    }
-
-    public function mainan_hv()
-    {
-        return $this->state(function (array $attributes){
-            return [
-                'name_category' => 'mainan_hv',
-                'discount_category' => 50,
-                'max_price_category' => 200000
-            ];
-        });
-    }
-
-    public function perlengkapan_bayi()
-    {
-        return $this->state(function (array $attributes){
-            return [
-                'name_category' => 'perlengkapan_bayi',
-                'discount_category' => 50,
-                'max_price_category' => 200000
+                'max_price_category' => 499999
             ];
         });
     }
     
-    public function beauty()
+    public function cat10()
     {
         return $this->state(function (array $attributes){
             return [
-                'name_category' => 'beauty',
+                'name_category' => 'ACC (>500)',
                 'discount_category' => 50,
-                'max_price_category' => 200000
+                'max_price_category' => 10000000
             ];
         });
     }
-    public function electronic_hv()
+    public function cat11()
     {
         return $this->state(function (array $attributes){
             return [
-                'name_category' => 'electronic_hv',
-                'discount_category' => 50,
-                'max_price_category' => 1000000
+                'name_category' => 'FASHION',
+                'discount_category' => 60,
+                'max_price_category' => 10000000
             ];
         });
     }
-
-
-
-
+    public function cat12()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'ATK',
+                'discount_category' => 50,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+    public function cat13()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'ART HV',
+                'discount_category' => 40,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+    public function cat14()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'TOYS HOBBIES (0-199)',
+                'discount_category' => 60,
+                'max_price_category' => 199999
+            ];
+        });
+    }
+    public function cat15()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'ART',
+                'discount_category' => 50,
+                'max_price_category' => 10000000
+            ];
+        });
+    }
+    public function cat16()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'OTHER',
+                'discount_category' => 50,
+                'max_price_category' => 2000000
+            ];
+        });
+    }
 
    
 

@@ -27,17 +27,22 @@ class DatabaseSeeder extends Seeder
 
         Buyer::factory(10)->create();
 
-        Category::factory()->fashion()->create();
-        Category::factory()->otomotif()->create();
-        Category::factory()->toys_hobbies_a()->create();
-        Category::factory()->art()->create();
-        Category::factory()->toys_hobbies_b()->create();
-        Category::factory()->others_fmcg()->create();
-        Category::factory()->elektronic_art()->create();
-        Category::factory()->mainan_hv()->create();
-        Category::factory()->perlengkapan_bayi()->create();
-        Category::factory()->beauty()->create();
-        Category::factory()->electronic_hv()->create();
+        Category::factory()->cat1()->create();
+        Category::factory()->cat2()->create();
+        Category::factory()->cat3()->create();
+        Category::factory()->cat4()->create();
+        Category::factory()->cat5()->create();
+        Category::factory()->cat6()->create();
+        Category::factory()->cat7()->create();
+        Category::factory()->cat8()->create();
+        Category::factory()->cat9()->create();
+        Category::factory()->cat10()->create();
+        Category::factory()->cat11()->create();
+        Category::factory()->cat12()->create();
+        Category::factory()->cat13()->create();
+        Category::factory()->cat14()->create();
+        Category::factory()->cat15()->create();
+        Category::factory()->cat16()->create();
         Color_tag::factory()->merah()->create();
         Color_tag::factory()->biru()->create();
 

@@ -339,7 +339,7 @@ class GenerateController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-    
+
         $headerKeys = [
             'Checked Out Buyers',
             'Checked QCD',
@@ -348,26 +348,26 @@ class GenerateController extends Controller
             'Checked Palet Online',
             'Final Checkout Status'
         ];
-    
+
         DB::beginTransaction();
-    
+
         try {
             $dataToRemove = ExcelOld::all()->filter(function ($item) use ($headerKeys) {
                 $data = json_decode($item->data, true);
-    
+
                 foreach ($headerKeys as $key) {
                     if (!empty($data[$key])) {
                         return true;
                     }
                 }
-    
+
                 return false;
             });
-    
+
             $dataToRemove->each->delete();
-    
+
             DB::commit();
-    
+
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil difilter dan dibersihkan',
@@ -378,14 +378,11 @@ class GenerateController extends Controller
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
-    
+
     public function insertCleanedData()
     {
-        set_time_limit(300);
         ini_set('memory_limit', '512M');
-    
-        DB::beginTransaction();
-    
+        set_time_limit(300);
         $headerMappings = [
             'old_barcode_product' => ['Barcode'],
             'new_barcode_product' => ['Barcode'],
@@ -393,87 +390,90 @@ class GenerateController extends Controller
             'new_category_product' => ['Category'],
             'new_quantity_product' => ['Qty'],
             'new_price_product' => ['Price After Discount'],
+            'display_price' => ['Price After Discount'],
             'old_price_product' => ['Unit Price'],
             'new_date_in_product' => ['Date'],
-            'display_price' => ['Price After Discount']
         ];
-    
+
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
         }
         $code_document = $latestDocument->code_document;
-    
-        $chunkSize = 100; // Number of records to process at a time
-    
-        ExcelOld::chunk($chunkSize, function ($items) use ($headerMappings, $code_document) {
-            $mergedData = [
-                'old_barcode_product' => [],
-                'new_barcode_product' => [],
-                'new_name_product' => [],
-                'new_category_product' => [],
-                'new_quantity_product' => [],
-                'new_price_product' => [],
-                'old_price_product' => [],
-                'new_date_in_product' => [],
-                'new_quality' => [],
-                'new_discount' => [],
-                'display_price' => []
-            ];
-    
-            foreach ($items as $item) {
-                $dataItem = json_decode($item->data, true);
-    
-                foreach ($headerMappings as $templateHeader => $selectedHeaders) {
-                    foreach ($selectedHeaders as $userSelectedHeader) {
-                        if (isset($dataItem[$userSelectedHeader])) {
-                            $mergedData[$templateHeader][] = $dataItem[$userSelectedHeader];
-                        }
+
+        $ekspedisiData = ExcelOld::all()->map(function ($item) {
+            return json_decode($item->data, true);
+        });
+
+
+        $mergedData = [
+            'old_barcode_product' => [],
+            'new_barcode_product' => [],
+            'new_name_product' => [],
+            'new_category_product' => [],
+            'new_quantity_product' => [],
+            'new_price_product' => [],
+            'old_price_product' => [],
+            'new_date_in_product' => [],
+            'new_quality' => [],
+            'new_discount' => [],
+            'display_price' => [],
+        ];
+
+        foreach ($ekspedisiData as $dataItem) {
+            foreach ($headerMappings as $templateHeader => $selectedHeaders) {
+                foreach ($selectedHeaders as $userSelectedHeader) {
+                    if (isset($dataItem[$userSelectedHeader])) {
+                        $mergedData[$templateHeader][] = $dataItem[$userSelectedHeader];
+                    } else {
+                        $mergedData[$templateHeader][] = null;
                     }
                 }
-    
-                $status = $dataItem['Status'] ?? 'unknown';
-                $description = $dataItem['Description'] ?? '';
-    
-                $qualityData = [
-                    'lolos' => $status === 'lolos' ? true : null,
-                    'damaged' => $status === 'damaged' ? $description : null,
-                    'abnormal' => $status === 'abnormal' ? $description : null,
-                ];
-    
-                $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
             }
-    
-            $newProducts = [];
-    
+
+            $status = $dataItem['Status'] ?? 'unknown';
+            $description = $dataItem['Description'] ?? '';
+
+            $qualityData = [
+                'lolos' => $status === 'lolos' ? true : null,
+                'damaged' => $status === 'damaged' ? $description : null,
+                'abnormal' => $status === 'abnormal' ? $description : null,
+            ];
+
+            $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
+        }
+
+        DB::beginTransaction();
+        try {
             foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
                 $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0;
-    
-                $newProducts[] = [
+                $newProductData = [
                     'code_document' => $code_document,
                     'old_barcode_product' => $barcode,
                     'new_barcode_product' => $mergedData['new_barcode_product'][$index] ?? null,
                     'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
                     'new_category_product' => $mergedData['new_category_product'][$index] ?? null,
                     'new_quantity_product' => $quantity,
-                    'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
-                    'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
+                    'new_price_product' => isset($mergedData['new_price_product'][$index]) && $mergedData['new_price_product'][$index] !== '' ? $mergedData['new_price_product'][$index] : 0,
+                    'old_price_product' => isset($mergedData['old_price_product'][$index]) && $mergedData['old_price_product'][$index] !== '' ? $mergedData['old_price_product'][$index] : 0,
                     'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
                     'new_quality' => $mergedData['new_quality'][$index],
                     'new_discount' => 0,
-                    'display_price' => $mergedData['display_price'][$index]
+                    'display_price' => isset($mergedData['display_price'][$index]) && $mergedData['display_price'][$index] !== '' ? $mergedData['display_price'][$index] : 0,
                 ];
+
+                New_product::create($newProductData);
             }
-    
-            New_product::insert($newProducts);
-        });
-    
-        DB::commit();
-    
-        return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil dipindahkan ke tabel baru',
-        ], 200);
+
+            ExcelOld::query()->delete();
+            DB::commit();
+
+            Log::info('Merged data prepared for response', ['mergedData' => $mergedData]);
+
+            return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
-    
 }
