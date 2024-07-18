@@ -16,30 +16,30 @@ class CategoryController extends Controller
      * Display a listing of the resource.
      */
 
-     public function index(Request $request)
-     {
-       
-         $query = $request->input('q');
-         $categories = Category::query();
-     
-         if ($query) {
-             $categories = $categories->where(function($search) use ($query) {
-                 $search->where('name_category', 'LIKE', '%' . $query . '%')
-                        ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
-                        ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
-             });
-         }
-     
-         $categories = $categories->get();
-     
-         return new ResponseResource(true, "data category", $categories);
-     }
-     
+    public function index(Request $request)
+    {
+
+        $query = $request->input('q');
+        $categories = Category::query();
+
+        if ($query) {
+            $categories = $categories->where(function ($search) use ($query) {
+                $search->where('name_category', 'LIKE', '%' . $query . '%')
+                    ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
+                    ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
+            });
+        }
+
+        $categories = $categories->get();
+
+        return new ResponseResource(true, "data category", $categories);
+    }
+
 
     /**
      * Show the form for creating a new resource.
      */
-    
+
     public function create()
     {
         //
@@ -48,7 +48,7 @@ class CategoryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    
+
     public function store(Request $request)
     {
         $validation = Validator::make($request->all(), [
@@ -59,7 +59,7 @@ class CategoryController extends Controller
             'name_category.unique' => "nama category sudah ada"
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             return response()->json(['error' => $validation->errors()], 422);
         }
 
@@ -68,10 +68,8 @@ class CategoryController extends Controller
             'discount_category' => $request['discount_category'],
             'max_price_category' => $request['max_price_category']
         ]);
-        
-        return new ResponseResource(true, "berhasil menambahkan category", $category);
 
-        
+        return new ResponseResource(true, "berhasil menambahkan category", $category);
     }
 
     /**
@@ -101,13 +99,12 @@ class CategoryController extends Controller
             'max_price_category' => 'required',
         ]);
 
-        if($validation->fails()){
+        if ($validation->fails()) {
             return response()->json(['error' => $validation->errors(), 422]);
         }
         $category->update($request->all());
-        
-        return new ResponseResource(true, "berhasil edit category", $category);
 
+        return new ResponseResource(true, "berhasil edit category", $category);
     }
 
     /**
@@ -147,16 +144,16 @@ class CategoryController extends Controller
 
         // Mengambil data dalam batch
         Category::chunk(1000, function ($categories) use ($sheet, &$rowIndex) {
-                foreach ($categories as $category) {
-                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $category->id);
-                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $category->name_category);
-                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $category->discount_category);
-                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $category->max_price_category);
-                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $category->created_at);
-                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $category->updated_at);
-                    $rowIndex++;
-                }
-            });
+            foreach ($categories as $category) {
+                $sheet->setCellValueByColumnAndRow(1, $rowIndex, $category->id);
+                $sheet->setCellValueByColumnAndRow(2, $rowIndex, $category->name_category);
+                $sheet->setCellValueByColumnAndRow(3, $rowIndex, $category->discount_category);
+                $sheet->setCellValueByColumnAndRow(4, $rowIndex, $category->max_price_category);
+                $sheet->setCellValueByColumnAndRow(5, $rowIndex, $category->created_at);
+                $sheet->setCellValueByColumnAndRow(6, $rowIndex, $category->updated_at);
+                $rowIndex++;
+            }
+        });
 
         // Menyimpan file Excel
         $writer = new Xlsx($spreadsheet);
