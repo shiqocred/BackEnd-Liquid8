@@ -130,7 +130,7 @@ class RepairProductController extends Controller
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
-            'new_category_product' => 'required',
+            'new_category_product' => 'nullable',
         ]);
 
         if ($validator->fails()) {
