@@ -149,7 +149,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    //bundle
    Route::get('bundle', [BundleController::class, 'index']);
    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
-   Route::put('bundle/{bundle}', [BundleController::class, 'update']);
    Route::post('bundle', [ProductBundleController::class, 'store']);
    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
 
@@ -338,6 +337,8 @@ Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
 
 
-// Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
-// Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
-// Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
+Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
+Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
+Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
+
+
