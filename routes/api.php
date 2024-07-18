@@ -338,6 +338,6 @@ Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
 
 
-Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
-Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
-Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
+// Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
+// Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
+// Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
