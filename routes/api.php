@@ -130,9 +130,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(funct
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
 
    //=========================================== inbound ==========================================================
-   //generates file excel -> input data ekspedisi 
-   Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
-   Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+   // //generates file excel -> input data ekspedisi 
+   // Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
+   // Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
    Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
@@ -341,3 +341,9 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
 Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
 Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
+
+
+//generates file excel -> input data ekspedisi 
+Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
+Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
+
