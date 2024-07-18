@@ -177,6 +177,7 @@ class ProductApproveController extends Controller
             'new_tag_product',
             'condition',
             'deskripsi',
+            
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -186,13 +187,18 @@ class ProductApproveController extends Controller
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
         $inputData['new_quality'] = json_encode($qualityData);
 
+        $inputData['new_discount'] = 0;
+        $inputData['display_price'] = $inputData['new_price_product'];
+
         if ($status !== 'lolos') {
             $inputData['new_category_product'] = null;
             $inputData['new_price_product'] = null;
         }
-
-        $inputData['new_discount'] = 0;
-        $inputData['display_price'] = $inputData['new_price_product'];
+        
+        if( $inputData['new_price_product'] == null) {
+            $inputData['display_price'] = 0;
+        }
+        
 
 
         return $inputData;
