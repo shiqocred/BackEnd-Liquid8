@@ -85,9 +85,7 @@ class NewProductController extends Controller
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'required|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
-            'new_discount' => 'nullable|numeric',
-            'display_price' => 'nullable|numeric',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada',
 
@@ -152,9 +150,7 @@ class NewProductController extends Controller
             'old_price_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product',
-            'new_discount',
-            'display_price'
+            'new_tag_product'
         ]);
 
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
@@ -222,9 +218,7 @@ class NewProductController extends Controller
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
             'condition' => 'nullable',
             'new_category_product' => 'nullable',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
-            'new_discount' => 'nullable',
-            'display_price' => 'nullable' 
+            'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ]);
 
         if ($validator->fails()) {
@@ -252,9 +246,7 @@ class NewProductController extends Controller
             'new_date_in_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product',
-            'new_discount',
-            'display_price'
+            'new_tag_product'
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -334,8 +326,7 @@ class NewProductController extends Controller
             $query = $request->input('q');
             $productExpired = New_product::where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_status_product', 'expired')
-                    ->whereNull('new_tag_product')
-                    ->where('new_name_product', 'LIKE', '%' . $query . '%');
+                    ->where('new_name_product', 'LIKE', '%' . $query  . '%');
             })->paginate(50);
 
             return new ResponseResource(true, "list product expired", $productExpired);
@@ -368,7 +359,7 @@ class NewProductController extends Controller
                     }
                     $product['fixed_price'] = $fixedPrice->fixed_price_color;
                 }
-            }            
+            }
 
             return new ResponseResource(true, "List product expired", $productExpDisplay);
         } catch (\Exception $e) {
@@ -614,9 +605,7 @@ class NewProductController extends Controller
                 'old_price_product' => 'required|numeric',
                 'new_status_product' => 'required|in:display,expired,promo,bundle,palet',
                 'new_category_product' => 'nullable|exists:categories,name_category',
-                'new_tag_product' => 'nullable|exists:color_tags,name_color',
-                'new_discount' => 'nullable',
-                'display_price' => 'nullable'
+                'new_tag_product' => 'nullable|exists:color_tags,name_color'
             ]);
 
             if ($validator->fails()) {
@@ -633,9 +622,7 @@ class NewProductController extends Controller
                 'new_date_in_product',
                 'new_status_product',
                 'new_category_product',
-                'new_tag_product',
-                'new_discount',
-                'display_price'
+                'new_tag_product'
             ]);
 
             $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -660,6 +647,10 @@ class NewProductController extends Controller
                 $inputData['new_price_product'] = $colortag['fixed_price_color'];
                 $inputData['new_tag_product'] = $colortag['name_color'];
             }
+
+
+
+
 
             $product->update($inputData);
 
@@ -954,9 +945,7 @@ class NewProductController extends Controller
             'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
-            'new_discount' => 'nullable',
-            'display_price' => 'nullable',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color'
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada'
         ]);
@@ -989,7 +978,6 @@ class NewProductController extends Controller
                 'new_category_product',
                 'new_tag_product',
                 'price_discount',
-          
             ]);
 
             $inputData['new_status_product'] = 'display';
@@ -1000,8 +988,6 @@ class NewProductController extends Controller
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
             }
-            $inputData['new_discount'] = 0;
-            $inputData['display_price'] = $inputData['new_price_product'];
 
 
             $newProduct = New_product::create($inputData);
@@ -1146,7 +1132,7 @@ class NewProductController extends Controller
 
         // Mengambil data dalam batch
         New_product::whereNotNull('new_category_product')
-        ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
             ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
                 foreach ($products as $product) {
                     $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
@@ -1256,8 +1242,4 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
-
-  
-    
-    
 }

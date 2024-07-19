@@ -91,6 +91,7 @@ class BundleController extends Controller
         $validator = Validator::make($request->all(), [
             'name_bundle' => 'required',
             'category' => 'required',
+            'total_price_bundle' => 'required|numeric',
             'total_price_custom_bundle' => 'required|numeric',
         ]);
 
@@ -104,6 +105,7 @@ class BundleController extends Controller
             $bundle->update([
                 'name_bundle' => $request->name_bundle,
                 'category' => $request->category,
+                'total_price_bundle' => $request->total_price_bundle,
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
             ]);
 
