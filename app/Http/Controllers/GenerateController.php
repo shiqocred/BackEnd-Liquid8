@@ -23,6 +23,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
+use Faker\Factory as Faker;
 
 class GenerateController extends Controller
 {
@@ -473,4 +474,64 @@ class GenerateController extends Controller
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
     }
+
+
+    public function createDummyData($count)
+    {
+        $faker = Faker::create();
+
+        // Non-unique fields to avoid OverflowException
+        $barcodes = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            // Ensure unique barcode generation
+            $oldBarcode = $faker->ean13;
+            while (in_array($oldBarcode, $barcodes)) {
+                $oldBarcode = $faker->ean13;
+            }
+            $barcodes[] = $oldBarcode;
+
+            $newBarcode = $faker->ean13;
+            while (in_array($newBarcode, $barcodes)) {
+                $newBarcode = $faker->ean13;
+            }
+            $barcodes[] = $newBarcode;
+
+            $oldPrice = $faker->randomFloat(2, 0, 100000);
+            $newPrice = $oldPrice;
+            $newTag = '';
+            $displayPrice = 0;
+
+            if ($oldPrice >= 50000 && $oldPrice <= 99999) {
+                $newTag = 'Biru';
+                $displayPrice = 24000.00;
+            } elseif ($oldPrice >= 20000 && $oldPrice <= 49999) {
+                $newTag = 'Merah';
+                $displayPrice = 12000.00;
+            } elseif ($oldPrice >= 0 && $oldPrice <= 19999) {
+                $newTag = 'Brown';
+                $displayPrice = 0.00;
+            }
+
+            New_product::create([
+                'code_document' => $faker->unique()->word,
+                'old_barcode_product' => $oldBarcode,
+                'new_barcode_product' => $newBarcode,
+                'new_name_product' => $faker->word,
+                'new_quantity_product' => $faker->numberBetween(1, 100),
+                'new_price_product' => $newPrice,
+                'old_price_product' => $oldPrice,
+                'new_date_in_product' => $faker->date,
+                'new_status_product' => 'display',
+                'new_quality' => json_encode(['lolos' => 'lolos']),
+                'new_category_product' => null,
+                'new_tag_product' => $newTag,
+                'new_discount' => $faker->randomFloat(2, 0, 100),
+                'display_price' => $displayPrice,
+            ]);
+        }
+
+        return response()->json(['message' => "$count dummy data created successfully."]);
+    }
+    
 }

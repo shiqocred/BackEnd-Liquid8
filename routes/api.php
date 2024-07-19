@@ -284,7 +284,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    Route::resource('notifications', NotificationController::class);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir'])->group(function () {
    // Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
    Route::get('new_products', [NewProductController::class, 'index']);
 });
@@ -340,5 +340,6 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
 Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
 Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
+Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 
