@@ -472,6 +472,7 @@ class NewProductController extends Controller
             'new_price_product' => ['Price After Discount'],
             'old_price_product' => ['Unit Price'],
             'new_date_in_product' => ['Date'],
+            'display_price' => ['Price After Discount'],
         ];
 
 
@@ -497,6 +498,8 @@ class NewProductController extends Controller
             'old_price_product' => [],
             'new_date_in_product' => [],
             'new_quality' => [],
+            'new_discount' => [],
+            'display_price' => [],
         ];
 
         foreach ($ekspedisiData as $dataItem) {
@@ -535,6 +538,8 @@ class NewProductController extends Controller
                 'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
                 'new_quality' => $mergedData['new_quality'][$index],
+                'new_discount' => 0,
+                'display_price' => $mergedData['display_price'][$index] ?? null,
             ];
 
             New_product::create($newProductData);
