@@ -218,7 +218,9 @@ class NewProductController extends Controller
             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
             'condition' => 'nullable',
             'new_category_product' => 'nullable',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_discount' => 'nullable|numeric',
+            'display_price' => 'required|numeric'
         ]);
 
         if ($validator->fails()) {
@@ -246,7 +248,8 @@ class NewProductController extends Controller
             'new_date_in_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product'
+            'new_tag_product',
+            'new_discount',
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
