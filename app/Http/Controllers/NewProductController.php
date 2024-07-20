@@ -947,7 +947,7 @@ class NewProductController extends Controller
     public function addProductByAdmin(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
+            // 'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
@@ -1000,10 +1000,11 @@ class NewProductController extends Controller
             $inputData['new_discount'] = 0;
             $inputData['display_price'] = $inputData['new_price_product'];
 
+            $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);
 
             $newProduct = New_product::create($inputData);
 
-            // $this->deleteOldProduct($request->input('old_barcode_product'));
+            // $this->deleteOldProduct($request->input('old_barcode_product')); 
 
             DB::commit();
 
