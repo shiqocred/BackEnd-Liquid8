@@ -218,6 +218,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    //product approve
    Route::resource('product-approves', ProductApproveController::class);
    Route::get('productApprovesByDoc', [ProductApproveController::class, 'searchByDocument']);
+   Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
 
 
    //new product (hasil scan)
@@ -266,6 +267,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    //document
    Route::resource('/documents', DocumentController::class);
    Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
+   Route::get('/documentInProgress', [DocumentController::class, 'documentInProgress']);
 
    //categories discount
    Route::get('categories', [CategoryController::class, 'index']);

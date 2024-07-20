@@ -430,4 +430,38 @@ class ProductApproveController extends Controller
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
+
+    public function delete_all_by_codeDocument(Request $request)
+    {
+        $code_document = $request->input('code_document');
+        DB::beginTransaction();
+    
+        try {
+            $products = ProductApprove::where('code_document', $code_document)->get();
+    
+            foreach ($products as $product) {
+                $newProduct = new Product_old([
+                    'code_document' => $product->code_document,
+                    'old_barcode_product' => $product->old_barcode_product,
+                    'old_name_product' => $product->new_name_product,
+                    'old_quantity_product' => $product->new_quantity_product,
+                    'old_price_product' => $product->old_price_product,
+                ]);
+                $newProduct->save();
+            }
+    
+            ProductApprove::where('code_document', $code_document)->delete();
+            
+            $document = Document::where('code_document', $code_document)->first();
+            $document->update(['status_document' => 'pending']);
+    
+            DB::commit();
+            return new ResponseResource(true, "berhasil dihapus", $products);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return new ResponseResource(false, "transaksi salah: ", $e->getMessage());
+        }
+    }
+    
+    
 }
