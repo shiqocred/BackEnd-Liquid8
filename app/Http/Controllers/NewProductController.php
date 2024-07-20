@@ -250,6 +250,7 @@ class NewProductController extends Controller
             'new_category_product',
             'new_tag_product',
             'new_discount',
+            'display_price'
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
