@@ -93,7 +93,7 @@ class DocumentController extends Controller
             $documents = $documents->where('status_document', '!=', 'pending');
         }
     
-        return new ResponseResource(true, "list document progress", $documents->get());
+        return new ResponseResource(true, "list document progress", $documents->paginate(50));
     }
     
 }
