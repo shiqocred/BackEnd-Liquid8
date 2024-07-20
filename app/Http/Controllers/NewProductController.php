@@ -997,6 +997,8 @@ class NewProductController extends Controller
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
             }
+            $inputData['new_discount'] = 0;
+            $inputData['display_price'] = $inputData['new_price_product'];
 
 
             $newProduct = New_product::create($inputData);
@@ -1005,7 +1007,7 @@ class NewProductController extends Controller
 
             DB::commit();
 
-            return response()->json($inputData, 200);
+            return new ResponseResource(true, "berhasil menambah data", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
