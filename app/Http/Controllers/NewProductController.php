@@ -1044,15 +1044,12 @@ class NewProductController extends Controller
 
     public function exportNewProducts()
     {
-        // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        // Membuat spreadsheet baru
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Menentukan headers berdasarkan nama kolom di tabel new_products
         $headers = [
             'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
             'New Name Product', 'New Quantity Product', 'New Price Product',
@@ -1060,7 +1057,6 @@ class NewProductController extends Controller
             'New Quality', 'New Category Product', 'New Tag Product', 'Created At', 'Updated At'
         ];
 
-        // Menuliskan headers ke sheet
         $columnIndex = 1;
         foreach ($headers as $header) {
             $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
@@ -1116,15 +1112,12 @@ class NewProductController extends Controller
 
     public function export_product_byCategory(Request $request)
     {
-        // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        // Membuat spreadsheet baru
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Menentukan headers berdasarkan nama kolom di tabel new_products
         $headers = [
             'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
             'New Name Product', 'New Quantity Product', 'New Price Product',
