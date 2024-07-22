@@ -455,7 +455,7 @@ class NewProductController extends Controller
         return $id_document . '/' . $month . '/' . $year;
     }
 
-    protected function mapAndMergeHeaders()
+    protected function mapAndMergeHeaders() 
     {
         set_time_limit(300);
         $headerMappings = [

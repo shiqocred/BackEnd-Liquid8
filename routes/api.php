@@ -344,4 +344,8 @@ Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filt
 Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
+//download template
+Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
+
+
 
