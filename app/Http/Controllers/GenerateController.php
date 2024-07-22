@@ -23,6 +23,8 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Faker\Factory as Faker;
 
 class GenerateController extends Controller
@@ -530,6 +532,49 @@ class GenerateController extends Controller
         }
 
         return response()->json(['message' => "$count dummy data created successfully."]);
+    }
+
+    public function exportTemplaye(Request $request)
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        // Membuat spreadsheet baru
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Menentukan headers berdasarkan nama kolom di tabel new_products
+        $headers = [
+            'Barcode', 'Description', 'Category', 'Qty',
+            'Price After Discount', 'Unit Price'
+        ];
+
+        // Menuliskan headers ke sheet
+        $columnIndex = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+    
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'templates_display.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
     
 }
