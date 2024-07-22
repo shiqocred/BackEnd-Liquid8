@@ -29,8 +29,8 @@ class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
     {
-        set_time_limit(300); // Extend max execution time
-        ini_set('memory_limit', '512M'); // Increase memory limit
+        set_time_limit(300); 
+        ini_set('memory_limit', '512M'); 
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -43,8 +43,7 @@ class GenerateController extends Controller
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $file->hashName());
 
-        DB::beginTransaction(); // Start transaction
-
+        DB::beginTransaction(); 
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
@@ -484,7 +483,6 @@ class GenerateController extends Controller
         $barcodes = [];
 
         for ($i = 0; $i < $count; $i++) {
-            // Ensure unique barcode generation
             $oldBarcode = $faker->ean13;
             while (in_array($oldBarcode, $barcodes)) {
                 $oldBarcode = $faker->ean13;

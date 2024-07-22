@@ -40,7 +40,7 @@ class ProductOldController extends Controller
             return new ResponseResource(false, "Produk tidak ditemukan.", null);
         }
 
-        $newBarcode = $this->generateUniqueBarcode();
+        // $newBarcode = $this->generateUniqueBarcode();
         $response = ['product' => $product];
 
         if ($product->old_price_product <= 99999) {

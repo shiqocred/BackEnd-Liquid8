@@ -45,6 +45,7 @@ class DashboardController extends Controller
 
         //Product by Category
         $totalNewProductByCategory = New_product::select('new_category_product', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('new_category_product')
             ->whereIn('new_status_product', ['display', 'promo', 'bundle'])
             ->groupBy('new_category_product')
             ->get();
