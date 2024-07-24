@@ -578,3 +578,7 @@ class GenerateController extends Controller
     }
     
 }
+
+
+
+
