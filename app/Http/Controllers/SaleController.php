@@ -20,13 +20,13 @@ class SaleController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        
+
         $allSales = Sale::where('status_sale', 'proses')->where('user_id', $userId)->get();
-        
+
         $totalSale = $allSales->sum('product_price_sale');
-        
+
         $sale = Sale::where('status_sale', 'proses')->where('user_id', $userId)->latest()->paginate(50);
-        
+
         $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
         if ($saleDocument == null) {
             $codeDocumentSale = codeDocumentSale($userId);
@@ -37,20 +37,20 @@ class SaleController extends Controller
             $saleBuyerName = $saleDocument->buyer_name_document_sale;
             $saleBuyerId = $saleDocument->buyer_id_document_sale;
         }
-    
+
         $data = [
             'code_document_sale' => $codeDocumentSale,
             'sale_buyer_name' => $saleBuyerName,
             'sale_buyer_id' => $saleBuyerId,
             'total_sale' => $totalSale,
         ];
-        
+
         $data += $sale->toArray();
-        
+
         $resource = new ResponseResource(true, "list data sale", $data);
         return $resource->response();
     }
-    
+
 
     /**
      * Store a newly created resource in storage.
@@ -109,7 +109,8 @@ class SaleController extends Controller
                     $bundle->name_bundle,
                     $bundle->category,
                     $bundle->barcode_bundle,
-                    $bundle->total_price_custom_bundle
+                    $bundle->total_price_custom_bundle,
+                    $bundle->total_price_bundle,
                 ];
             } else {
                 return (new ResponseResource(false, "Barcode tidak ditemukan!", []))->response()->setStatusCode(404);
@@ -146,8 +147,9 @@ class SaleController extends Controller
                     'product_price_sale' => $data[3],
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses',
-                    'new_discount' => $data[5],
-                    'display_price' => $data[3]
+                    'total_discount_sale' => $data[3] - $data[4],
+                    'new_discount' => $data[5] ?? NULL,
+                    'display_price' => $data[3],
                 ]
             );
 
@@ -285,7 +287,7 @@ class SaleController extends Controller
             $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
             return $resource->response()->setStatusCode(422);
         }
-        
+
         $sale->product_price_sale = $request->input('update_price_sale');
         $sale->save();
         return new ResponseResource(true, "data berhasil di update", $sale);
