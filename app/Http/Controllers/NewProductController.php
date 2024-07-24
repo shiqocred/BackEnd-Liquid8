@@ -819,17 +819,19 @@ class NewProductController extends Controller
                 ->whereNotNull('new_category_product')
                 ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
                 ->when($query, function ($queryBuilder) use ($query) {
-                    $queryBuilder->where('new_category_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    $queryBuilder->where(function ($subQuery) use ($query) {
+                        $subQuery->whereNotNull('new_category_product')
+                                 ->where('new_category_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    });
                 })
                 ->paginate(51);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
-
+    
         return new ResponseResource(true, "list product by tag color", $productByTagColor);
     }
 
