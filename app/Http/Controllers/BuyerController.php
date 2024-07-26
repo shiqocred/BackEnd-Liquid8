@@ -11,7 +11,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class BuyerController extends Controller
-{ 
+{
     /**
      * Display a listing of the resource.
      */
@@ -22,7 +22,8 @@ class BuyerController extends Controller
                 $query
                     ->where('name_buyer', 'like', '%' . request()->q . '%')
                     ->orWhere('phone_buyer', 'like', '%' . request()->q . '%')
-                    ->orWhere('address_buyer', 'like', '%' . request()->q . '%');
+                    ->orWhere('address_buyer', 'like', '%' . request()->q . '%')
+                    ->orWhere('type_buyer', 'like', '%' . request()->q . '%');
             })->latest()->paginate(10);
         } else {
             $buyer = Buyer::latest()->paginate(10);
@@ -50,7 +51,15 @@ class BuyerController extends Controller
             return $resource->response()->setStatusCode(422);
         }
         try {
-            $buyer = Buyer::create($request->all());
+            $buyer = Buyer::create([
+                'name_buyer' => $request->name_buyer,
+                'phone_buyer' => $request->phone_buyer,
+                'address_buyer' => $request->address_buyer,
+                'type_buyer' => 'Biasa',
+                'amount_transaction_buyer' => 0,
+                'amount_purchase_buyer' => 0,
+                'avg_purchase_buyer' => 0,
+            ]);
             $resource = new ResponseResource(true, "Data berhasil ditambahkan!", $buyer);
         } catch (Exception $e) {
             $resource = new ResponseResource(false, "Data gagal ditambahkan!", $e->getMessage());
@@ -87,7 +96,13 @@ class BuyerController extends Controller
             return $resource->response()->setStatusCode(422);
         }
         try {
-            $buyer->update($request->all());
+            $buyer->update(
+                [
+                    'name_buyer' => $request->name_buyer,
+                    'phone_buyer' => $request->phone_buyer,
+                    'address_buyer' => $request->address_buyer,
+                ]
+            );
             $resource = new ResponseResource(true, "Data berhasil ditambahkan!", $buyer);
         } catch (Exception $e) {
             $resource = new ResponseResource(false, "Data gagal ditambahkan!", $e->getMessage());
@@ -145,7 +160,7 @@ class BuyerController extends Controller
                 $rowIndex++;
             }
         });
-    
+
 
         // Menyimpan file Excel
         $writer = new Xlsx($spreadsheet);

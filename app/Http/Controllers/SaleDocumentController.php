@@ -12,6 +12,8 @@ use App\Models\New_product;
 use App\Models\SaleDocument;
 use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
+use App\Models\Buyer;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class SaleDocumentController extends Controller
@@ -97,6 +99,7 @@ class SaleDocumentController extends Controller
     public function saleFinish(Request $request)
     {
         try {
+            DB::beginTransaction();
             $userId = $request->user()->id;
             $saleDocument = SaleDocument::where('status_document_sale', 'proses')
                 ->where('user_id', $userId)
@@ -128,8 +131,29 @@ class SaleDocumentController extends Controller
                 'status_document_sale' => 'selesai'
             ]);
 
+            $avgPurchaseBuyer = SaleDocument::where('status_document_sale', 'selesai')
+                ->where('buyer_id_document_sale', $saleDocument->buyer_id_document_sale)
+                ->avg('total_price_document_sale');
+
+            $buyer = Buyer::findOrFail($saleDocument->buyer_id_document_sale);
+            $saleDocumentCountWithBuyerId = SaleDocument::where('buyer_id_document_sale', $buyer->id)->count();
+
+            if ($saleDocumentCountWithBuyerId == 2 || $saleDocumentCountWithBuyerId == 3) {
+                $typeBuyer = 'Repeat';
+            } else if ($saleDocumentCountWithBuyerId > 3) {
+                $typeBuyer = 'Reguler';
+            }
+
+            $buyer->update([
+                'type_buyer' => $typeBuyer ?? "Biasa",
+                'amount_transaction_buyer' => $buyer->amount_transaction_buyer + 1,
+                'amount_purchase_buyer' => $buyer->amount_purchase_buyer + $saleDocument->total_price_document_sale,
+                'avg_purchase_buyer' => $avgPurchaseBuyer,
+            ]);
+            DB::commit();
             $resource = new ResponseResource(true, "Data berhasil disimpan!", $saleDocument);
         } catch (\Exception $e) {
+            DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal disimpan!", $e->getMessage());
         }
 
