@@ -84,8 +84,9 @@ class ProductApproveController extends Controller
             $inputData = $request->input('data.resource');
             $newBarcode = generateNewBarcode($inputData['new_category_product']);
             $inputData['new_barcode_product'] = $newBarcode;
-            if ($inputData['display_price'] == 0) {
-                $inputData['display_price'] = $inputData['new_price_product'];
+            $inputData['display_price'] = $inputData['new_price_product'];
+            if($inputData['new_price_product'] == null){
+                $inputData['display_price'] = $inputData['old_price_product'];
             }
             $newProduct = ProductApprove::create($inputData);
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
@@ -119,6 +120,7 @@ class ProductApproveController extends Controller
             $qualityData = $this->prepareQualityData($status, $description);
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
+            
             $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
             $newBarcode = New_product::where('new_barcode_product', $request->input('new_barcode_product'))->first();
 
