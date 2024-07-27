@@ -11,8 +11,8 @@ class New_product extends Model
 
     protected $guarded = ['id'];
 
-    public function Promos(){
+    public function Promos()
+    {
         return $this->hasMany(Promo::class);
     }
-    
 }

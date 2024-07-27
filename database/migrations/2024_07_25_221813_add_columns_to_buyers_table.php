@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::table('buyers', function (Blueprint $table) {
             $table->enum('type_buyer', ['Biasa', 'Repeat', 'Reguler'])->after('address_buyer');
             $table->bigInteger('amount_transaction_buyer')->after('type_buyer');
-            $table->decimal('amount_purchase_buyer')->after('amount_transaction_buyer');
-            $table->decimal('avg_purchase_buyer')->after('amount_purchase_buyer');
+            $table->decimal('amount_purchase_buyer', 15, 2)->after('amount_transaction_buyer');
+            $table->decimal('avg_purchase_buyer', 15, 2)->after('amount_purchase_buyer');
         });
     }
 
