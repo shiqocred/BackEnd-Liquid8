@@ -20,6 +20,11 @@ class BuyerFactory extends Factory
             'name_buyer' => $this->faker->name(),
             'phone_buyer' => $this->faker->phoneNumber(),
             'address_buyer' => $this->faker->address(),
+            'type_buyer' => "biasa",
+            'amount_transaction_buyer' => 1000.0,
+            'amount_purchase_buyer' => 1000.0,
+            'avg_purchase_buyer' => 1000.0,
+
         ];
     }
 }

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\ProductApprove;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -455,7 +456,7 @@ class NewProductController extends Controller
         return $id_document . '/' . $month . '/' . $year;
     }
 
-    protected function mapAndMergeHeaders() 
+    protected function mapAndMergeHeaders()
     {
         set_time_limit(300);
         $headerMappings = [
@@ -815,25 +816,56 @@ class NewProductController extends Controller
     {
         $query = $request->input('q');
         try {
-            $productByTagColor = New_product::latest()
+            // Query untuk New_product
+            $productQuery = New_product::select(
+                    'id',
+                    'new_barcode_product',
+                    'new_name_product',
+                    'new_category_product',
+                    'new_price_product',
+                    'created_at',
+                    'new_status_product',
+                    'display_price',
+                    'new_date_in_product'
+                )
                 ->whereNotNull('new_category_product')
                 ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where(function ($subQuery) use ($query) {
                         $subQuery->whereNotNull('new_category_product')
-                                 ->where('new_category_product', 'LIKE', '%' . $query . '%')
+                            ->where('new_category_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                     });
-                })
-                ->paginate(51);
+                });
+    
+            // Query untuk Bundle
+            $bundleQuery = Bundle::select(
+                    'id',
+                    'barcode_bundle as new_barcode_product',
+                    'name_bundle as new_name_product',
+                    'category as new_category_product',
+                    'total_price_custom_bundle as new_price_product',
+                    'created_at',
+                    'product_status as new_status_product',
+                    'total_price_custom_bundle as display_price',
+                    'created_at as new_date_in_product'
+                );
+    
+            // Gabungkan hasil dari kedua query menggunakan union
+            $mergedQuery = $productQuery->union($bundleQuery)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
     
-        return new ResponseResource(true, "list product by tag color", $productByTagColor);
+        return new ResponseResource(true, "list product by tag color", $mergedQuery);
     }
+    
+    
+
 
     public function updatePriceDump(Request $request, $id)
     {
