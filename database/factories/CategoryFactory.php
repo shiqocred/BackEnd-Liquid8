@@ -36,7 +36,7 @@ class CategoryFactory extends Factory
     {
         return $this->state(function (array $attributes){
             return [
-                'name_category' => 'TOYS HOBBIES (>700)	',
+                'name_category' => 'TOYS HOBBIES (>700)',
                 'discount_category' => 40,
                 'max_price_category' => 10000000
             ];
