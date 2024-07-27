@@ -148,7 +148,7 @@ class SaleDocumentController extends Controller
                 'type_buyer' => $typeBuyer ?? "Biasa",
                 'amount_transaction_buyer' => $buyer->amount_transaction_buyer + 1,
                 'amount_purchase_buyer' => $buyer->amount_purchase_buyer + $saleDocument->total_price_document_sale,
-                'avg_purchase_buyer' => $avgPurchaseBuyer,
+                'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', ''),
             ]);
             DB::commit();
             $resource = new ResponseResource(true, "Data berhasil disimpan!", $saleDocument);
