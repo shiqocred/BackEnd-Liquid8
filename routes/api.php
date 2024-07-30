@@ -50,7 +50,7 @@ Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi','Team leader'])->group(function () {
    // =========================================== repair station ==================================================
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -346,6 +346,10 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
+
+
+// Route::post('/excelOld2', [NewProductController::class, 'processExcelFiles2']);
+// Route::post('/excelOld/merge2', [NewProductController::class, 'mapAndMergeHeaders2']);
 
 
 
