@@ -816,7 +816,6 @@ class NewProductController extends Controller
     {
         $query = $request->input('q');
         try {
-            // Query untuk New_product
             $productQuery = New_product::select(
                     'id',
                     'new_barcode_product',
@@ -836,11 +835,11 @@ class NewProductController extends Controller
                             ->where('new_category_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
                     });
                 });
     
-            // Query untuk Bundle
             $bundleQuery = Bundle::select(
                     'id',
                     'barcode_bundle as new_barcode_product',
@@ -851,9 +850,13 @@ class NewProductController extends Controller
                     'product_status as new_status_product',
                     'total_price_custom_bundle as display_price',
                     'created_at as new_date_in_product'
-                );
+                )->when($query, function($dataBundle) use ($query){
+                    $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
+                    ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
+                    ->orWhere('category', 'LIKE', '%' . $query . '%')
+                    ->orWhere('product_status', 'LIKE', '%' . $query . '%');
+                });
     
-            // Gabungkan hasil dari kedua query menggunakan union
             $mergedQuery = $productQuery->union($bundleQuery)
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
