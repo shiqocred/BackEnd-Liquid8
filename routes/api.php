@@ -136,6 +136,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
 
    Route::post('/excelOld', [NewProductController::class, 'processExcelFilesCategory']);
    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
+   Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
 
 
    //=========================================== storage ==========================================================
@@ -348,7 +349,7 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplate']);
 
 
-Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
+
 
 
 

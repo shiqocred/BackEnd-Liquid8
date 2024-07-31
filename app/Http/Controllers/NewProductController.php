@@ -433,10 +433,9 @@ class NewProductController extends Controller
             // Decode the response if it is in JSON format
             $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
 
-            // Check if mergeResponse indicates an error
             if ($mergeResponseArray['status'] === false) {
                 DB::rollback();
-                return response()->json($mergeResponseArray,422);
+                return response()->json($mergeResponseArray, 422);
             }
 
             DB::commit();
@@ -628,6 +627,14 @@ class NewProductController extends Controller
             // Call mapAndMergeHeaders function here
             $mergeResponse = $this->mapAndMergeHeadersTagColor();
 
+            // Decode the response if it is in JSON format
+            $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
+
+            if ($mergeResponseArray['status'] === false) {
+                DB::rollback();
+                return response()->json($mergeResponseArray, 422);
+            }
+
             DB::commit();
 
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
@@ -662,7 +669,7 @@ class NewProductController extends Controller
         }
         $code_document = $latestDocument->code_document;
 
-        $ekspedisiData = ExcelOld::all()->map(function ($item) {
+        $ekspedisiData = ExcelOldColor::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
 
@@ -704,6 +711,21 @@ class NewProductController extends Controller
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
 
+        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
+        // Variabel penampung barcode double ini adalah $responseBarcode
+        $responseBarcode = collect();
+        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            $new_product = New_product::where('new_barcode_product', $barcode)->first();
+            if ($new_product) {
+                $responseBarcode->push($barcode);
+            }
+        }
+
+        if ($responseBarcode->isNotEmpty()) {
+            ExcelOldColor::query()->delete();
+            return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
+        }
+
 
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
@@ -738,9 +760,8 @@ class NewProductController extends Controller
             New_product::create($newProductData);
         }
 
-        ExcelOld::query()->delete();
+        ExcelOldColor::query()->delete();
 
-        Log::info('Merged data prepared for response', ['mergedData' => $mergedData]);
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
