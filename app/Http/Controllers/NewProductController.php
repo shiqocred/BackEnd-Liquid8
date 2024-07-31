@@ -439,7 +439,6 @@ class NewProductController extends Controller
                 return response()->json($mergeResponseArray,422);
             }
 
-
             DB::commit();
 
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
