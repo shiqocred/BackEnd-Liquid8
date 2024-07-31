@@ -534,7 +534,7 @@ class GenerateController extends Controller
         return response()->json(['message' => "$count dummy data created successfully."]);
     }
 
-    public function exportTemplaye(Request $request)
+    public function exportTemplate(Request $request)
     {
         // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);

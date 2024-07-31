@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\ExcelOldColor;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -373,7 +374,7 @@ class NewProductController extends Controller
     }
 
     //inject display
-    public function processExcelFiles(Request $request)
+    public function processExcelFilesCategory(Request $request)
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
@@ -417,7 +418,6 @@ class NewProductController extends Controller
                 ExcelOld::insert($chunk);
             }
 
-
             // Create a new document with the rowCount
             Document::create([
                 'code_document' => $this->generateDocumentCode(),
@@ -427,9 +427,18 @@ class NewProductController extends Controller
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
-
             // Call mapAndMergeHeaders function here
-            $mergeResponse = $this->mapAndMergeHeaders();
+            $mergeResponse = $this->mapAndMergeHeadersCategory();
+
+            // Decode the response if it is in JSON format
+            $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
+
+            // Check if mergeResponse indicates an error
+            if ($mergeResponseArray['status'] === false) {
+                DB::rollback();
+                return response()->json($mergeResponseArray,422);
+            }
+
 
             DB::commit();
 
@@ -456,7 +465,7 @@ class NewProductController extends Controller
         return $id_document . '/' . $month . '/' . $year;
     }
 
-    protected function mapAndMergeHeaders()
+    protected function mapAndMergeHeadersCategory()
     {
         set_time_limit(300);
         $headerMappings = [
@@ -471,7 +480,6 @@ class NewProductController extends Controller
             'display_price' => ['Price After Discount'],
         ];
 
-
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
@@ -481,8 +489,6 @@ class NewProductController extends Controller
         $ekspedisiData = ExcelOld::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-
-
 
         $mergedData = [
             'old_barcode_product' => [],
@@ -519,6 +525,20 @@ class NewProductController extends Controller
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
 
+        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
+        // Variabel penampung barcode double ini adalah $responseBarcode
+        $responseBarcode = collect();
+        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            $new_product = New_product::where('new_barcode_product', $barcode)->first();
+            if ($new_product) {
+                $responseBarcode->push($barcode);
+            }
+        }
+
+        if ($responseBarcode->isNotEmpty()) {
+            ExcelOld::query()->delete();
+            return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
+        }
 
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
@@ -547,10 +567,11 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
+
     //end enject display
 
     //inject tag warna
-    public function processExcelFiles2(Request $request)
+    public function processExcelFilesTagColor(Request $request)
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
@@ -591,7 +612,7 @@ class NewProductController extends Controller
 
             $chunks = array_chunk($dataToInsert, 500);
             foreach ($chunks as $chunk) {
-                ExcelOld::insert($chunk);
+                ExcelOldColor::insert($chunk);
             }
 
 
@@ -606,7 +627,7 @@ class NewProductController extends Controller
 
 
             // Call mapAndMergeHeaders function here
-            $mergeResponse = $this->mapAndMergeHeaders();
+            $mergeResponse = $this->mapAndMergeHeadersTagColor();
 
             DB::commit();
 
@@ -623,7 +644,7 @@ class NewProductController extends Controller
         }
     }
 
-    protected function mapAndMergeHeaders2()
+    protected function mapAndMergeHeadersTagColor()
     {
         set_time_limit(300);
         $headerMappings = [
@@ -690,10 +711,13 @@ class NewProductController extends Controller
             if ($mergedData['old_price_product'][$index] <= 99999) {
                 $colors = Color_tag::where('min_price_color', '<=', $mergedData['old_price_product'][$index])
                     ->where('max_price_color', '>=', $mergedData['old_price_product'][$index])
-                    ->get();
-                $mergedData['new_tag_product'][$index] = $colors->name_color; 
-                $mergedData['display_price'][$index] = $colors->fixed_price_color; 
-                $mergedData['new_price_product'][$index] = $colors->fixed_price_color; 
+                    ->first();
+
+                if ($colors) {
+                    $mergedData['new_tag_product'][$index] = $colors->name_color;
+                    $mergedData['display_price'][$index] = $colors->fixed_price_color;
+                    $mergedData['new_price_product'][$index] = $colors->fixed_price_color;
+                }
             }
             $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
             $newProductData = [
@@ -994,16 +1018,16 @@ class NewProductController extends Controller
         $query = $request->input('q');
         try {
             $productQuery = New_product::select(
-                    'id',
-                    'new_barcode_product',
-                    'new_name_product',
-                    'new_category_product',
-                    'new_price_product',
-                    'created_at',
-                    'new_status_product',
-                    'display_price',
-                    'new_date_in_product'
-                )
+                'id',
+                'new_barcode_product',
+                'new_name_product',
+                'new_category_product',
+                'new_price_product',
+                'created_at',
+                'new_status_product',
+                'display_price',
+                'new_date_in_product'
+            )
                 ->whereNotNull('new_category_product')
                 ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
                 ->when($query, function ($queryBuilder) use ($query) {
@@ -1016,35 +1040,35 @@ class NewProductController extends Controller
                             ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
                     });
                 });
-    
+
             $bundleQuery = Bundle::select(
-                    'id',
-                    'barcode_bundle as new_barcode_product',
-                    'name_bundle as new_name_product',
-                    'category as new_category_product',
-                    'total_price_custom_bundle as new_price_product',
-                    'created_at',
-                    'product_status as new_status_product',
-                    'total_price_custom_bundle as display_price',
-                    'created_at as new_date_in_product'
-                )->when($query, function($dataBundle) use ($query){
-                    $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
+                'id',
+                'barcode_bundle as new_barcode_product',
+                'name_bundle as new_name_product',
+                'category as new_category_product',
+                'total_price_custom_bundle as new_price_product',
+                'created_at',
+                'product_status as new_status_product',
+                'total_price_custom_bundle as display_price',
+                'created_at as new_date_in_product'
+            )->when($query, function ($dataBundle) use ($query) {
+                $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
                     ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
                     ->orWhere('category', 'LIKE', '%' . $query . '%')
                     ->orWhere('product_status', 'LIKE', '%' . $query . '%');
-                });
-    
+            });
+
             $mergedQuery = $productQuery->union($bundleQuery)
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
-    
+
         return new ResponseResource(true, "list product by tag color", $mergedQuery);
     }
-    
-    
+
+
 
 
     public function updatePriceDump(Request $request, $id)
