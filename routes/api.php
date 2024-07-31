@@ -291,7 +291,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('new_products', [NewProductController::class, 'index']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Tean leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::resource('destinations', DestinationController::class);
