@@ -81,24 +81,31 @@ class DashboardController extends Controller
             ->groupBy(DB::raw('DATE_FORMAT(created_at, "%M")'), 'buyer_id_document_sale')
             ->get();
 
-        $categoriesSaleMontly = Sale::selectRaw('COUNT(product_category_sale) as total_category_sale, SUM(product_price_sale) as total_sales, DATE_FORMAT(created_at, "%M")  as month')
-            ->where('status_sale', 'selesai')
-            ->whereYear('created_at', $year)
-            ->groupBy('month', 'product_category_sale')
-            ->get();
-
-        $dailyTransactionSummary = SaleDocument::selectRaw('SUM(total_price_document_sale) as display_price, (SUM(total_price_document_sale) * 0.2) as initial_capital, DATE_FORMAT(created_at, "%d") as day')
+        $dailyTransactionSummary = SaleDocument::with('sales.newProduct')
             ->where('status_document_sale', 'selesai')
-            ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
-            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%d")'))
-            ->get();
+            ->whereYear('created_at', $year)
+            ->get()
+            ->groupBy(function ($date) {
+                return Carbon::parse($date->created_at)->format('d');
+            })
+            ->map(function ($saleDocuments, $day) {
+                $saleValue = $saleDocuments->sum('total_price_document_sale');
 
-        // $monthlyTransactionSummary = SaleDocument::selectRaw('SUM(total_price_document_sale) as display_price, (SUM(total_price_document_sale) * 0.2) as initial_capital, DATE_FORMAT(created_at, "%M") as day')
-        //     ->where('status_document_sale', 'selesai')
-        //     ->whereYear('created_at', $year)
-        //     ->groupBy(DB::raw('DATE_FORMAT(created_at, "%M")'))
-        //     ->get();
+                $totalOldPrice = $saleDocuments->sum(function ($saleDocument) {
+                    return $saleDocument->sales->sum(function ($sale) {
+                        return $sale->newProduct->old_price_product ?? 0;
+                    });
+                });
+                $initialCapital = $totalOldPrice * 0.2;
+
+                return [
+                    'display_price' => $totalOldPrice,
+                    'initial_capital' => $initialCapital,
+                    'sale_value' => $saleValue,
+                    'day' => $day,
+                ];
+            });
 
         $typeBuyer = Buyer::selectRaw('type_buyer, COUNT(*) as total_buyer')
             ->groupBy('type_buyer')
@@ -106,41 +113,41 @@ class DashboardController extends Controller
             ->pluck('total_buyer', 'type_buyer')
             ->toArray();
 
-        $monthlyTransactionSummary = SaleDocument::selectRaw('
-            SUM(sale_documents.total_price_document_sale) as display_price,
-            SUM(sale_documents.total_price_document_sale) * 0.2 as initial_capital,
-            DATE_FORMAT(sale_documents.created_at, "%M") as month
-                ')
-            ->with(['sales.newProduct' => function ($query) {
-                $query->selectRaw('SUM(new_products.old_price_product) as total_old_price');
-            }])
-            ->where('sale_documents.status_document_sale', 'selesai')
-            ->whereYear('sale_documents.created_at', $year)
-            ->groupBy(DB::raw('DATE_FORMAT(sale_documents.created_at, "%M")'))
-            ->get();
+        $monthlyTransactionSummary = SaleDocument::with('sales.newProduct')
+            ->where('status_document_sale', 'selesai')
+            ->whereYear('created_at', $year)
+            ->get()
+            ->groupBy(function ($date) {
+                return Carbon::parse($date->created_at)->format('F');
+            })
+            ->map(function ($saleDocuments, $month) {
+                $saleValue = $saleDocuments->sum('total_price_document_sale');
 
-        // Format hasil untuk menambahkan total_old_price
-        // $monthlyTransactionSummary = $monthlyTransactionSummary->map(function ($saleDocument) {
-        //     $saleDocument->total_old_price = $saleDocument->sales->sum(function ($sale) {
-        //         return $sale->product->total_old_price ?? 0;
-        //     });
-        //     return $saleDocument;
-        // });
+                $totalOldPrice = $saleDocuments->sum(function ($saleDocument) {
+                    return $saleDocument->sales->sum(function ($sale) {
+                        return $sale->newProduct->old_price_product ?? 0;
+                    });
+                });
+                $initialCapital = $totalOldPrice * 0.2;
 
-
-        // dd($monthlyTransactionSummary);
+                return [
+                    'display_price' => $totalOldPrice,
+                    'initial_capital' => $initialCapital,
+                    'sale_value' => $saleValue,
+                    'month' => $month,
+                ];
+            });
 
         $resource = new ResponseResource(
             true,
             "Data dashboard analytic",
             // [
             //     "monthly_transaction_customer" => ,
-            //     "monthly_categories_sale" => ,
             //     "monthly_transaction_summary" => ,
             //     "daily_transaction_summary" => ,
             //     "type_buyer" => ,
             // ]
-            $categoriesSaleMontly
+            $dailyTransactionSummary
         );
         return $resource->response();
     }
@@ -222,7 +229,9 @@ class DashboardController extends Controller
             // Tambahkan hasil ke dalam array summarySales
             $summaryTransaction[] = [
                 'month' => Carbon::createFromDate($year, $month, 1)->format('F'), // Format nama bulan
-                'data' => $saleDocument,
+                'total_transaction' => $saleDocument->total_transaction,
+                'total_customer' => $saleDocument->total_customer,
+                'value_transaction' => $saleDocument->value_transaction,
             ];
         }
 
