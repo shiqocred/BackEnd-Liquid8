@@ -147,7 +147,7 @@ class SaleController extends Controller
                     'product_price_sale' => $data[3],
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses',
-                    'total_discount_sale' => $data[3] - $data[4],
+                    'total_discount_sale' => $data[4] - $data[3],
                     'new_discount' => $data[5] ?? NULL,
                     'display_price' => $data[3],
                 ]

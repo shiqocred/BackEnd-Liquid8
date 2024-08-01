@@ -203,6 +203,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
+   Route::get('dashboard2', [DashboardController::class, 'index2']);
+   Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
+   Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
 
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);
@@ -346,6 +349,3 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
-
-
-

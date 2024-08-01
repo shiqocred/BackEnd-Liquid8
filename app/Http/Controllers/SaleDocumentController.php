@@ -127,7 +127,7 @@ class SaleDocumentController extends Controller
 
             $saleDocument->update([
                 'total_product_document_sale' => count($sales),
-                'total_price_document_sale' => $sales->sum('display_price'),
+                'total_price_document_sale' => $sales->sum('product_price_sale'),
                 'status_document_sale' => 'selesai'
             ]);
 
