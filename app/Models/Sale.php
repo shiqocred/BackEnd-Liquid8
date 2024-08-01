@@ -10,4 +10,9 @@ class Sale extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
+
+    public function newProduct()
+    {
+        return $this->hasOne(New_product::class, 'new_barcode_product', 'product_barcode_sale');
+    }
 }
