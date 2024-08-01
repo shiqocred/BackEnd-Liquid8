@@ -84,7 +84,7 @@ class DashboardController extends Controller
         $categoriesSaleMontly = Sale::selectRaw('COUNT(product_category_sale) as total_category_sale, SUM(product_price_sale) as total_sales, DATE_FORMAT(created_at, "%M")  as month')
             ->where('status_sale', 'selesai')
             ->whereYear('created_at', $year)
-            ->groupBy(DB::raw('DATE_FORMAT(created_at, "%M") '), 'product_category_sale')
+            ->groupBy('month', 'product_category_sale')
             ->get();
 
         $dailyTransactionSummary = SaleDocument::selectRaw('SUM(total_price_document_sale) as display_price, (SUM(total_price_document_sale) * 0.2) as initial_capital, DATE_FORMAT(created_at, "%d") as day')
@@ -148,8 +148,7 @@ class DashboardController extends Controller
     public function summaryTransaction(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'm' => 'nullable|date_format:m', // Format bulan (01-12)
-            'y' => 'nullable|date_format:Y', // Format tahun (misalnya, 2024)
+            'y' => 'nullable|date_format:Y|digits:4', // Format tahun (misalnya, 2024)
         ]);
 
         if ($validator->fails()) {
@@ -184,18 +183,48 @@ class DashboardController extends Controller
             ')
             ->where('status_document_sale', 'selesai')
             ->whereYear('created_at', $year)
-            ->get();
+            ->first();
 
-        $summaryTransaction = SaleDocument::selectRaw('
-                DATE_FORMAT(created_at, "%M") as month,
+        // Casting nilai agar menjadi integer atau float
+        $summaryTransactionTotal->total_transaction = (float) $summaryTransactionTotal->total_transaction;
+        $summaryTransactionTotal->total_customer = (float) $summaryTransactionTotal->total_customer;
+        $summaryTransactionTotal->value_transaction = (float) $summaryTransactionTotal->value_transaction;
+
+        // Buat array kosong untuk menyimpan summary sales dari Januari sampai Desember
+        $summaryTransaction = [];
+
+        // Loop untuk menghasilkan summary sales untuk setiap bulan
+        for ($month = 1; $month <= 12; $month++) {
+            $saleDocument = SaleDocument::selectRaw('
                 COUNT(*) as total_transaction,
                 COUNT(DISTINCT buyer_id_document_sale) as total_customer,
                 SUM(total_price_document_sale) as value_transaction
-            ')
-            ->where('status_document_sale', 'selesai')
-            ->whereYear('created_at', $year)
-            ->groupBy('month')
-            ->get();
+                ')
+                ->where('status_document_sale', 'selesai')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->first(); // Menggunakan first() untuk mengambil satu hasil
+
+            // Jika tidak ada data untuk bulan ini, isi dengan nilai default
+            if (!$saleDocument) {
+                $saleDocument = (object) [
+                    'total_transaction' => 0,
+                    'total_customer' => 0,
+                    'value_transaction' => 0,
+                ];
+            } else {
+                // Casting nilai agar menjadi integer atau float
+                $saleDocument->total_transaction = (float) $saleDocument->total_transaction;
+                $saleDocument->total_customer = (float) $saleDocument->total_customer;
+                $saleDocument->value_transaction = (float) $saleDocument->value_transaction;
+            }
+
+            // Tambahkan hasil ke dalam array summarySales
+            $summaryTransaction[] = [
+                'month' => Carbon::createFromDate($year, $month, 1)->format('F'), // Format nama bulan
+                'data' => $saleDocument,
+            ];
+        }
 
         $resource = new ResponseResource(
             true,
@@ -226,8 +255,8 @@ class DashboardController extends Controller
     public function summarySales(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'm' => 'nullable|date_format:m', // Format bulan (01-12)
-            'y' => 'nullable|date_format:Y', // Format tahun (misalnya, 2024)
+            'm' => 'nullable|date_format:m|digits:2', // Format bulan (01-12)
+            'y' => 'nullable|date_format:Y|digits:4', // Format tahun (misalnya, 2024)
         ]);
 
         if ($validator->fails()) {
@@ -279,7 +308,15 @@ class DashboardController extends Controller
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->groupBy('product_category_sale')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'product_category_sale' => $item->product_category_sale,
+                    'qty_sale' => (int) $item->qty_sale,
+                    'display_price_sale' => (float) $item->display_price_sale,
+                    'after_discount_sale' => (float) $item->after_discount_sale,
+                ];
+            });
 
         $resource = new ResponseResource(
             true,
