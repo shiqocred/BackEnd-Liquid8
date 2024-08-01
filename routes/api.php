@@ -50,7 +50,7 @@ Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi','Team leader'])->group(function () {
    // =========================================== repair station ==================================================
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -83,7 +83,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi'])
    Route::post('repair-mv/filter_product/{id}/add', [RepairFilterController::class, 'store']);
    Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
 
-   //bundle
+   //repair
    Route::get('repair-mv', [RepairController::class, 'index']);
    Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
    Route::post('repair-mv', [RepairProductController::class, 'store']);
@@ -134,8 +134,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
-   Route::post('/excelOld', [NewProductController::class, 'processExcelFiles']);
-   Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeaders']);
+   Route::post('/excelOld', [NewProductController::class, 'processExcelFilesCategory']);
+   Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
+   Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
 
 
    //=========================================== storage ==========================================================
@@ -294,7 +295,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('new_products', [NewProductController::class, 'index']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::resource('destinations', DestinationController::class);
@@ -348,4 +349,14 @@ Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 //download template
+<<<<<<< HEAD
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
+=======
+Route::post('downloadTemplate', [GenerateController::class, 'exportTemplate']);
+
+
+
+
+
+
+>>>>>>> d601e6cb403638934c6ce059f7210572692838cd

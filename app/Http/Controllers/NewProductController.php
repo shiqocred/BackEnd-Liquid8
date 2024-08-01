@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\ExcelOldColor;
 use App\Models\ProductApprove;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -372,8 +373,8 @@ class NewProductController extends Controller
         }
     }
 
-
-    public function processExcelFiles(Request $request)
+    //inject display
+    public function processExcelFilesCategory(Request $request)
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
@@ -417,7 +418,6 @@ class NewProductController extends Controller
                 ExcelOld::insert($chunk);
             }
 
-
             // Create a new document with the rowCount
             Document::create([
                 'code_document' => $this->generateDocumentCode(),
@@ -427,9 +427,16 @@ class NewProductController extends Controller
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
-
             // Call mapAndMergeHeaders function here
-            $mergeResponse = $this->mapAndMergeHeaders();
+            $mergeResponse = $this->mapAndMergeHeadersCategory();
+
+            // Decode the response if it is in JSON format
+            $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
+
+            if ($mergeResponseArray['status'] === false) {
+                DB::rollback();
+                return response()->json($mergeResponseArray, 422);
+            }
 
             DB::commit();
 
@@ -456,7 +463,7 @@ class NewProductController extends Controller
         return $id_document . '/' . $month . '/' . $year;
     }
 
-    protected function mapAndMergeHeaders()
+    protected function mapAndMergeHeadersCategory()
     {
         set_time_limit(300);
         $headerMappings = [
@@ -471,7 +478,6 @@ class NewProductController extends Controller
             'display_price' => ['Price After Discount'],
         ];
 
-
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
@@ -481,8 +487,6 @@ class NewProductController extends Controller
         $ekspedisiData = ExcelOld::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-
-
 
         $mergedData = [
             'old_barcode_product' => [],
@@ -519,6 +523,20 @@ class NewProductController extends Controller
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
 
+        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
+        // Variabel penampung barcode double ini adalah $responseBarcode
+        $responseBarcode = collect();
+        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            $new_product = New_product::where('new_barcode_product', $barcode)->first();
+            if ($new_product) {
+                $responseBarcode->push($barcode);
+            }
+        }
+
+        if ($responseBarcode->isNotEmpty()) {
+            ExcelOld::query()->delete();
+            return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
+        }
 
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
@@ -547,6 +565,205 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
+
+    //end enject display
+
+    //inject tag warna
+    public function processExcelFilesTagColor(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+            'file.unique' => 'Nama file sudah ada di database.',
+        ]);
+
+        $file = $request->file('file');
+        $filePath = $file->getPathname();
+        $fileName = $file->getClientOriginalName();
+        $file->storeAs('public/ekspedisis', $fileName);
+
+        DB::beginTransaction();
+
+        try {
+            $spreadsheet = IOFactory::load($filePath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
+            $dataToInsert = [];
+            $rowCount = 0;
+
+            foreach ($sheet->getRowIterator(2) as $row) {
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(FALSE);
+
+                $rowData = [];
+                foreach ($cellIterator as $cell) {
+                    $rowData[] = $cell->getValue() ?? '';
+                }
+
+                if (count($header) === count($rowData)) {
+                    $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
+                    $rowCount++;
+                }
+            }
+
+            $chunks = array_chunk($dataToInsert, 500);
+            foreach ($chunks as $chunk) {
+                ExcelOldColor::insert($chunk);
+            }
+
+
+            // Create a new document with the rowCount
+            Document::create([
+                'code_document' => $this->generateDocumentCode(),
+                'base_document' => $fileName,
+                'total_column_document' => count($header),
+                'total_column_in_document' => $rowCount,
+                'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
+            ]);
+
+
+            // Call mapAndMergeHeaders function here
+            $mergeResponse = $this->mapAndMergeHeadersTagColor();
+            // Decode the response if it is in JSON format
+            $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
+
+            if ($mergeResponseArray['status'] === false) {
+                DB::rollback();
+                return response()->json($mergeResponseArray, 422);
+            }
+            DB::commit();
+            return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
+                'code_document' => Document::latest()->first(),
+                'file_name' => $fileName,
+                'total_column_count' => count($header),
+                'total_row_count' => $rowCount,
+                'merged' => $mergeResponse
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
+    }
+
+    protected function mapAndMergeHeadersTagColor()
+    {
+        set_time_limit(300);
+        $headerMappings = [
+            'old_barcode_product' => ['Waybill'],
+            'new_barcode_product' => ['Waybill'],
+            'new_name_product' => ['Isi Barang'],
+            'new_quantity_product' => ['Qty'],
+            'old_price_product' => ['Nilai Barang Satuan'],
+            'new_date_in_product' => ['Date'],
+        ];
+
+        $latestDocument = Document::latest()->first();
+        if (!$latestDocument) {
+            return response()->json(['error' => 'No documents found.'], 404);
+        }
+        $code_document = $latestDocument->code_document;
+
+        $ekspedisiData = ExcelOldColor::all()->map(function ($item) {
+            return json_decode($item->data, true);
+        });
+
+
+
+        $mergedData = [
+            'old_barcode_product' => [],
+            'new_barcode_product' => [],
+            'new_name_product' => [],
+            'new_category_product' => [],
+            'new_tag_product' => [],
+            'new_quantity_product' => [],
+            'new_price_product' => [],
+            'old_price_product' => [],
+            'new_date_in_product' => [],
+            'new_quality' => [],
+            'new_discount' => [],
+            'display_price' => [],
+        ];
+
+        foreach ($ekspedisiData as $dataItem) {
+            foreach ($headerMappings as $templateHeader => $selectedHeaders) {
+                foreach ($selectedHeaders as $userSelectedHeader) {
+                    if (isset($dataItem[$userSelectedHeader])) {
+                        $mergedData[$templateHeader][] = $dataItem[$userSelectedHeader];
+                    }
+                }
+            }
+
+            $status = $dataItem['Status'] ?? 'unknown';
+            $description = $dataItem['Description'] ?? '';
+
+            $qualityData = [
+                'lolos' => $status === 'lolos' ? true : null,
+                'damaged' => $status === 'damaged' ? $description : null,
+                'abnormal' => $status === 'abnormal' ? $description : null,
+            ];
+
+            $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
+        }
+
+        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
+        // Variabel penampung barcode double ini adalah $responseBarcode
+        $responseBarcode = collect();
+        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            $new_product = New_product::where('new_barcode_product', $barcode)->first();
+            if ($new_product) {
+                $responseBarcode->push($barcode);
+            }
+        }
+
+        if ($responseBarcode->isNotEmpty()) {
+            ExcelOldColor::query()->delete();
+            return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
+        }
+
+
+        // Menyimpan data yang digabungkan ke dalam model New_product
+        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            if ($mergedData['old_price_product'][$index] <= 99999) {
+                $colors = Color_tag::where('min_price_color', '<=', $mergedData['old_price_product'][$index])
+                    ->where('max_price_color', '>=', $mergedData['old_price_product'][$index])
+                    ->first();
+
+                if ($colors) {
+                    $mergedData['new_tag_product'][$index] = $colors->name_color;
+                    $mergedData['display_price'][$index] = $colors->fixed_price_color;
+                    $mergedData['new_price_product'][$index] = $colors->fixed_price_color;
+                }
+            }
+            $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
+            $newProductData = [
+                'code_document' => $code_document,
+                'old_barcode_product' => $barcode,
+                'new_barcode_product' => $mergedData['new_barcode_product'][$index] ?? null,
+                'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
+                'new_category_product' => null,
+                'new_tag_product' => $mergedData['new_tag_product'][$index] ?? null,
+                'new_quantity_product' => $quantity,
+                'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
+                'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
+                'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
+                'new_quality' => $mergedData['new_quality'][$index],
+                'new_discount' => 0,
+                'display_price' => $mergedData['display_price'][$index] ?? null,
+            ];
+
+            New_product::create($newProductData);
+        }
+
+        ExcelOldColor::query()->delete();
+
+
+        return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
+    }
+    //end inject tag warna
+
+
 
     public function showRepair(Request $request)
     {
@@ -816,18 +1033,17 @@ class NewProductController extends Controller
     {
         $query = $request->input('q');
         try {
-            // Query untuk New_product
             $productQuery = New_product::select(
-                    'id',
-                    'new_barcode_product',
-                    'new_name_product',
-                    'new_category_product',
-                    'new_price_product',
-                    'created_at',
-                    'new_status_product',
-                    'display_price',
-                    'new_date_in_product'
-                )
+                'id',
+                'new_barcode_product',
+                'new_name_product',
+                'new_category_product',
+                'new_price_product',
+                'created_at',
+                'new_status_product',
+                'display_price',
+                'new_date_in_product'
+            )
                 ->whereNotNull('new_category_product')
                 ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
                 ->when($query, function ($queryBuilder) use ($query) {
@@ -836,35 +1052,39 @@ class NewProductController extends Controller
                             ->where('new_category_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
                     });
                 });
-    
-            // Query untuk Bundle
+
             $bundleQuery = Bundle::select(
-                    'id',
-                    'barcode_bundle as new_barcode_product',
-                    'name_bundle as new_name_product',
-                    'category as new_category_product',
-                    'total_price_custom_bundle as new_price_product',
-                    'created_at',
-                    'product_status as new_status_product',
-                    'total_price_custom_bundle as display_price',
-                    'created_at as new_date_in_product'
-                );
-    
-            // Gabungkan hasil dari kedua query menggunakan union
+                'id',
+                'barcode_bundle as new_barcode_product',
+                'name_bundle as new_name_product',
+                'category as new_category_product',
+                'total_price_custom_bundle as new_price_product',
+                'created_at',
+                'product_status as new_status_product',
+                'total_price_custom_bundle as display_price',
+                'created_at as new_date_in_product'
+            )->when($query, function ($dataBundle) use ($query) {
+                $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
+                    ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
+                    ->orWhere('category', 'LIKE', '%' . $query . '%')
+                    ->orWhere('product_status', 'LIKE', '%' . $query . '%');
+            });
+
             $mergedQuery = $productQuery->union($bundleQuery)
                 ->orderBy('created_at', 'desc')
                 ->paginate(10);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
-    
+
         return new ResponseResource(true, "list product by tag color", $mergedQuery);
     }
-    
-    
+
+
 
 
     public function updatePriceDump(Request $request, $id)
