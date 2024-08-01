@@ -626,7 +626,6 @@ class NewProductController extends Controller
 
             // Call mapAndMergeHeaders function here
             $mergeResponse = $this->mapAndMergeHeadersTagColor();
-
             // Decode the response if it is in JSON format
             $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
 
@@ -634,9 +633,7 @@ class NewProductController extends Controller
                 DB::rollback();
                 return response()->json($mergeResponseArray, 422);
             }
-
             DB::commit();
-
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => Document::latest()->first(),
                 'file_name' => $fileName,
@@ -661,7 +658,6 @@ class NewProductController extends Controller
             'old_price_product' => ['Nilai Barang Satuan'],
             'new_date_in_product' => ['Date'],
         ];
-
 
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
