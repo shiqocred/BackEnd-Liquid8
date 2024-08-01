@@ -305,7 +305,7 @@ class DashboardController extends Controller
             ')
             ->where('status_sale', 'selesai')
             ->whereYear('created_at', $year)
-            ->get();
+            ->first();
 
         $summarySales = Sale::selectRaw('
                 product_category_sale,
