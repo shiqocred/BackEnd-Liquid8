@@ -204,6 +204,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
+   Route::get('dashboard2', [DashboardController::class, 'index2']);
+   Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
+   Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
 
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);
@@ -346,6 +349,9 @@ Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 //download template
+<<<<<<< HEAD
+Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
+=======
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplate']);
 
 
@@ -353,3 +359,4 @@ Route::post('downloadTemplate', [GenerateController::class, 'exportTemplate']);
 
 
 
+>>>>>>> d601e6cb403638934c6ce059f7210572692838cd

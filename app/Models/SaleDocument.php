@@ -16,7 +16,8 @@ class SaleDocument extends Model
         return $this->hasMany(Sale::class, 'code_document_sale', 'code_document_sale');
     }
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo(User::class);
     }
 }
