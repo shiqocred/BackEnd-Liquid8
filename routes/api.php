@@ -50,7 +50,7 @@ Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi','Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi', 'Team leader'])->group(function () {
    // =========================================== repair station ==================================================
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -349,14 +349,4 @@ Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 //download template
-<<<<<<< HEAD
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
-=======
-Route::post('downloadTemplate', [GenerateController::class, 'exportTemplate']);
-
-
-
-
-
-
->>>>>>> d601e6cb403638934c6ce059f7210572692838cd
