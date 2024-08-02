@@ -110,6 +110,7 @@ class SaleDocumentController extends Controller
             }
             $validator = Validator::make($request->all(), [
                 'voucher' => 'nullable|numeric',
+                'total_price_document_sale' => 'required|numeric',
             ]);
             if($validator->fails()){
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
@@ -134,7 +135,7 @@ class SaleDocumentController extends Controller
 
             $saleDocument->update([
                 'total_product_document_sale' => count($sales),
-                'total_price_document_sale' => $sales->sum('display_price'),
+                'total_price_document_sale' => $request->input('total_price_document_sale'),
                 'status_document_sale' => 'selesai',
                 'voucher' => $request->input('voucher')
             ]);
