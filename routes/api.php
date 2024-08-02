@@ -50,7 +50,7 @@ Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi','Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi', 'Team leader'])->group(function () {
    // =========================================== repair station ==================================================
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -204,6 +204,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    // =========================================== Dashboard ==================================================
    Route::get('dashboard', [DashboardController::class, 'index']);
+   Route::get('dashboard2', [DashboardController::class, 'index2']);
+   Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
+   Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
 
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);
@@ -346,10 +349,4 @@ Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 //download template
-Route::post('downloadTemplate', [GenerateController::class, 'exportTemplate']);
-
-
-
-
-
-
+Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
