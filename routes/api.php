@@ -103,7 +103,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi', 
    Route::get('getProductRepair', [RepairController::class, 'getProductRepair']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(function () {
    //=========================================== outbound ==========================================================
 
    //migrate
