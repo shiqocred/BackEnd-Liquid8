@@ -241,9 +241,10 @@ class SaleDocumentController extends Controller
                     return $sale->product_qty_sale * $sale->product_price_sale;
                 });
                 $totalPrice += $totalPricePerCategory;
-                $categoryName = $group->first()->product_name_sale;
-                $category = $categories->firstWhere('name_category', $categoryName);
-
+                $categoryName = $group->first()->product_category_sale;
+                $category = $categories->filter(function ($item) {
+                   return $item;
+                })->first();
                 return [
                     'category' => $categoryName,
                     'total_quantity' => $group->sum('product_qty_sale'),
