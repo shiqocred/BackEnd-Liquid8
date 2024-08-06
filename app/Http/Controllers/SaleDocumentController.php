@@ -236,7 +236,7 @@ class SaleDocumentController extends Controller
                     ->where('new_barcode_product', $sale->product_barcode_sale)
                     ->first();
                 return $product ? $product->new_category_product : 'Unknown';
-            })->map(function ($group) use (&$totalPrice, $categories) {
+            })->map(function ($group) use (&$totalPrice, $categories, $product) {
                 $totalPricePerCategory = $group->sum(function ($sale) {
                     return $sale->product_qty_sale * $sale->product_price_sale;
                 });
@@ -245,10 +245,12 @@ class SaleDocumentController extends Controller
                 $category = $categories->filter(function ($item) {
                    return $item;
                 })->first();
+                // dd($product->old_price_product);
                 return [
                     'category' => $categoryName,
                     'total_quantity' => $group->sum('product_qty_sale'),
                     'total_price' => $totalPricePerCategory,
+                    'before_discount' => $product->old_price_product,
                     'total_discount' => $category ? $category->discount_category : null,
                 ];
             })->values()->all();
