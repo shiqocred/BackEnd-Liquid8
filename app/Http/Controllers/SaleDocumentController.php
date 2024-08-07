@@ -112,7 +112,7 @@ class SaleDocumentController extends Controller
                 'voucher' => 'nullable|numeric',
                 'total_price_document_sale' => 'required|numeric',
             ]);
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
@@ -210,18 +210,22 @@ class SaleDocumentController extends Controller
     private function generateCategoryReport($saleDocument)
     {
         $totalPrice = 0;
+        $oldPrice = 0;
         $categoryReport = [];
         $products = collect();
         $categories = collect();
 
+        // Mengisi koleksi produk dan kategori
         foreach ($saleDocument->sales as $sale) {
             $product = New_product::where('new_name_product', $sale->product_name_sale)
-                ->where('new_status_product', 'sale')->where('new_barcode_product', $sale->product_barcode_sale)
+                ->where('new_status_product', 'sale')
+                ->where('new_barcode_product', $sale->product_barcode_sale)
                 ->first();
             $category = Category::where('name_category', $product->new_category_product)->first();
 
             if ($product) {
                 $product->new_quantity_product = $sale->product_qty_sale;
+                $oldPrice += $product->old_price_product;
                 $products->push($product);
             }
             if ($category) {
@@ -230,34 +234,51 @@ class SaleDocumentController extends Controller
         }
 
         if ($saleDocument->sales->count() > 0) {
-            $categoryReport = $saleDocument->sales->groupBy(function ($sale) {
+            $groupedSales = $saleDocument->sales->groupBy(function ($sale) {
                 $product = New_product::where('new_name_product', $sale->product_name_sale)
                     ->where('new_status_product', 'sale')
                     ->where('new_barcode_product', $sale->product_barcode_sale)
                     ->first();
                 return $product ? $product->new_category_product : 'Unknown';
-            })->map(function ($group) use (&$totalPrice, $categories, $product) {
+            });
+
+            foreach ($groupedSales as $categoryName => $group) {
                 $totalPricePerCategory = $group->sum(function ($sale) {
                     return $sale->product_qty_sale * $sale->product_price_sale;
                 });
                 $totalPrice += $totalPricePerCategory;
-                $categoryName = $group->first()->product_category_sale;
-                $category = $categories->filter(function ($item) {
-                   return $item;
-                })->first();
-                // dd($product->old_price_product);
-                return [
+
+                // Menemukan kategori dari koleksi secara manual
+                $category = null;
+                foreach ($categories as $cat) {
+                    if ($cat->name_category === $categoryName) {
+                        $category = $cat;
+                        break;
+                    }
+                }
+
+                // Menemukan produk yang sesuai dari koleksi
+                $beforeDiscount = null;
+                foreach ($products as $product) {
+                    if ($product->new_category_product === $categoryName) {
+                        $beforeDiscount = $product->old_price_product;
+                        break;
+                    }
+                }
+
+                $categoryReport[] = [
                     'category' => $categoryName,
                     'total_quantity' => $group->sum('product_qty_sale'),
                     'total_price' => $totalPricePerCategory,
-                    'before_discount' => $product->old_price_product,
+                    'before_discount' => $beforeDiscount ? $beforeDiscount : null,
                     'total_discount' => $category ? $category->discount_category : null,
                 ];
-            })->values()->all();
+            }
         }
 
-        return ["category_list" => $categoryReport, 'total_harga' => $totalPrice];
+        return ["category_list" => $categoryReport, 'total_harga' => $totalPrice, 'total_price_before_discount' => $oldPrice];
     }
+
 
 
     private function generateBarcodeReport($saleDocument)
