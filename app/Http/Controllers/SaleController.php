@@ -102,7 +102,8 @@ class SaleController extends Controller
                     $newProduct->new_barcode_product,
                     $newProduct->display_price,
                     $newProduct->new_price_product,
-                    $newProduct->new_discount
+                    $newProduct->new_discount,
+                    $newProduct->old_price_product,
                 ];
             } elseif ($bundle) {
                 $data = [
@@ -125,10 +126,11 @@ class SaleController extends Controller
                     'buyer_name_document_sale' => $buyer->name_buyer,
                     'buyer_phone_document_sale' => $buyer->phone_buyer,
                     'buyer_address_document_sale' => $buyer->address_buyer,
-                    'total_price_document_sale' => 0,
                     'total_product_document_sale' => 0,
+                    'total_old_price_document_sale' => 0,
+                    'total_price_document_sale' => 0,
                     'status_document_sale' => 'proses',
-                    'voucher'=>0
+                    'voucher' => 0
                 ];
 
                 $createSaleDocument = (new SaleDocumentController)->store(new Request($saleDocumentRequest));
@@ -145,6 +147,7 @@ class SaleController extends Controller
                     'product_name_sale' => $data[0],
                     'product_category_sale' => $data[1],
                     'product_barcode_sale' => $data[2],
+                    'product_old_price_sale' => $data[6] ?? $data[4],
                     'product_price_sale' => $data[3],
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses',

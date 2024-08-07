@@ -110,12 +110,20 @@ class SaleDocumentController extends Controller
             }
             $validator = Validator::make($request->all(), [
                 'voucher' => 'nullable|numeric',
-                'total_price_document_sale' => 'required|numeric',
             ]);
+
             if ($validator->fails()) {
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }
+
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
+
+            $totalDisplayPrice = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('display_price');
+
+            $totalProductPriceSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('product_price_sale');
+            $totalProductPriceSale = $request['voucher'] ? $totalProductPriceSale - $request['voucher'] : $totalProductPriceSale;
+
+            $totalProductOldPriceSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('product_old_price_sale');
 
             foreach ($sales as $sale) {
                 $newProduct = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
@@ -135,7 +143,9 @@ class SaleDocumentController extends Controller
 
             $saleDocument->update([
                 'total_product_document_sale' => count($sales),
-                'total_price_document_sale' => $request->input('total_price_document_sale'),
+                'total_old_price_document_sale' => $totalProductOldPriceSale,
+                'total_price_document_sale' => $totalProductPriceSale,
+                'total_display_document_sale' => $totalDisplayPrice,
                 'status_document_sale' => 'selesai',
                 'voucher' => $request->input('voucher')
             ]);
