@@ -357,31 +357,12 @@ class DashboardController extends Controller
         return $resource->response();
     }
 
-    public function storageReport(Request $request)
+    public function storageReport()
     {
-        $validator = Validator::make($request->all(), [
-            'from' => 'nullable|date',
-            'to' => 'nullable|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
-
         //tanggal sekarang
-        $currentDate = Carbon::now();
-        $currentMonth = $currentDate->format('M');
-        $currentYear = $currentDate->format('Y');
-
-        $fromInput = $request->input('from');
-        $toInput = $request->input('to');
-
-        $fromDate = $fromInput
-            ? Carbon::parse($fromInput)->startOfDay()
-            : Carbon::now()->startOfMonth()->startOfDay();
-        $toDate = $toInput
-            ? Carbon::parse($toInput)->endOfDay()
-            : Carbon::now()->endOfMonth()->endOfDay();
+        // $currentDate = Carbon::now();
+        // $currentMonth = $currentDate->format('M');
+        // $currentYear = $currentDate->format('Y');
 
         $categoryCount = New_product::selectRaw('
                 new_category_product as category_product,
@@ -390,7 +371,6 @@ class DashboardController extends Controller
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->whereBetween('created_at', [$fromDate, $toDate])
             ->groupBy('new_category_product')
             ->get();
 
@@ -398,22 +378,12 @@ class DashboardController extends Controller
             true,
             "Laporan Data Perkategori",
             [
-                'month' => [
-                    'current_month' => [
-                        'month' => $currentMonth,
-                        'year' => $currentYear,
-                    ],
-                    'date_from' => [
-                        'date' => $fromDate->format('d') ?? null,
-                        'month' => $fromDate->format('F') ?? null,
-                        'year' => $fromDate->format('Y') ?? null,
-                    ],
-                    'date_to' => [
-                        'date' => $toDate->format('d') ?? null,
-                        'month' => $toDate->format('F') ?? null,
-                        'year' => $toDate->format('Y') ?? null,
-                    ],
-                ],
+                // 'month' => [
+                //     'current_month' => [
+                //         'month' => $currentMonth,
+                //         'year' => $currentYear,
+                //     ],
+                // ],
                 'chart' => $categoryCount
             ]
         );
@@ -444,7 +414,7 @@ class DashboardController extends Controller
 
         //tanggal sekarang
         $currentDate = Carbon::now();
-        $currentMonth = $currentDate->format('M');
+        $currentMonth = $currentDate->format('F');
         $currentYear = $currentDate->format('Y');
 
         $generalSale = SaleDocument::selectRaw('
@@ -462,9 +432,9 @@ class DashboardController extends Controller
             ->map(function ($salesOnDate) {
                 $total_price_sale = $salesOnDate->sum('total_price_sale');
                 $total_display_price = $salesOnDate->sum('total_display_price');
-
+                $date = Carbon::parse($salesOnDate->first()->tgl)->format('d-m-Y');
                 return [
-                    "date" => $salesOnDate->first()->tgl,
+                    "date" => $date,
                     "total_price_sale" => $total_price_sale,
                     "total_display_price" => $total_display_price,
                 ];
@@ -490,14 +460,14 @@ class DashboardController extends Controller
                         'year' => $currentYear,
                     ],
                     'date_from' => [
-                        'date' => $fromDate->format('d') ?? null,
-                        'month' => $fromDate->format('F') ?? null,
-                        'year' => $fromDate->format('Y') ?? null,
+                        'date' => $fromInput ? $fromDate->format('d') : null,
+                        'month' => $fromInput ? $fromDate->format('M') : null,
+                        'year' => $fromInput ? $fromDate->format('Y') : null,
                     ],
                     'date_to' => [
-                        'date' => $toDate->format('d') ?? null,
-                        'month' => $toDate->format('F') ?? null,
-                        'year' => $toDate->format('Y') ?? null,
+                        'date' => $toInput ? $toDate->format('d') : null,
+                        'month' => $toInput ? $toDate->format('M') : null,
+                        'year' => $toInput ? $toDate->format('Y') : null,
                     ],
                 ],
                 'chart' => $generalSale,
@@ -508,7 +478,7 @@ class DashboardController extends Controller
         return $resource->response();
     }
 
-    public function analitycSales(Request $request)
+    public function analyticSales(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'from' => 'nullable|date',
@@ -531,10 +501,10 @@ class DashboardController extends Controller
 
         //tanggal sekarang
         $currentDate = Carbon::now();
-        $currentMonth = $currentDate->format('M');
+        $currentMonth = $currentDate->format('F');
         $currentYear = $currentDate->format('Y');
 
-        $analitycSales = Sale::selectRaw('
+        $analyticSales = Sale::selectRaw('
                     DATE(created_at) as tgl,
                     product_category_sale,
                     COUNT(product_category_sale) as total_category,
@@ -548,19 +518,25 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('tgl')
             ->map(function ($salesOnDate) {
-                return [
-                    'date' => $salesOnDate->first()->tgl,
-                    'categories' => $salesOnDate->mapWithKeys(function ($item) {
-                        return [
-                            $item->product_category_sale => [
-                                'total_category' => $item->total_category,
-                                'display_price_sale' => (float) $item->display_price_sale,
-                                'purchase' => (float) $item->purchase,
-                            ],
-                        ];
-                    })
-                ];
+                $categories = $salesOnDate->mapWithKeys(function ($item) {
+                    return [$item->product_category_sale => $item->total_category];
+                });
+                $date = Carbon::parse($salesOnDate->first()->tgl)->format('d-m-Y');
+                return array_merge([
+                    'date' => $date,
+                ], $categories->toArray());
             })->values();
+
+        $listAnalyticSales = Sale::selectRaw('
+                    product_category_sale,
+                    COUNT(product_category_sale) as total_category,
+                    SUM(display_price) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+            ->where('status_sale', 'selesai')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->groupBy('product_category_sale')
+            ->get();
 
         $resource = new ResponseResource(
             true,
@@ -572,17 +548,18 @@ class DashboardController extends Controller
                         'year' => $currentYear,
                     ],
                     'date_from' => [
-                        'date' => $fromDate->format('d') ?? null,
-                        'month' => $fromDate->format('F') ?? null,
-                        'year' => $fromDate->format('Y') ?? null,
+                        'date' => $fromInput ? $fromDate->format('d') : null,
+                        'month' => $fromInput ? $fromDate->format('M') : null,
+                        'year' => $fromInput ? $fromDate->format('Y') : null,
                     ],
                     'date_to' => [
-                        'date' => $toDate->format('d') ?? null,
-                        'month' => $toDate->format('F') ?? null,
-                        'year' => $toDate->format('Y') ?? null,
+                        'date' => $toInput ? $toDate->format('d') : null,
+                        'month' => $toInput ? $toDate->format('M') : null,
+                        'year' => $toInput ? $toDate->format('Y') : null,
                     ],
                 ],
-                'chart' => $analitycSales
+                'chart' => $analyticSales,
+                'list_analytic_sale' => $listAnalyticSales
             ]
         );
 
