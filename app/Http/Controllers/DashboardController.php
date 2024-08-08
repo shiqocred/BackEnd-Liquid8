@@ -357,51 +357,212 @@ class DashboardController extends Controller
         return $resource->response();
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function storageReport()
     {
-        //
+        //tanggal sekarang
+        // $currentDate = Carbon::now();
+        // $currentMonth = $currentDate->format('M');
+        // $currentYear = $currentDate->format('Y');
+
+        $categoryCount = New_product::selectRaw('
+                new_category_product as category_product,
+                COUNT(new_category_product) as total_category
+            ')
+            ->whereNotNull('new_category_product')
+            ->where('new_tag_product', NULL)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->groupBy('new_category_product')
+            ->get();
+
+        $resource = new ResponseResource(
+            true,
+            "Laporan Data Perkategori",
+            [
+                // 'month' => [
+                //     'current_month' => [
+                //         'month' => $currentMonth,
+                //         'year' => $currentYear,
+                //     ],
+                // ],
+                'chart' => $categoryCount
+            ]
+        );
+
+        return $resource->response();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function generalSale(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        $fromInput = $request->input('from');
+        $toInput = $request->input('to');
+
+        $fromDate = $fromInput
+            ? Carbon::parse($fromInput)->startOfDay()
+            : Carbon::now()->startOfMonth()->startOfDay();
+        $toDate = $toInput
+            ? Carbon::parse($toInput)->endOfDay()
+            : Carbon::now()->endOfMonth()->endOfDay();
+
+        //tanggal sekarang
+        $currentDate = Carbon::now();
+        $currentMonth = $currentDate->format('F');
+        $currentYear = $currentDate->format('Y');
+
+        $generalSale = SaleDocument::selectRaw('
+                SUM(total_price_document_sale) as total_price_sale,
+                SUM(total_old_price_document_sale) as total_display_price,
+                code_document_sale,
+                buyer_name_document_sale,
+                DATE(created_at) as tgl
+            ')
+            ->where('status_document_sale', 'selesai')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->groupBy('tgl', 'code_document_sale')
+            ->get()
+            ->groupBy('tgl')
+            ->map(function ($salesOnDate) {
+                $total_price_sale = $salesOnDate->sum('total_price_sale');
+                $total_display_price = $salesOnDate->sum('total_display_price');
+                $date = Carbon::parse($salesOnDate->first()->tgl)->format('d-m-Y');
+                return [
+                    "date" => $date,
+                    "total_price_sale" => $total_price_sale,
+                    "total_display_price" => $total_display_price,
+                ];
+            })->values();
+
+        $listDocumentSale = SaleDocument::selectRaw('
+                total_price_document_sale as total_purchase,
+                total_old_price_document_sale as total_display_price,
+                code_document_sale,
+                buyer_name_document_sale
+            ')
+            ->where('status_document_sale', 'selesai')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->get();
+
+        $resource = new ResponseResource(
+            true,
+            "Laporan Data General",
+            [
+                'month' => [
+                    'current_month' => [
+                        'month' => $currentMonth,
+                        'year' => $currentYear,
+                    ],
+                    'date_from' => [
+                        'date' => $fromInput ? $fromDate->format('d') : null,
+                        'month' => $fromInput ? $fromDate->format('M') : null,
+                        'year' => $fromInput ? $fromDate->format('Y') : null,
+                    ],
+                    'date_to' => [
+                        'date' => $toInput ? $toDate->format('d') : null,
+                        'month' => $toInput ? $toDate->format('M') : null,
+                        'year' => $toInput ? $toDate->format('Y') : null,
+                    ],
+                ],
+                'chart' => $generalSale,
+                'list_document_sale' => $listDocumentSale
+            ]
+        );
+
+        return $resource->response();
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function analyticSales(Request $request)
     {
-        //
-    }
+        $validator = Validator::make($request->all(), [
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()], 422);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        $fromInput = $request->input('from');
+        $toInput = $request->input('to');
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $fromDate = $fromInput
+            ? Carbon::parse($fromInput)->startOfDay()
+            : Carbon::now()->startOfMonth()->startOfDay();
+        $toDate = $toInput
+            ? Carbon::parse($toInput)->endOfDay()
+            : Carbon::now()->endOfMonth()->endOfDay();
+
+        //tanggal sekarang
+        $currentDate = Carbon::now();
+        $currentMonth = $currentDate->format('F');
+        $currentYear = $currentDate->format('Y');
+
+        $analyticSales = Sale::selectRaw('
+                    DATE(created_at) as tgl,
+                    product_category_sale,
+                    COUNT(product_category_sale) as total_category,
+                    SUM(display_price) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+            ->where('status_sale', 'selesai')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->groupBy('tgl', 'product_category_sale')
+            ->orderBy('tgl')
+            ->get()
+            ->groupBy('tgl')
+            ->map(function ($salesOnDate) {
+                $categories = $salesOnDate->mapWithKeys(function ($item) {
+                    return [$item->product_category_sale => $item->total_category];
+                });
+                $date = Carbon::parse($salesOnDate->first()->tgl)->format('d-m-Y');
+                return array_merge([
+                    'date' => $date,
+                ], $categories->toArray());
+            })->values();
+
+        $listAnalyticSales = Sale::selectRaw('
+                    product_category_sale,
+                    COUNT(product_category_sale) as total_category,
+                    SUM(display_price) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+            ->where('status_sale', 'selesai')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->groupBy('product_category_sale')
+            ->get();
+
+        $resource = new ResponseResource(
+            true,
+            "Laporan Data Sale",
+            [
+                'month' => [
+                    'current_month' => [
+                        'month' => $currentMonth,
+                        'year' => $currentYear,
+                    ],
+                    'date_from' => [
+                        'date' => $fromInput ? $fromDate->format('d') : null,
+                        'month' => $fromInput ? $fromDate->format('M') : null,
+                        'year' => $fromInput ? $fromDate->format('Y') : null,
+                    ],
+                    'date_to' => [
+                        'date' => $toInput ? $toDate->format('d') : null,
+                        'month' => $toInput ? $toDate->format('M') : null,
+                        'year' => $toInput ? $toDate->format('Y') : null,
+                    ],
+                ],
+                'chart' => $analyticSales,
+                'list_analytic_sale' => $listAnalyticSales
+            ]
+        );
+
+        return $resource->response();
     }
 }
