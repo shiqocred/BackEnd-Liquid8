@@ -112,6 +112,7 @@ class SaleDocumentController extends Controller
                 'voucher' => 'nullable|numeric',
                 'total_price_document_sale' => 'required|numeric',
             ]);
+            
             if ($validator->fails()) {
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }
