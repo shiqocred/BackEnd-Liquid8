@@ -208,7 +208,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
    Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
    Route::get('dashboard/storage-report', [DashboardController::class, 'storageReport']);
-   Route::get('dashboard/analityc-sales', [DashboardController::class, 'analitycSales']);
+   Route::get('dashboard/analytic-sales', [DashboardController::class, 'analyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
 
    // =========================================== Category ==================================================
