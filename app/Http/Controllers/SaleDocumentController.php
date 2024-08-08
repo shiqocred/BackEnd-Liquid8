@@ -111,7 +111,6 @@ class SaleDocumentController extends Controller
             $validator = Validator::make($request->all(), [
                 'voucher' => 'nullable|numeric',
             ]);
-
             if ($validator->fails()) {
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }

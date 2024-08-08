@@ -130,7 +130,8 @@ class SaleController extends Controller
                     'total_old_price_document_sale' => 0,
                     'total_price_document_sale' => 0,
                     'status_document_sale' => 'proses',
-                    'voucher' => 0
+                    'voucher' => 0,
+                    'total_display_document_sale' => 0
                 ];
 
                 $createSaleDocument = (new SaleDocumentController)->store(new Request($saleDocumentRequest));
