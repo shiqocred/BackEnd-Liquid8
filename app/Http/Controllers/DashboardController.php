@@ -360,9 +360,9 @@ class DashboardController extends Controller
     public function storageReport()
     {
         //tanggal sekarang
-        // $currentDate = Carbon::now();
-        // $currentMonth = $currentDate->format('M');
-        // $currentYear = $currentDate->format('Y');
+        $currentDate = Carbon::now();
+        $currentMonth = $currentDate->format('F');
+        $currentYear = $currentDate->format('Y');
 
         $categoryCount = New_product::selectRaw('
                 new_category_product as category_product,
@@ -378,12 +378,12 @@ class DashboardController extends Controller
             true,
             "Laporan Data Perkategori",
             [
-                // 'month' => [
-                //     'current_month' => [
-                //         'month' => $currentMonth,
-                //         'year' => $currentYear,
-                //     ],
-                // ],
+                'month' => [
+                    'current_month' => [
+                        'month' => $currentMonth,
+                        'year' => $currentYear,
+                    ],
+                ],
                 'chart' => $categoryCount
             ]
         );
@@ -441,6 +441,7 @@ class DashboardController extends Controller
             })->values();
 
         $listDocumentSale = SaleDocument::selectRaw('
+                id,
                 total_price_document_sale as total_purchase,
                 total_old_price_document_sale as total_display_price,
                 code_document_sale,
