@@ -221,27 +221,14 @@ class SaleDocumentController extends Controller
         $totalPrice = 0;
         $oldPrice = 0;
         $categoryReport = [];
-        $products = collect();
         $categories = collect();
 
-        // Mengisi koleksi produk dan kategori
         foreach ($saleDocument->sales as $sale) {
-            $product = New_product::where('new_name_product', $sale->product_name_sale)
-                ->where('new_status_product', 'sale')
-                ->where('new_barcode_product', $sale->product_barcode_sale)
-                ->first();
-            $category = Category::where('name_category', $product->new_category_product)->first();
-
-            if ($product) {
-                $product->new_quantity_product = $sale->product_qty_sale;
-                $oldPrice += $product->old_price_product;
-                $products->push($product);
-            }
+            $category = Category::where('name_category', $sale->product_category_sale)->first();
             if ($category) {
                 $categories->push($category);
             }
         }
-
         if ($saleDocument->sales->count() > 0) {
             $groupedSales = $saleDocument->sales->groupBy(function ($sale) {
                 $product = New_product::where('new_name_product', $sale->product_name_sale)
@@ -250,11 +237,15 @@ class SaleDocumentController extends Controller
                     ->first();
                 return $product ? $product->new_category_product : 'Unknown';
             });
-
             foreach ($groupedSales as $categoryName => $group) {
                 $totalPricePerCategory = $group->sum(function ($sale) {
                     return $sale->product_qty_sale * $sale->product_price_sale;
                 });
+
+                $PriceBeforeDiscount = $group->sum(function ($sale) {
+                    return $sale->product_old_price_sale;
+                });
+                $oldPrice += $PriceBeforeDiscount;
                 $totalPrice += $totalPricePerCategory;
 
                 // Menemukan kategori dari koleksi secara manual
@@ -266,20 +257,11 @@ class SaleDocumentController extends Controller
                     }
                 }
 
-                // Menemukan produk yang sesuai dari koleksi
-                $beforeDiscount = null;
-                foreach ($products as $product) {
-                    if ($product->new_category_product === $categoryName) {
-                        $beforeDiscount = $product->old_price_product;
-                        break;
-                    }
-                }
-
                 $categoryReport[] = [
                     'category' => $categoryName,
                     'total_quantity' => $group->sum('product_qty_sale'),
                     'total_price' => $totalPricePerCategory,
-                    'before_discount' => $beforeDiscount ? $beforeDiscount : null,
+                    'before_discount' => $PriceBeforeDiscount,
                     'total_discount' => $category ? $category->discount_category : null,
                 ];
             }
