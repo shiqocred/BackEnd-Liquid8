@@ -27,7 +27,7 @@ class RoleFactory extends Factory
             'Spv',
             'Team leader',
             'Crew',
-            'Admin kasir',
+            'Admin Kasir',
             'Reparasi' 
         ];
 
