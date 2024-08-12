@@ -366,13 +366,23 @@ class DashboardController extends Controller
 
         $categoryCount = New_product::selectRaw('
                 new_category_product as category_product,
-                COUNT(new_category_product) as total_category
+                COUNT(new_category_product) as total_category,
+                SUM(new_price_product) as total_price_category
             ')
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
             ->groupBy('new_category_product')
             ->get();
+
+        $categoryCountAll = New_product::selectRaw('
+                COUNT(new_category_product) as total_all_category,
+                SUM(new_price_product) as total_all_price_category
+            ')
+            ->whereNotNull('new_category_product')
+            ->where('new_tag_product', NULL)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->first();
 
         $resource = new ResponseResource(
             true,
@@ -384,7 +394,9 @@ class DashboardController extends Controller
                         'year' => $currentYear,
                     ],
                 ],
-                'chart' => $categoryCount
+                'chart' => $categoryCount,
+                'total_all_category' => $categoryCountAll['total_all_category'],
+                'total_all_price_category' => $categoryCountAll['total_all_price_category']
             ]
         );
 
@@ -505,7 +517,7 @@ class DashboardController extends Controller
         $currentMonth = $currentDate->format('F');
         $currentYear = $currentDate->format('Y');
 
-        $analyticSales = Sale::selectRaw('
+        $analyticSalesMonthly = Sale::selectRaw('
                     DATE(created_at) as tgl,
                     product_category_sale,
                     COUNT(product_category_sale) as total_category,
@@ -527,6 +539,29 @@ class DashboardController extends Controller
                     'date' => $date,
                 ], $categories->toArray());
             })->values();
+
+        $analyticSalesYearly = [];
+
+        // Loop untuk menghasilkan summary sales untuk setiap bulan
+        for ($month = 1; $month <= 12; $month++) {
+            $sale = Sale::selectRaw('
+                    product_category_sale,
+                    COUNT(product_category_sale) as total_category,
+                    SUM(display_price) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+                ->where('status_sale', 'selesai')
+                ->whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $month)
+                ->groupBy('product_category_sale')
+                ->pluck('total_category', 'product_category_sale')
+                ->toArray();
+
+            $analyticSalesYearly[] = array_merge(
+                ['month' => Carbon::createFromDate($currentYear, $month, 1)->format('F')],
+                $sale
+            );
+        }
 
         $listAnalyticSales = Sale::selectRaw('
                     product_category_sale,
@@ -559,7 +594,8 @@ class DashboardController extends Controller
                         'year' => $toInput ? $toDate->format('Y') : null,
                     ],
                 ],
-                'chart' => $analyticSales,
+                'chart_monthly' => $analyticSalesMonthly,
+                'chart_yearly' => $analyticSalesYearly,
                 'list_analytic_sale' => $listAnalyticSales
             ]
         );
