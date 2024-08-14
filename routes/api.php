@@ -208,7 +208,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
    Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
    Route::get('dashboard/storage-report', [DashboardController::class, 'storageReport']);
-   Route::get('dashboard/analytic-sales', [DashboardController::class, 'analyticSales']);
+   Route::get('dashboard/monthly-analytic-sales', [DashboardController::class, 'monthlyAnalyticSales']);
+   Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
 
    // =========================================== Category ==================================================

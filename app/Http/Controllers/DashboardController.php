@@ -491,7 +491,7 @@ class DashboardController extends Controller
         return $resource->response();
     }
 
-    public function analyticSales(Request $request)
+    public function monthlyAnalyticSales(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'from' => 'nullable|date',
@@ -521,7 +521,7 @@ class DashboardController extends Controller
                     DATE(created_at) as tgl,
                     product_category_sale,
                     COUNT(product_category_sale) as total_category,
-                    SUM(display_price) as display_price_sale,
+                    SUM(product_old_price_sale) as display_price_sale,
                     SUM(product_price_sale) as purchase
                 ')
             ->where('status_sale', 'selesai')
@@ -540,33 +540,10 @@ class DashboardController extends Controller
                 ], $categories->toArray());
             })->values();
 
-        $analyticSalesYearly = [];
-
-        // Loop untuk menghasilkan summary sales untuk setiap bulan
-        for ($month = 1; $month <= 12; $month++) {
-            $sale = Sale::selectRaw('
-                    product_category_sale,
-                    COUNT(product_category_sale) as total_category,
-                    SUM(display_price) as display_price_sale,
-                    SUM(product_price_sale) as purchase
-                ')
-                ->where('status_sale', 'selesai')
-                ->whereYear('created_at', $currentYear)
-                ->whereMonth('created_at', $month)
-                ->groupBy('product_category_sale')
-                ->pluck('total_category', 'product_category_sale')
-                ->toArray();
-
-            $analyticSalesYearly[] = array_merge(
-                ['month' => Carbon::createFromDate($currentYear, $month, 1)->format('F')],
-                $sale
-            );
-        }
-
         $listAnalyticSales = Sale::selectRaw('
                     product_category_sale,
                     COUNT(product_category_sale) as total_category,
-                    SUM(display_price) as display_price_sale,
+                    SUM(product_old_price_sale) as display_price_sale,
                     SUM(product_price_sale) as purchase
                 ')
             ->where('status_sale', 'selesai')
@@ -594,8 +571,98 @@ class DashboardController extends Controller
                         'year' => $toInput ? $toDate->format('Y') : null,
                     ],
                 ],
-                'chart_monthly' => $analyticSalesMonthly,
-                'chart_yearly' => $analyticSalesYearly,
+                'chart' => $analyticSalesMonthly,
+                'list_analytic_sale' => $listAnalyticSales
+            ]
+        );
+
+        return $resource->response();
+    }
+
+    public function yearlyAnalyticSales(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'y' => 'nullable|date_format:Y|digits:4', // Format tahun (misalnya, 2024)
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => 'Invalid input format. Year should be in format YYYY.',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $year = $request->input('y', Carbon::now()->format('Y'));
+
+        //tanggal sekarang
+        $currentDate = Carbon::now();
+        $currentYear = $currentDate->format('Y');
+
+        //bulan yang di pilih
+        $selectedDate = Carbon::createFromFormat('Y', $year);
+        $selectedYear = $selectedDate->format('Y');
+
+        //bulan seblumnya
+        $prevMonthDate = $selectedDate->copy()->subYear();
+        $prevYear = $prevMonthDate->format('Y');
+
+        //bulan yang akan datang
+        $nextMonthDate = $selectedDate->copy()->addYear();
+        $nextYear = $nextMonthDate->format('Y');
+
+        $analyticSalesYearly = [];
+
+        // Loop untuk menghasilkan summary sales untuk setiap bulan
+        for ($month = 1; $month <= 12; $month++) {
+            $sale = Sale::selectRaw('
+                    product_category_sale,
+                    COUNT(product_category_sale) as total_category,
+                    SUM(product_old_price_sale) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+                ->where('status_sale', 'selesai')
+                ->whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $month)
+                ->groupBy('product_category_sale')
+                ->pluck('total_category', 'product_category_sale')
+                ->toArray();
+
+            $analyticSalesYearly[] = array_merge(
+                ['month' => Carbon::createFromDate($currentYear, $month, 1)->format('F')],
+                $sale
+            );
+        }
+
+        $listAnalyticSales = Sale::selectRaw('
+                    product_category_sale,
+                    COUNT(product_category_sale) as total_category,
+                    SUM(product_old_price_sale) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+            ->where('status_sale', 'selesai')
+            ->whereYear('created_at', $year)
+            ->groupBy('product_category_sale')
+            ->get();
+
+        $resource = new ResponseResource(
+            true,
+            "Laporan Data Sale",
+            [
+                'year' => [
+                    'current_year' => [
+                        'year' => $currentYear,
+                    ],
+                    'prev_year' => [
+                        'year' => $prevYear,
+                    ],
+                    'selected_year' => [
+                        'year' => $selectedYear,
+                    ],
+                    'next_year' => [
+                        'year' => $nextYear,
+                    ],
+                ],
+                'chart' => $analyticSalesYearly,
                 'list_analytic_sale' => $listAnalyticSales
             ]
         );
