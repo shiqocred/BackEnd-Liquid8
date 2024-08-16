@@ -617,21 +617,36 @@ class DashboardController extends Controller
         // Loop untuk menghasilkan summary sales untuk setiap bulan
         for ($month = 1; $month <= 12; $month++) {
             $sale = Sale::selectRaw('
+                    COUNT(product_category_sale) as total_all_category,
+                    SUM(product_old_price_sale) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+                ->where('status_sale', 'selesai')
+                ->whereYear('created_at', $year ?? $currentYear)
+                ->whereMonth('created_at', $month)
+                ->first();
+
+            $saleCategory = Sale::selectRaw('
                     product_category_sale,
                     COUNT(product_category_sale) as total_category,
                     SUM(product_old_price_sale) as display_price_sale,
                     SUM(product_price_sale) as purchase
                 ')
                 ->where('status_sale', 'selesai')
-                ->whereYear('created_at', $currentYear)
+                ->whereYear('created_at', $year ?? $currentYear)
                 ->whereMonth('created_at', $month)
                 ->groupBy('product_category_sale')
                 ->pluck('total_category', 'product_category_sale')
                 ->toArray();
 
             $analyticSalesYearly[] = array_merge(
-                ['month' => Carbon::createFromDate($currentYear, $month, 1)->format('F')],
-                $sale
+                [
+                    'month' => Carbon::createFromDate($year ?? $currentYear, $month, 1)->format('F'),
+                    'total_all_category' => $sale->total_all_category,
+                    'display_price_sale' => $sale->display_price_sale,
+                    'purchase' => $sale->purchase,
+                ],
+                $saleCategory
             );
         }
 
