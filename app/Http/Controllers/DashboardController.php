@@ -12,6 +12,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardController extends Controller
 {
@@ -683,5 +685,69 @@ class DashboardController extends Controller
         );
 
         return $resource->response();
+    }
+
+    public function dashboard_slowmov_product(Request $request)
+    {
+        try {
+            $productExpired = New_product::where('new_status_product', 'expired');
+
+            if ($productExpired->exist()) {
+                return response()->json(['error' => 'No expired products found'], 404);
+            }
+            $total_display_price = $productExpired->sum('display_price');
+            $productExpired = $productExpired->paginate(150);
+
+            return new ResponseResource(true, "List of expired products", [
+                'total_display_price' => $total_display_price,
+                'productExp' => $productExpired
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function generateExcel_StorageReport()
+    {
+        // Ambil data dari function storageReport
+        $response = $this->storageReport();
+        $data = $response->getData(true);
+        $month = $data['data']['resource']['month']['current_month']['month'];
+        $year = $data['data']['resource']['month']['current_month']['year'];
+        $dataChart = $data['data']['resource']['chart'];
+        $totalPriceCategory = array_sum(array_column($dataChart, 'total_price_category'));
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Set judul kolom di baris pertama
+        $sheet->setCellValue('A1', 'Category Product');
+        $sheet->setCellValue('B1', 'Total Category');
+        $sheet->setCellValue('C1', 'Total Price Category');
+
+        // Isi data chart ke dalam spreadsheet mulai dari baris kedua
+        $row = 2;
+        foreach ($data['data']['resource']['chart'] as $item) {
+            $sheet->setCellValue('A' . $row, $item['category_product']);
+            $sheet->setCellValue('B' . $row, $item['total_category']);
+            $sheet->setCellValue('C' . $row, $item['total_price_category']);
+            $row++;
+        }
+        
+        // Tambahkan total di akhir sheet
+        $sheet->setCellValue('A' . $row, 'Total');
+        $sheet->setCellValue('B' . $row, $data['data']['resource']['total_all_category']);
+        $sheet->setCellValue('C' . $row, $data['data']['resource']['total_all_price_category']);
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = $month.$year.'.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true); 
+        }
+        $writer->save($filePath);
+        $downloadUrl = url($publicPath . '/' . $fileName);
+        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 }
