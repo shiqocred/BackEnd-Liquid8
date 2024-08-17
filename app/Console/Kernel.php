@@ -13,6 +13,11 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         $schedule->command('cron:expiredProduct')->everyTwoHours();
+
+        // Jadwalkan command untuk dijalankan pada pukul 23:59 pada hari terakhir bulan
+        $schedule->command('end-of-month:task')->monthlyOn(28, '23:59')->when(function () {
+            return now()->endOfMonth()->isToday();
+        });
     }
 
     /**

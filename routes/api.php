@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ArchiveStorageController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BundleController;
 use App\Http\Controllers\BundleQcdController;
@@ -213,7 +214,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
    Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
-
+  
 
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);

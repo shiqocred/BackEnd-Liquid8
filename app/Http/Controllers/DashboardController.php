@@ -553,6 +553,15 @@ class DashboardController extends Controller
             ->groupBy('product_category_sale')
             ->get();
 
+        $monthlySummary = Sale::selectRaw('
+                    COUNT(product_category_sale) as total_category,
+                    SUM(product_old_price_sale) as display_price_sale,
+                    SUM(product_price_sale) as purchase
+                ')
+            ->where('status_sale', 'selesai')
+            ->whereBetween('created_at', [$fromDate, $toDate])
+            ->first();
+
         $resource = new ResponseResource(
             true,
             "Laporan Data Sale",
@@ -574,7 +583,8 @@ class DashboardController extends Controller
                     ],
                 ],
                 'chart' => $analyticSalesMonthly,
-                'list_analytic_sale' => $listAnalyticSales
+                'list_analytic_sale' => $listAnalyticSales,
+                'monthly_ummary' => $monthlySummary,
             ]
         );
 
@@ -661,6 +671,15 @@ class DashboardController extends Controller
             ->groupBy('product_category_sale')
             ->get();
 
+        $analyticalSalesSummary = Sale::selectRaw('
+                    COUNT(product_category_sale) as total_all_category,
+                    SUM(product_old_price_sale) as total_display_price_sale,
+                    SUM(product_price_sale) as total_product_price_sale
+                ')
+            ->where('status_sale', 'selesai')
+            ->whereYear('created_at', $year)
+            ->first();
+
         $resource = new ResponseResource(
             true,
             "Laporan Data Sale",
@@ -680,7 +699,8 @@ class DashboardController extends Controller
                     ],
                 ],
                 'chart' => $analyticSalesYearly,
-                'list_analytic_sale' => $listAnalyticSales
+                'list_analytic_sale' => $listAnalyticSales,
+                'annual_summary' => $analyticalSalesSummary,
             ]
         );
 
