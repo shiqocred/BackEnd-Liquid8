@@ -1491,7 +1491,7 @@ class NewProductController extends Controller
 
         // Membuat direktori exports jika belum ada
         if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
+            mkdir(public_path($publicPath), 0777, true); 
         }
 
         $writer->save($filePath);
@@ -1501,4 +1501,7 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
+
+
+  
 }

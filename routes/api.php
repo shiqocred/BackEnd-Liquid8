@@ -120,6 +120,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
    Route::resource('sale-documents', SaleDocumentController::class);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
+   Route::get('sale-report-by-product', [SaleDocumentController::class, 'combinedReport']);
    Route::get('sale-products', [SaleController::class, 'products']);
 
    Route::apiResource('buyers', BuyerController::class);
@@ -212,7 +213,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('dashboard/monthly-analytic-sales', [DashboardController::class, 'monthlyAnalyticSales']);
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
-   Route::get('dashboard/storage-report-archive', [ArchiveStorageController::class, 'store']);
+   Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
+  
 
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);
@@ -270,6 +272,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
    Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
+   Route::get('dashboard_slowmov_product', [DashboardController::class, 'dashboard_slowmov_product']);
    Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
    Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
    Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
@@ -356,3 +359,4 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
+
