@@ -584,7 +584,7 @@ class DashboardController extends Controller
                 ],
                 'chart' => $analyticSalesMonthly,
                 'list_analytic_sale' => $listAnalyticSales,
-                'monthly_ummary' => $monthlySummary,
+                'monthly_summary' => $monthlySummary,
             ]
         );
 
@@ -752,19 +752,19 @@ class DashboardController extends Controller
             $sheet->setCellValue('C' . $row, $item['total_price_category']);
             $row++;
         }
-        
+
         // Tambahkan total di akhir sheet
         $sheet->setCellValue('A' . $row, 'Total');
         $sheet->setCellValue('B' . $row, $data['data']['resource']['total_all_category']);
         $sheet->setCellValue('C' . $row, $data['data']['resource']['total_all_price_category']);
 
         $writer = new Xlsx($spreadsheet);
-        $fileName = $month.$year.'.xlsx';
+        $fileName = $month . $year . '.xlsx';
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
 
         if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true); 
+            mkdir(public_path($publicPath), 0777, true);
         }
         $writer->save($filePath);
         $downloadUrl = url($publicPath . '/' . $fileName);
