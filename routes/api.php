@@ -238,6 +238,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('new_products', [NewProductController::class, 'index']);
    Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
+   Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
 
    Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
 
@@ -360,5 +361,4 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 
-Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
 
