@@ -16,7 +16,7 @@ class ProductBrandController extends Controller
     public function index()
     {
         $productBrands = ProductBrand::all();
-        $resource = new ResponseResource(true, "list migrate", $productBrands);
+        $resource = new ResponseResource(true, "list brand", $productBrands);
 
         return $resource->response();
     }

@@ -16,7 +16,7 @@ class ProductConditionController extends Controller
     public function index()
     {
         $productConditions = ProductCondition::all();
-        $resource = new ResponseResource(true, "list migrate", $productConditions);
+        $resource = new ResponseResource(true, "list kondisi", $productConditions);
 
         return $resource->response();
     }
