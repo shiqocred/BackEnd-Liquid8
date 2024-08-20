@@ -360,3 +360,5 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 
+Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
+
