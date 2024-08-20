@@ -20,11 +20,16 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
 use App\Http\Controllers\PaletProductController;
+use App\Http\Controllers\PalletBrandController;
+use App\Http\Controllers\PalletImageController;
 use App\Http\Controllers\ProductApproveController;
+use App\Http\Controllers\ProductBrandController;
 use App\Http\Controllers\ProductBundleController;
+use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\ProductQcdController;
+use App\Http\Controllers\ProductStatusController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RepairController;
 use App\Http\Controllers\RepairFilterController;
@@ -214,7 +219,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
    Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
-  
+
 
    // =========================================== Category ==================================================
    Route::get('list-category', [CategoryController::class, 'index']);
@@ -361,4 +366,15 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 
+//=========================================== Api For Bulky ==========================================================
+Route::resource('product-brands', ProductBrandController::class);
+Route::resource('product-conditions', ProductConditionController::class);
+Route::resource('product-statuses', ProductStatusController::class);
+Route::resource('pallet-brands', PalletBrandController::class)->except(['update']);
+Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update'])->name('pallet-brands.update');
+Route::resource('pallet-images', PalletImageController::class)->except(['update', 'show']);
+Route::put('pallet-images/{pallet_id}', [PalletImageController::class, 'update'])->name('pallet-images.update');
+Route::get('pallet-images/{pallet_id}', [PalletImageController::class, 'show'])->name('pallet-images.show');
+
+=======
 
