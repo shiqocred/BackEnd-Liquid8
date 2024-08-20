@@ -243,6 +243,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('new_products', [NewProductController::class, 'index']);
    Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
+   Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
 
    Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
 
@@ -374,3 +375,6 @@ Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update']
 Route::resource('pallet-images', PalletImageController::class)->except(['update', 'show']);
 Route::put('pallet-images/{pallet_id}', [PalletImageController::class, 'update'])->name('pallet-images.update');
 Route::get('pallet-images/{pallet_id}', [PalletImageController::class, 'show'])->name('pallet-images.show');
+
+=======
+

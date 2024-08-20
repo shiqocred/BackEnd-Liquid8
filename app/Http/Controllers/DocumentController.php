@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
 use App\Models\Document;
 use App\Models\Product_old;
-use App\Models\ProductApprove;
 use Illuminate\Http\Request;
+use App\Models\ProductApprove;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
+use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx\Rels;
+use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class DocumentController extends Controller
 {
@@ -80,20 +81,38 @@ class DocumentController extends Controller
     {
         $query = $request->input('q');
         $documents = Document::latest();
-    
+
         if (!empty($query)) {
             $documents = $documents->where(function ($search) use ($query) {
                 $search->where('status_document', '!=', 'pending')
-                       ->where(function ($baseCode) use ($query) {
-                           $baseCode->where('base_document', 'LIKE', '%' . $query . '%')
-                                    ->orWhere('code_document', 'LIKE', '%' . $query . '%');
-                       });
+                    ->where(function ($baseCode) use ($query) {
+                        $baseCode->where('base_document', 'LIKE', '%' . $query . '%')
+                            ->orWhere('code_document', 'LIKE', '%' . $query . '%');
+                    });
             });
         } else {
             $documents = $documents->where('status_document', '!=', 'pending');
         }
-    
+
         return new ResponseResource(true, "list document progress", $documents->paginate(50));
     }
-    
+
+    public function changeBarcodeDocument(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'required',
+            'init_barcode' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $generate = changeBarcodeByDocument($request->code_document, $request->init_barcode);
+        
+        if ($generate) {
+            return new ResponseResource(true, "berhasil mengganti barcode", $request->init_barcode);
+        } else {
+            return "gagal";
+        }
+    }
 }
