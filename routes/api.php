@@ -181,6 +181,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::get('palet', [PaletController::class, 'index']);
    Route::get('palet/{palet}', [PaletController::class, 'show']);
    Route::post('palet', [PaletProductController::class, 'store']);
+   // Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
    Route::put('palet/{palet}', [PaletController::class, 'update']);
 
@@ -339,6 +340,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
    Route::resource('roles', RoleController::class);
+   Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 });
 
 
@@ -366,15 +368,17 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 
-//=========================================== Api For Bulky ==========================================================
-Route::resource('product-brands', ProductBrandController::class);
-Route::resource('product-conditions', ProductConditionController::class);
-Route::resource('product-statuses', ProductStatusController::class);
-Route::resource('pallet-brands', PalletBrandController::class)->except(['update']);
-Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update'])->name('pallet-brands.update');
-Route::resource('pallet-images', PalletImageController::class)->except(['update', 'show']);
-Route::put('pallet-images/{pallet_id}', [PalletImageController::class, 'update'])->name('pallet-images.update');
-Route::get('pallet-images/{pallet_id}', [PalletImageController::class, 'show'])->name('pallet-images.show');
 
-=======
-
+Route::middleware('check.api_key')->group(function () {
+   //=========================================== Api For Bulky ==========================================================
+   Route::resource('product-brands', ProductBrandController::class);
+   Route::resource('product-conditions', ProductConditionController::class);
+   Route::resource('product-statuses', ProductStatusController::class);
+   Route::resource('pallet-brands', PalletBrandController::class)->except(['update']);
+   Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update'])->name('pallet-brands.update');
+   Route::resource('pallet-images', PalletImageController::class)->except(['update', 'show']);
+   Route::put('pallet-images/{pallet_id}', [PalletImageController::class, 'update'])->name('pallet-images.update');
+   Route::get('pallet-images/{pallet_id}', [PalletImageController::class, 'show'])->name('pallet-images.show');
+   Route::get('palets', [PaletController::class, 'index']);
+   Route::post('addPalet', [PaletController::class, 'store']);
+});
