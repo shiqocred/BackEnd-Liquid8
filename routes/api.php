@@ -367,6 +367,7 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
+Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 
 
 Route::middleware('check.api_key')->group(function () {
