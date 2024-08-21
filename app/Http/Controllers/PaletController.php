@@ -69,6 +69,59 @@ class PaletController extends Controller
      */
     public function store(Request $request)
     {
+        DB::beginTransaction();
+
+        try{
+                // Validasi request
+            $validator = Validator::make($request->all(), [
+                'name_palet' => 'required|string',
+                'category_palet' => 'required|string',
+                'total_price_palet' => 'required|numeric',
+                'total_product_palet' => 'required|integer',
+                'palet_barcode' => 'required|string|unique:palets,palet_barcode',
+                'file_pdf' => 'nullable|mimes:pdf|max:2048',
+                'description' => 'nullable|string',
+                'is_active' => 'boolean',
+                'warehouse' => 'required|string',
+                'condition' => 'required|string',
+                'status' => 'required|string',
+                'is_sale' => 'boolean',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+
+            if ($request->hasFile('file_pdf')) {
+                $file = $request->file('file_pdf');
+                $filename = $file->getClientOriginalName();
+                $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public'); 
+                $validatedData['file_pdf'] = $filename;; 
+            }
+            
+            $palet = Palet::create([
+                'name_palet' => $request['name_palet'],
+                'category_palet' => $request['category_palet'],
+                'total_price_palet' => $request['total_price_palet'],
+                'total_product_palet' => $request['total_product_palet'],
+                'palet_barcode' => $request['palet_barcode'],
+                'file_pdf' => $validatedData['file_pdf'] ?? null,
+                'description' => $request['description'] ?? null,
+                'is_active' => $request['is_active'],
+                'warehouse' => $request['warehouse'],
+                'condition' => $request['condition'],
+                'status' => $request['status'],
+                'is_sale' => $request['is_sale'],
+            ]);
+            DB::commit();
+
+            return new ResponseResource(true, "data palet berhasil ditambahkan", $palet);
+        }catch(\Exception $e){
+            DB::rollBack();
+            Log::error('Failed to store palet: ' . $e->getMessage());
+            return new ResponseResource(false, "data gagal di tambah", null);
+        }
+     
     }
 
     /**
@@ -173,7 +226,7 @@ class PaletController extends Controller
     }
 
 
-    public function exportPalletsDetail($id) 
+    public function exportPalletsDetail($id)
     {
         // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);
@@ -184,15 +237,31 @@ class PaletController extends Controller
 
 
         $paletHeaders = [
-            'id', 'name_palet', 'category_palet', 'total_price_palet',
-            'total_product_palet', 'palet_barcode', 'total_harga_lama',
+            'id',
+            'name_palet',
+            'category_palet',
+            'total_price_palet',
+            'total_product_palet',
+            'palet_barcode',
+            'total_harga_lama',
         ];
 
         $paletProductsHeaders = [
-            'palet_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
-            'new_name_product', 'new_quantity_product', 'new_price_product',
-            'old_price_product', 'new_date_in_product', 'new_status_product',
-            'new_quality', 'new_category_product', 'new_tag_product', 'new_discount', 'display_price'
+            'palet_id',
+            'code_document',
+            'old_barcode_product',
+            'new_barcode_product',
+            'new_name_product',
+            'new_quantity_product',
+            'new_price_product',
+            'old_price_product',
+            'new_date_in_product',
+            'new_status_product',
+            'new_quality',
+            'new_category_product',
+            'new_tag_product',
+            'new_discount',
+            'display_price'
         ];
 
         $columnIndex = 1;
@@ -238,7 +307,7 @@ class PaletController extends Controller
 
         // Menyimpan file Excel
         $writer = new Xlsx($spreadsheet);
-        $fileName = 'exportPalet_'.$palet->name_palet.'.xlsx';
+        $fileName = 'exportPalet_' . $palet->name_palet . '.xlsx';
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
 
@@ -255,4 +324,5 @@ class PaletController extends Controller
         return new ResponseResource(true, "unduh", $downloadUrl);
     }
 
+   
 }

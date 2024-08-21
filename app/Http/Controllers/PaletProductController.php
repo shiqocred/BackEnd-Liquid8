@@ -40,7 +40,7 @@ class PaletProductController extends Controller
         DB::beginTransaction();
         try {
             $userId = auth()->id();
-            $product_filters = PaletFilter::where('user_id', $userId)->get();
+            $product_filters = PaletFilter::where('user_id', $userId)->get(); 
 
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);

@@ -125,5 +125,17 @@ class UserController extends Controller
         return new ResponseResource(true, "unduh", $downloadUrl);
     }
 
+    public function generateApiKey($userId){
+        $user = User::find($userId);
+
+        if ($user) {
+            $apiKey = $user->generateApiKey();
+            
+            return new ResponseResource(true, "generate api_key", $apiKey);
+        }
+
+            return response()->json(['message' => 'User not found'], 404);
+    }
+
 
 }
