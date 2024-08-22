@@ -101,7 +101,7 @@ class PaletController extends Controller
                 $file = $request->file('file_pdf');
                 $filename = $file->getClientOriginalName();
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-                $validatedData['file_pdf'] = $pdfPath;
+                $validatedData['file_pdf'] = $filename;
             }
 
             // Create Palet
