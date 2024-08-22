@@ -8,6 +8,7 @@ use App\Models\New_product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -71,7 +72,7 @@ class PaletController extends Controller
     public function store(Request $request)
     {
         DB::beginTransaction();
-    
+
         try {
             // Validasi request
             $validator = Validator::make($request->all(), [
@@ -85,24 +86,24 @@ class PaletController extends Controller
                 'file_pdf' => 'nullable|mimes:pdf|max:2048',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
-                'warehouse' => 'required|string',
-                'condition' => 'required|string',
-                'status' => 'required|string',
+                'warehouse' => 'nullable|required|string',
+                'condition' => 'nullable|required|string',
+                'status' => 'nullable|required|string',
                 'is_sale' => 'boolean',
             ]);
-    
+
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
-    
+
             // Handle PDF upload
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
                 $filename = $file->getClientOriginalName();
-                $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public'); 
-                $validatedData['file_pdf'] = $pdfPath; 
+                $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
+                $validatedData['file_pdf'] = $pdfPath;
             }
-    
+
             // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],
@@ -118,22 +119,22 @@ class PaletController extends Controller
                 'status' => $request['status'],
                 'is_sale' => $request['is_sale'],
             ]);
-    
+
             // Handle multiple image uploads
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     $imageName = $image->hashName();
                     $imagePath = $image->storeAs('product-images', $imageName, 'public');
-    
+
                     PaletImage::create([
                         'palet_id' => $palet->id,
                         'filename' => $imageName
                     ]);
                 }
             }
-    
+
             DB::commit();
-    
+
             return new ResponseResource(true, "Data palet berhasil ditambahkan", $palet);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -141,7 +142,7 @@ class PaletController extends Controller
             return new ResponseResource(false, "Data gagal ditambahkan", null);
         }
     }
-    
+
 
     /**
      * Display the specified resource.
@@ -149,7 +150,7 @@ class PaletController extends Controller
     public function show(Request $request, Palet $palet)
     {
         $query = $request->input('q');
-        $palet->load(['paletProducts' => function ($productPalet) use ($query) {
+        $palet->load(['paletImages', 'paletProducts' => function ($productPalet) use ($query) {
             if (!empty($query)) {
                 $productPalet->where('new_name_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -177,31 +178,87 @@ class PaletController extends Controller
      */
     public function update(Request $request, Palet $palet)
     {
-        $validator = Validator::make($request->all(), [
-            'nama_palet' => 'required',
-            'total_price_palet' => 'required|numeric',
-        ]);
-
-        if ($validator->fails()) {
-            $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
-            return $resource->response()->setStatusCode(422);
-        }
-
         DB::beginTransaction();
+
         try {
-            $palet->update([
-                'name_palet' => $request->nama_palet,
-                'total_price_palet' => $request->total_price_palet,
+            // Validasi request
+            $validator = Validator::make($request->all(), [
+                'images' => 'array|nullable', 
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', 
+                'name_palet' => 'required|string',
+                'category_palet' => 'required|string',
+                'total_price_palet' => 'required|numeric',
+                'total_product_palet' => 'required|integer',
+                'file_pdf' => 'nullable|mimes:pdf|max:2048',
+                'description' => 'nullable|string',
+                'is_active' => 'nullable|boolean',
+                'warehouse' => 'nullable|string',
+                'condition' => 'nullable|string',
+                'status' => 'nullable|string',
+                'is_sale' => 'nullable|boolean',
             ]);
 
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+
+            if ($request->hasFile('file_pdf')) {
+                // Hapus file PDF lama jika ada
+                if ($palet->file_pdf) {
+                    Storage::disk('public')->delete('palets_pdfs/' . $palet->file_pdf);
+                }
+
+                $file = $request->file('file_pdf');
+                $filename = $file->getClientOriginalName();
+                $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
+                $palet->file_pdf = $pdfPath;
+                $request['file_pdf'] = $filename;
+            }
+
+            $palet->update([
+                'name_palet' => $request['name_palet'],
+                'category_palet' => $request['category_palet'],
+                'total_price_palet' => $request['total_price_palet'],
+                'total_product_palet' => $request['total_product_palet'],
+                'file_pdf' => $request['file_pdf'] ?? null,
+                'description' => $request['description'] ?? null,
+                'is_active' => $request['is_active'],
+                'warehouse' => $request['warehouse'],
+                'condition' => $request['condition'],
+                'status' => $request['status'],
+                'is_sale' => $request['is_sale'],
+            ]);
+
+            // Handle multiple image uploads
+            if ($request->hasFile('images')) {
+                $oldImages = PaletImage::where('palet_id', $palet->id)->get();
+                foreach ($oldImages as $oldImage) {
+                    Storage::disk('public')->delete('product-images/' . $oldImage->filename);
+                    $oldImage->delete();
+                }
+
+                // Simpan gambar baru
+                foreach ($request->file('images') as $image) {
+                    $imageName = $image->hashName(); 
+                    $image->storeAs('product-images', $imageName, 'public'); 
+
+                    PaletImage::create([
+                        'palet_id' => $palet->id,
+                        'filename' => $imageName
+                    ]);
+                }
+            }
+
             DB::commit();
-            return new ResponseResource(true, "palet berhasil di edit", $palet);
+
+            return new ResponseResource(true, "Data palet berhasil diperbarui", $palet);
         } catch (\Exception $e) {
-            DB::rollback();
-            Log::error("Palet gagal di edit" . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Palet gagal di edit', 'error' => $e->getMessage()], 500);
+            DB::rollBack();
+            Log::error('Failed to update palet: ' . $e->getMessage());
+            return new ResponseResource(false, "Data gagal diperbarui", null);
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -211,28 +268,33 @@ class PaletController extends Controller
         DB::beginTransaction();
         try {
             $productPalet = $palet->paletProducts;
+            if ($productPalet) {
+                foreach ($productPalet as $product) {
+                    New_product::create([
+                        'code_document' => $product->code_document,
+                        'old_barcode_product' => $product->old_barcode_product,
+                        'new_barcode_product' => $product->new_barcode_product,
+                        'new_name_product' => $product->new_name_product,
+                        'new_quantity_product' => $product->new_quantity_product,
+                        'new_price_product' => $product->new_price_product,
+                        'old_price_product' => $product->old_price_product,
+                        'new_date_in_product' => $product->new_date_in_product,
+                        'new_status_product' => $product->new_status_product,
+                        'new_quality' => $product->new_quality,
+                        'new_category_product' => $product->new_category_product,
+                        'new_tag_product' => $product->new_tag_product,
+                        'new_discount' => $product->new_discount,
+                        'display_price' => $product->display_price
+                    ]);
 
-            foreach ($productPalet as $product) {
-                New_product::create([
-                    'code_document' => $product->code_document,
-                    'old_barcode_product' => $product->old_barcode_product,
-                    'new_barcode_product' => $product->new_barcode_product,
-                    'new_name_product' => $product->new_name_product,
-                    'new_quantity_product' => $product->new_quantity_product,
-                    'new_price_product' => $product->new_price_product,
-                    'old_price_product' => $product->old_price_product,
-                    'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' => $product->new_status_product,
-                    'new_quality' => $product->new_quality,
-                    'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product,
-                    'new_discount' => $product->new_discount,
-                    'display_price' => $product->display_price
-                ]);
-
-                $product->delete();
+                    $product->delete();
+                }
             }
-
+            $oldImages = PaletImage::where('palet_id', $palet->id)->get();
+            foreach ($oldImages as $oldImage) {
+                Storage::disk('public')->delete('product-images/' . $oldImage->filename);
+                $oldImage->delete();
+            }
             $palet->delete();
 
             DB::commit();
@@ -342,6 +404,4 @@ class PaletController extends Controller
 
         return new ResponseResource(true, "unduh", $downloadUrl);
     }
-
-   
 }
