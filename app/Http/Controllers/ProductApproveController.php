@@ -81,14 +81,23 @@ class ProductApproveController extends Controller
     public function store(Request $request)
     {
         if ($request->input('data.needConfirmation') === true) {
+            DB::beginTransaction();
             $inputData = $request->input('data.resource');
-            $newBarcode = generateNewBarcode($inputData['new_category_product']);
-            $inputData['new_barcode_product'] = $newBarcode;
+            $document = Document::where('code_document',  $inputData['code_document'])->first();
+            if ($document->custom_barcode) {
+                $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
+                $inputData['new_barcode_product'] = $generate;
+            } else {
+                $generate = generateNewBarcode($inputData['new_category_product']);
+                $inputData['new_barcode_product'] = $generate;
+            }
             $inputData['display_price'] = $inputData['new_price_product'];
-            if($inputData['new_price_product'] == null){
+            if ($inputData['new_price_product'] == null) {
                 $inputData['display_price'] = $inputData['old_price_product'];
             }
             $newProduct = ProductApprove::create($inputData);
+            $this->deleteOldProduct($inputData['old_barcode_product']);
+            DB::commit();
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
         } else {
             $validator = Validator::make($request->all(), [
@@ -120,7 +129,7 @@ class ProductApproveController extends Controller
             $qualityData = $this->prepareQualityData($status, $description);
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
-            
+
             $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
             $newBarcode = New_product::where('new_barcode_product', $request->input('new_barcode_product'))->first();
 
@@ -131,13 +140,18 @@ class ProductApproveController extends Controller
                 return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
             }
         }
-
         DB::beginTransaction();
-
         try {
             if (!isset($newProduct)) {
-                $generate = generateNewBarcode($inputData['new_category_product']);
-                $inputData['new_barcode_product'] = $generate;
+                $document = Document::where('code_document',  $request->input('code_document'))->first();
+                if ($document->custom_barcode) {
+                    $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
+                    $inputData['new_barcode_product'] = $generate;
+                } else {
+                    $generate = generateNewBarcode($inputData['new_category_product']);
+                    $inputData['new_barcode_product'] = $generate;
+                }
+
                 $newProduct = ProductApprove::create($inputData);
             }
 
@@ -179,7 +193,7 @@ class ProductApproveController extends Controller
             'new_tag_product',
             'condition',
             'deskripsi',
-            
+
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -196,11 +210,11 @@ class ProductApproveController extends Controller
             $inputData['new_category_product'] = null;
             $inputData['new_price_product'] = null;
         }
-        
-        if( $inputData['new_price_product'] == null) {
+
+        if ($inputData['new_price_product'] == null) {
             $inputData['display_price'] = 0;
         }
-        
+
 
 
         return $inputData;
@@ -437,10 +451,10 @@ class ProductApproveController extends Controller
     {
         $code_document = $request->input('code_document');
         DB::beginTransaction();
-    
+
         try {
             $products = ProductApprove::where('code_document', $code_document)->get();
-    
+
             foreach ($products as $product) {
                 $newProduct = new Product_old([
                     'code_document' => $product->code_document,
@@ -451,12 +465,12 @@ class ProductApproveController extends Controller
                 ]);
                 $newProduct->save();
             }
-    
+
             ProductApprove::where('code_document', $code_document)->delete();
-            
+
             $document = Document::where('code_document', $code_document)->first();
             $document->update(['status_document' => 'pending']);
-    
+
             DB::commit();
             return new ResponseResource(true, "berhasil dihapus", $products);
         } catch (\Exception $e) {
@@ -464,6 +478,4 @@ class ProductApproveController extends Controller
             return new ResponseResource(false, "transaksi salah: ", $e->getMessage());
         }
     }
-    
-    
 }

@@ -381,5 +381,6 @@ Route::middleware('check.api_key')->group(function () {
    Route::put('pallet-images/{pallet_id}', [PalletImageController::class, 'update'])->name('pallet-images.update');
    Route::get('pallet-images/{pallet_id}', [PalletImageController::class, 'show'])->name('pallet-images.show');
    Route::get('palets', [PaletController::class, 'index']);
+   Route::get('palets-detail', [PaletController::class, 'show']);
    Route::post('addPalet', [PaletController::class, 'store']);
 });

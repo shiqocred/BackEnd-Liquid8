@@ -6,6 +6,8 @@ use App\Models\Document;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
 use App\Models\ProductApprove;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -97,6 +99,23 @@ class DocumentController extends Controller
         return new ResponseResource(true, "list document progress", $documents->paginate(50));
     }
 
+    private function changeBarcodeByDocument($code_document, $init_barcode)
+    {
+        DB::beginTransaction();
+        try {
+            $document = Document::where('code_document', $code_document)->first();
+            $document->custom_barcode = $init_barcode;
+            $document->save();
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating barcodes: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function changeBarcodeDocument(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -106,9 +125,8 @@ class DocumentController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
+        $generate = $this->changeBarcodeByDocument($request->code_document, $request->init_barcode);
 
-        $generate = changeBarcodeByDocument($request->code_document, $request->init_barcode);
-        
         if ($generate) {
             return new ResponseResource(true, "berhasil mengganti barcode", $request->init_barcode);
         } else {
