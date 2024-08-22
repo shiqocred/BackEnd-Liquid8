@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\PaletImage;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Palet extends Model
 {
@@ -12,5 +13,9 @@ class Palet extends Model
 
     public function paletProducts(){
         return $this->hasMany(PaletProduct::class);
+    }
+    public function paletImages()
+    {
+        return $this->hasMany(PaletImage::class, 'palet_id');
     }
 }

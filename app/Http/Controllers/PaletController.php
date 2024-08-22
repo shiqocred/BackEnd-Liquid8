@@ -3,14 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Palet;
+use App\Models\PaletImage;
 use App\Models\New_product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Illuminate\Support\Facades\Validator;
 
 
 class PaletController extends Controller
@@ -41,7 +42,7 @@ class PaletController extends Controller
 
         $query = $request->input('q');
         $palets = Palet::latest()
-            ->with('paletProducts')
+            ->with('paletProducts', 'paletImages')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%')
                     ->orWhere('category_palet', 'LIKE', '%' . $query . '%')
@@ -70,10 +71,12 @@ class PaletController extends Controller
     public function store(Request $request)
     {
         DB::beginTransaction();
-
-        try{
-                // Validasi request
+    
+        try {
+            // Validasi request
             $validator = Validator::make($request->all(), [
+                'images' => 'array|nullable', // Validasi sebagai array
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validasi setiap file gambar
                 'name_palet' => 'required|string',
                 'category_palet' => 'required|string',
                 'total_price_palet' => 'required|numeric',
@@ -87,18 +90,20 @@ class PaletController extends Controller
                 'status' => 'required|string',
                 'is_sale' => 'boolean',
             ]);
-
+    
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
-
+    
+            // Handle PDF upload
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
                 $filename = $file->getClientOriginalName();
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public'); 
-                $validatedData['file_pdf'] = $filename;; 
+                $validatedData['file_pdf'] = $pdfPath; 
             }
-            
+    
+            // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],
                 'category_palet' => $request['category_palet'],
@@ -113,16 +118,30 @@ class PaletController extends Controller
                 'status' => $request['status'],
                 'is_sale' => $request['is_sale'],
             ]);
+    
+            // Handle multiple image uploads
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $imageName = $image->hashName();
+                    $imagePath = $image->storeAs('product-images', $imageName, 'public');
+    
+                    PaletImage::create([
+                        'palet_id' => $palet->id,
+                        'filename' => $imageName
+                    ]);
+                }
+            }
+    
             DB::commit();
-
-            return new ResponseResource(true, "data palet berhasil ditambahkan", $palet);
-        }catch(\Exception $e){
+    
+            return new ResponseResource(true, "Data palet berhasil ditambahkan", $palet);
+        } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to store palet: ' . $e->getMessage());
-            return new ResponseResource(false, "data gagal di tambah", null);
+            return new ResponseResource(false, "Data gagal ditambahkan", null);
         }
-     
     }
+    
 
     /**
      * Display the specified resource.

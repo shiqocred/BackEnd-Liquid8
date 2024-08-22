@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class PalletImage extends Model
+class PaletImage extends Model
 {
     use HasFactory;
-
     protected $guarded = ['id'];
 
     protected $appends = ['file_path'];
@@ -17,5 +16,9 @@ class PalletImage extends Model
     public function getFilePathAttribute()
     {
         return Storage::url('product-images/' . $this->attributes['filename']);
+    }
+    public function palet()
+    {
+        return $this->belongsTo(Palet::class, 'palet_id');
     }
 }
