@@ -384,5 +384,5 @@ Route::middleware('check.api_key')->group(function () {
    Route::get('palets', [PaletController::class, 'index']);
    Route::get('palets-detail/{palet}', [PaletController::class, 'show']);
    Route::put('palets/{palet}', [PaletController::class, 'update']);
+   Route::post('addPalet', [PaletController::class, 'store']);
 });
-Route::post('addPalet', [PaletController::class, 'store']);
