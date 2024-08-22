@@ -2,9 +2,11 @@
 
 use App\Models\Sale;
 use App\Models\Migrate;
+use App\Models\Document;
 use App\Models\New_product;
 use Illuminate\Support\Str;
 use App\Models\SaleDocument;
+use App\Models\ProductApprove;
 use App\Models\MigrateDocument;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -82,42 +84,20 @@ function generateNewBarcode($category)
     return "L{$categoryInitial}{$currentMonth}{$randomString}";
 }
 
-
-function changeBarcodeByDocument($code_document, $init_barcode)
+function newBarcodeCustom($code_document, $init_barcode)
 {
-    set_time_limit(300); 
-    ini_set('memory_limit', '512M'); 
-    DB::beginTransaction();
-    try {
-        $products = New_product::where('code_document', $code_document)->get();
-
+    $product = ProductApprove::where('code_document', $code_document)->latest()->first();
+    if ($product) {
+        $barcode = $product->new_barcode_product;
+        $numericPart = (int) substr($barcode, -4);
+        $numericPart = $numericPart + 1;
+        $paddedNumericPart = str_pad($numericPart, 4, '0', STR_PAD_LEFT);
+        $newBarcode = $init_barcode . $paddedNumericPart;
+        return $newBarcode;
+    } else {
         $code_parts = explode('/', $code_document);
         $code_numeric = $code_parts[0]; 
-
-        foreach ($products as $product) {
-            $newBarcode = $init_barcode . $code_numeric;
-
-            // Cek apakah barcode baru sudah ada di database
-            if (New_product::where('new_barcode_product', $newBarcode)->exists()) {
-                throw new \Exception("Barcode $newBarcode already exists.");
-            }
-
-            $product->new_barcode_product = $newBarcode;
-            $product->save();
-
-            $code_numeric++;
-        }
-
-        DB::commit();
-
-        return true; // Return true if everything is successful
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        // Logging error
-        Log::error('Error updating barcodes: ' . $e->getMessage());
-
-        return false; // Return false if an error occurs
+        $newBarcode = $init_barcode . $code_numeric;
+        return $newBarcode;
     }
 }
-
