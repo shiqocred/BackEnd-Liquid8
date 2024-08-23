@@ -133,4 +133,19 @@ class DocumentController extends Controller
             return "gagal";
         }
     }
+
+    public function deleteCustomBarcode(Request $request){
+        try{
+            $validator = Validator::make($request->all(),['code_document' => 'required']);
+            if($validator->fails()){
+                return response()->json($validator->errors(), 422);
+            }
+            $document = Document::where('code_document', $request->input('code_document'))->first();
+            $document->update(['custom_barcode' => null]);
+            return new ResponseResource(true, "custom barcode dihapus", null);
+        }catch(\Exception $e){
+            return new ResponseResource(false, "gagal di hapus", $e->getMessage());
+        }
+    }
+
 }

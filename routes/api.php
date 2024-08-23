@@ -246,6 +246,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
    Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
+   Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
 
    Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
 
