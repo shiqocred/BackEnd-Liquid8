@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
+use App\Models\Document;
 use App\Models\Color_tag;
 use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
+use App\Http\Resources\ResponseResource;
 
 class ProductOldController extends Controller
 {
@@ -69,13 +70,25 @@ class ProductOldController extends Controller
     public function searchByDocument(Request $request)
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
-
+        $document = Document::where('code_document', $request->input('search'))->first();
+    
+        if ($document && $document->custom_barcode) {
+            foreach ($code_documents as $code_document) {
+                $code_document->custom_barcode = $document->custom_barcode;
+            }
+        } else {
+            foreach ($code_documents as $code_document) {
+                $code_document->custom_barcode = null;
+            }
+        }
+    
         if ($code_documents->isNotEmpty()) {
             return new ResponseResource(true, "list product_old", $code_documents);
         } else {
             return new ResponseResource(false, "code document tidak ada", null);
         }
     }
+    
 
     public function index()
     {

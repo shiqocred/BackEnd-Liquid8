@@ -215,8 +215,6 @@ class ProductApproveController extends Controller
             $inputData['display_price'] = 0;
         }
 
-
-
         return $inputData;
     }
 
