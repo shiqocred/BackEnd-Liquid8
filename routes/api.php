@@ -220,6 +220,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
    Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
+   Route::get('dashboard/analytic-slow-moving', [DashboardController::class, 'analyticSlowMoving']);
+   Route::get('export/product-expired', [DashboardController::class, 'productExpiredExport']);
 
 
    // =========================================== Category ==================================================
@@ -279,7 +281,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
    Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
-   Route::get('dashboard_slowmov_product', [DashboardController::class, 'dashboard_slowmov_product']);
    Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
    Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
    Route::get('/new_product/document', [NewProductController::class, 'byDocument']);

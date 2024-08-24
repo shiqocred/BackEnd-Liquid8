@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductExpiredExport;
 use App\Http\Resources\ResponseResource;
 use App\Models\Buyer;
 use App\Models\Document;
@@ -12,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -707,24 +709,115 @@ class DashboardController extends Controller
         return $resource->response();
     }
 
-    public function dashboard_slowmov_product(Request $request)
+    public function analyticSlowMoving(Request $request)
     {
+
         try {
-            $productExpired = New_product::where('new_status_product', 'expired');
+            $validator = Validator::make($request->all(), [
+                'week' => 'nullable|integer', // Validasi untuk memastikan input 'week' adalah integer atau null
+            ]);
 
-            if ($productExpired->exist()) {
-                return response()->json(['error' => 'No expired products found'], 404);
+            if ($validator->fails()) {
+                return response()->json([
+                    'error' => 'Invalid input format. Week should be an integer.',
+                    'errors' => $validator->errors(),
+                ], 422);
             }
-            $total_display_price = $productExpired->sum('display_price');
-            $productExpired = $productExpired->paginate(150);
 
-            return new ResponseResource(true, "List of expired products", [
-                'total_display_price' => $total_display_price,
-                'productExp' => $productExpired
+            // Ambang batas 4 minggu untuk produk menjadi kadaluarsa
+            $expirationThreshold = 4;
+
+            // Ambil input minggu dari user
+            $inputWeek = $request->input('week', null);
+
+            // Query produk kadaluarsa
+            $queryProductExpired = New_product::selectRaw('
+                    new_category_product as category_product,
+                    COUNT(new_category_product) as total_category,
+                    FLOOR(DATEDIFF(NOW(), created_at) / 7) - 4 as weeks_expired,
+                    DATEDIFF(NOW(), created_at) % 7 as days_expired
+                ')
+                ->where('new_status_product', 'expired');
+
+            $queryListProductExpired = New_product::selectRaw("
+                    new_barcode_product, 
+                    new_name_product, 
+                    new_price_product, 
+                    new_quantity_product,
+                    FLOOR(DATEDIFF(NOW(), created_at) / 7) - 4 as weeks_expired,
+                    DATEDIFF(NOW(), created_at) % 7 as days_expired
+                ")
+                ->where('new_status_product', 'expired');
+
+            $totalExpiredProduct = $queryListProductExpired->count();
+
+            // Jika input minggu diberikan, sesuaikan filter untuk rentang waktu tersebut
+            if ($inputWeek !== null) {
+                $startDate = Carbon::now()->subWeeks($inputWeek + $expirationThreshold);
+                $endDate = Carbon::now()->subWeeks($expirationThreshold + ($inputWeek - 1));
+
+                $queryProductExpired->whereBetween('created_at', [$startDate, $endDate]);
+                $queryListProductExpired->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            // Eksekusi query
+            $expiredProductCategories = $queryProductExpired->groupBy('category_product', 'created_at')->get();
+            $listExpiredProduct = $queryListProductExpired->get();
+
+            return new ResponseResource(true, "Data of expired products", [
+                'total_expired_product' => $totalExpiredProduct,
+                'expired_product_categories' => $expiredProductCategories,
+                'list_expired_product' => $listExpiredProduct
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function productExpiredExport(Request $request)
+    {
+        // Ambil input dari user
+        $inputWeek = $request->input('week');
+
+        // Produk dianggap expired setelah 4 minggu
+        $expirationThreshold = 4;
+
+        // Query untuk mendapatkan produk yang sudah expired
+        $queryListProductExpired = New_product::selectRaw("
+            new_barcode_product AS barcode_product, 
+            new_name_product AS name_product, 
+            new_price_product AS price_product, 
+            new_quantity_product AS qty_product,
+            FLOOR(DATEDIFF(NOW(), created_at) / 7) - $expirationThreshold AS weeks_expired,
+            DATEDIFF(NOW(), created_at) % 7 AS days_expired
+        ")
+            ->where('new_status_product', 'expired');
+
+        if ($inputWeek !== null) {
+            $startDate = Carbon::now()->subWeeks($inputWeek + $expirationThreshold);
+            $endDate = Carbon::now()->subWeeks($expirationThreshold + ($inputWeek - 1));
+
+            $queryListProductExpired->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        // Ambil data dalam bentuk collection
+        $ListProductExpired = $queryListProductExpired->get();
+
+        // Buat collection yang sudah di-custom
+        $customProductExpired = $ListProductExpired->map(function ($product) {
+            // Gabungkan weeks_expired dan days_expired menjadi satu string
+            $expiredDate = "{$product->weeks_expired} minggu {$product->days_expired} hari";
+
+            return [
+                'Barcode' => $product->barcode_product,
+                'Nama Produk' => $product->name_product,
+                'Harga' => $product->price_product,
+                'Qty' => $product->qty_product,
+                'Lama Expired' => $expiredDate,
+            ];
+        });
+
+        return Excel::download(new ProductExpiredExport($customProductExpired), 'expired-product.xlsx');
     }
 
     public function generateExcel_StorageReport()
