@@ -378,11 +378,13 @@ Route::middleware('check.api_key')->group(function () {
    Route::put('palets/{palet}', [PaletController::class, 'update']);
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
-   
+   //================================================product-collab======================================================
+
    //inbound-collab
    Route::post('addProduct', [NewProductController::class, 'addProductThirdParty']);
+   Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 
-   //product-collab
+   //get
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
 
