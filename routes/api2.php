@@ -40,6 +40,7 @@ use App\Http\Controllers\SaleDocumentController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 //patokan urutan role : Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,
@@ -235,7 +236,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    //new product (hasil scan)
    // Route::resource('new_products', NewProductController::class);
    Route::get('new_products', [NewProductController::class, 'index']);
-   Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
+  
    Route::post('new_products', [NewProductController::class, 'store']);
    Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
    Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
@@ -378,13 +379,4 @@ Route::middleware('check.api_key')->group(function () {
    Route::put('palets/{palet}', [PaletController::class, 'update']);
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
-   
-   //inbound-collab
-   Route::post('addProduct', [NewProductController::class, 'addProductThirdParty']);
-
-   //product-collab
-   Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
-   Route::get('list-categories', [CategoryController::class, 'index']);
-
-   
 });

@@ -69,9 +69,7 @@ class NewProductController extends Controller
 
 
 
-    public function create()
-    {
-    }
+    public function create() {}
 
     public function store(Request $request)
     {
@@ -1125,11 +1123,21 @@ class NewProductController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
-            'Name bundle', 'total_price_bundle', 'total price custom bundle', 'total product bundle', 'barcode_bundle',
+            'Name bundle',
+            'total_price_bundle',
+            'total price custom bundle',
+            'total product bundle',
+            'barcode_bundle',
         ];
 
         $headers2 = [
-            'Name', 'New Price', 'Old Price', 'Qty', 'Category', 'Harga Tag Warna', 'New Barcode'
+            'Name',
+            'New Price',
+            'Old Price',
+            'Qty',
+            'Category',
+            'Harga Tag Warna',
+            'New Barcode'
         ];
 
         $columnIndex = 1;
@@ -1305,10 +1313,21 @@ class NewProductController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
-            'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
-            'New Name Product', 'New Quantity Product', 'New Price Product',
-            'Old Price Product', 'New Date In Product', 'New Status Product',
-            'New Quality', 'New Category Product', 'New Tag Product', 'Created At', 'Updated At'
+            'ID',
+            'Code Document',
+            'Old Barcode Product',
+            'New Barcode Product',
+            'New Name Product',
+            'New Quantity Product',
+            'New Price Product',
+            'Old Price Product',
+            'New Date In Product',
+            'New Status Product',
+            'New Quality',
+            'New Category Product',
+            'New Tag Product',
+            'Created At',
+            'Updated At'
         ];
 
         $columnIndex = 1;
@@ -1373,10 +1392,21 @@ class NewProductController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
-            'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
-            'New Name Product', 'New Quantity Product', 'New Price Product',
-            'Old Price Product', 'New Date In Product', 'New Status Product',
-            'New Quality', 'New Category Product', 'New Tag Product', 'Created At', 'Updated At'
+            'ID',
+            'Code Document',
+            'Old Barcode Product',
+            'New Barcode Product',
+            'New Name Product',
+            'New Quantity Product',
+            'New Price Product',
+            'Old Price Product',
+            'New Date In Product',
+            'New Status Product',
+            'New Quality',
+            'New Category Product',
+            'New Tag Product',
+            'Created At',
+            'Updated At'
         ];
 
         // Menuliskan headers ke sheet
@@ -1444,10 +1474,21 @@ class NewProductController extends Controller
 
         // Menentukan headers berdasarkan nama kolom di tabel new_products
         $headers = [
-            'ID', 'Code Document', 'Old Barcode Product', 'New Barcode Product',
-            'New Name Product', 'New Quantity Product', 'New Price Product',
-            'Old Price Product', 'New Date In Product', 'New Status Product',
-            'New Quality', 'New Category Product', 'New Tag Product', 'Created At', 'Updated At'
+            'ID',
+            'Code Document',
+            'Old Barcode Product',
+            'New Barcode Product',
+            'New Name Product',
+            'New Quantity Product',
+            'New Price Product',
+            'Old Price Product',
+            'New Date In Product',
+            'New Status Product',
+            'New Quality',
+            'New Category Product',
+            'New Tag Product',
+            'Created At',
+            'Updated At'
         ];
 
         // Menuliskan headers ke sheet
@@ -1491,7 +1532,7 @@ class NewProductController extends Controller
 
         // Membuat direktori exports jika belum ada
         if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true); 
+            mkdir(public_path($publicPath), 0777, true);
         }
 
         $writer->save($filePath);
@@ -1502,6 +1543,61 @@ class NewProductController extends Controller
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 
+    public function addProductThirdParty(Request $request)
+    {
+        // Validasi Input
+        $validator = Validator::make($request->all(), [
+            'product_name' => 'required',
+            'qty' => 'required',
+            'product_price' => 'required|numeric',
+            'category_id' => 'required|integer|exists:categories,id'
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+    
+        DB::beginTransaction();
+    
+        try {
+            // Mengambil kategori berdasarkan ID
+            $category = Category::findOrFail($request->input('category_id'));
+    
+            // Menghitung harga setelah diskon
+            $discountPercentage = $category->discount_category;
+            $productPrice = $request->input('product_price');
+            $discountedPrice = $productPrice - ($productPrice * $discountPercentage / 100);
+    
+            // Persiapan data input untuk disimpan
+            $inputData = [
+                'old_price_product' => $productPrice,
+                'new_name_product' => $request->input('product_name'),
+                'new_quantity_product' => $request['qty'],
+                'new_price_product' => $discountedPrice,
+                'new_discount' => 0,
+                'display_price' => $discountedPrice,
+                'new_status_product' => 'display',
+                'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                'new_quality' => json_encode('lolos'),
+                'new_category_product' => $category->name_category,
+                'new_barcode_product' => generateNewBarcode($category->name_category),
+                'new_tag_product' => null,
+            ];
+    
+            // Membuat produk baru
+            $newProduct = New_product::create($inputData);
+    
+            DB::commit();
+    
+            return new ResponseResource(true, "berhasil menambah data", $newProduct);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 
-  
+    public function addProductById($id){
+        $product_old = Product_old::findOrFail($id);
+    }
+    
 }
