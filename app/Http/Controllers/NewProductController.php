@@ -1596,8 +1596,19 @@ class NewProductController extends Controller
         }
     }
 
-    public function addProductById($id){
-        $product_old = Product_old::findOrFail($id);
+    public function addProductById($id)
+    {
+        DB::beginTransaction();
+        try {
+            $product = New_product::findOrFail($id);
+            $product->new_barcode_product = generateNewBarcode($product->new_category_product);
+            $productFilter = New_product::create($product->toArray());
+            DB::commit();
+            return new ResponseResource(true, "berhasil menambah product", $productFilter);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
     
 }
