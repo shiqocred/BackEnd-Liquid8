@@ -106,22 +106,22 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
    //=========================================== outbound ==========================================================
 
    //migrate
-   Route::resource('migrates', MigrateController::class);
+   Route::resource('migrates', MigrateController::class)->except(['destroy']);
    Route::get('displayMigrate', [MigrateController::class, 'displayMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
-   Route::resource('migrate-documents', MigrateDocumentController::class);
+   Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
 
    //sale
-   Route::resource('sales', SaleController::class);
+   Route::resource('sales', SaleController::class)->except(['destroy']);
    Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
    Route::put('/update_price_sales/{sale}', [SaleController::class, 'livePriceUpdates']);
-   Route::resource('sale-documents', SaleDocumentController::class);
+   Route::resource('sale-documents', SaleDocumentController::class)->except(['destroy']);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
    Route::get('sale-report-by-product', [SaleDocumentController::class, 'combinedReport']);
    Route::get('sale-products', [SaleController::class, 'products']);
 
-   Route::apiResource('buyers', BuyerController::class);
+   Route::apiResource('buyers', BuyerController::class)->except(['destroy']);
 
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::get('new_products', [NewProductController::class, 'index']);
@@ -181,10 +181,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    // Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
 
    //categories discount
-   Route::resource('categories', CategoryController::class);
+   Route::resource('categories', CategoryController::class)->except(['destroy']);
 
    //colortags diskon
-   Route::resource('color_tags', ColorTagController::class);
+   Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
 
    //product
    Route::post('new_products', [NewProductController::class, 'store']);
@@ -194,10 +194,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    // Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
 
    //migrate
-   Route::resource('migrates', MigrateController::class);
+   Route::resource('migrates', MigrateController::class)->except(['destroy']);
    Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
-   Route::resource('migrate-documents', MigrateDocumentController::class);
+   Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin Kasir'])->group(function () {
@@ -222,19 +222,18 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    //=========================================== inbound ==========================================================
 
    //product old
-   Route::resource('product_olds', ProductOldController::class);
+   Route::resource('product_olds', ProductOldController::class)->except(['destroy']);
    // Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
    Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
    //product approve
-   Route::resource('product-approves', ProductApproveController::class);
+   Route::resource('product-approves', ProductApproveController::class)->except(['destroy']);
    Route::get('productApprovesByDoc', [ProductApproveController::class, 'searchByDocument']);
    // Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
 
 
    //new product (hasil scan)
-   // Route::resource('new_products', NewProductController::class);
    Route::get('new_products', [NewProductController::class, 'index']);
    Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
@@ -278,7 +277,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
 
    //document
-   Route::resource('/documents', DocumentController::class);
+   Route::resource('/documents', DocumentController::class)->except(['destroy']);
    // Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
    Route::get('/documentInProgress', [DocumentController::class, 'documentInProgress']);
 
@@ -291,12 +290,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
 
    //riwayat
-   Route::resource('historys', RiwayatCheckController::class);
+   Route::resource('historys', RiwayatCheckController::class)->except(['destroy']);
    Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
    Route::post('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
    Route::get('/testEmail', [RiwayatCheckController::class, 'sendEmail']);
 
-   Route::resource('notifications', NotificationController::class);
+   Route::resource('notifications', NotificationController::class)->except(['destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir'])->group(function () {
@@ -307,7 +306,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
-   Route::resource('destinations', DestinationController::class);
+   Route::resource('destinations', DestinationController::class)->except(['destroy']);
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
 
    //export data by menu
@@ -330,6 +329,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi'])->group
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
+
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
    Route::resource('roles', RoleController::class);
@@ -337,7 +337,20 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
    Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 
-   //tombol delete 
+   // Tombol delete 
+   Route::delete('migrates', [MigrateController::class, 'destroy']);
+   Route::delete('migrate-documents', [MigrateDocumentController::class, 'destroy']);
+   Route::delete('sales', [SaleController::class, 'destroy']);
+   Route::delete('sale-documents', [SaleDocumentController::class, 'destroy']);
+   Route::delete('buyers', [BuyerController::class, 'destroy']);
+   Route::delete('categories', [CategoryController::class, 'destroy']);
+   Route::delete('color_tags', [ColorTagController::class, 'destroy']);
+   Route::delete('product_olds', [ProductOldController::class, 'destroy']);
+   Route::delete('product-approves', [ProductApproveController::class, 'destroy']);
+   Route::delete('documents', [DocumentController::class, 'destroy']);
+   Route::delete('historys', [RiwayatCheckController::class, 'destroy']);
+   Route::delete('notifications', [NotificationController::class, 'destroy']);
+   Route::delete('destinations', [DestinationController::class, 'destroy']);
    Route::delete('qcd/destroy/{id}', [FilterQcdController::class, 'destroy']);
    Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
    Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
@@ -345,26 +358,18 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
    Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
    Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
-   Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
    Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
-   Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
    Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
    Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
    Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
    Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
    Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
-   Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
-   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
-   Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
-   Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
-   Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
-   Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
-   Route::delete('/delete-all-documents', [DocumentController::class, 'deleteAll']);
+   Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
+   Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
 });
-
 
 
 //login
