@@ -40,7 +40,6 @@ use App\Http\Controllers\SaleDocumentController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 //patokan urutan role : Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,
@@ -200,7 +199,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::put('migrate-add/{new_product}', [MigrateController::class, 'addMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
    Route::resource('migrate-documents', MigrateDocumentController::class);
-});
+}); 
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin Kasir'])->group(function () {
 
@@ -214,6 +213,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
    Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
+   Route::get('dashboard/analytic-slow-moving', [DashboardController::class, 'analyticSlowMoving']);
+   Route::get('export/product-expired', [DashboardController::class, 'productExpiredExport']);
 
 
    // =========================================== Category ==================================================
@@ -236,7 +237,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    //new product (hasil scan)
    // Route::resource('new_products', NewProductController::class);
    Route::get('new_products', [NewProductController::class, 'index']);
-  
+   Route::get('get-latestPrice', [NewProductController::class, 'getLatestPrice']); //baru
    Route::post('new_products', [NewProductController::class, 'store']);
    Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
    Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
@@ -273,7 +274,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::delete('/delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::get('new_product/cronjob/expired', [NewProductController::class, 'expireProducts']);
    Route::get('new_product/expired', [NewProductController::class, 'listProductExp']);
-   Route::get('dashboard_slowmov_product', [DashboardController::class, 'dashboard_slowmov_product']);
    Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
    Route::post('new_product/excelImport', [NewProductController::class, 'excelImport']);
    Route::get('/new_product/document', [NewProductController::class, 'byDocument']);
@@ -379,4 +379,16 @@ Route::middleware('check.api_key')->group(function () {
    Route::put('palets/{palet}', [PaletController::class, 'update']);
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
+
+   //================================================product-collab======================================================
+
+   //inbound-collab
+   Route::post('addProduct', [NewProductController::class, 'addProductThirdParty']);
+   Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
+
+   //get
+   Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
+   Route::get('list-categories', [CategoryController::class, 'index']);
+
+   
 });
