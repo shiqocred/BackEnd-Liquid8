@@ -341,6 +341,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
    Route::resource('roles', RoleController::class);
+   Route::post('sale-document/add-product', [SaleDocumentController::class, 'addProductSaleInDocument']);
+   Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
    Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 });
 
