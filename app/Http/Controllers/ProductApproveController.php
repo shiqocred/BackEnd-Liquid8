@@ -95,8 +95,8 @@ class ProductApproveController extends Controller
             if ($inputData['new_price_product'] == null) {
                 $inputData['display_price'] = $inputData['old_price_product'];
             }
-            $newProduct = ProductApprove::create($inputData);
             $this->deleteOldProduct($inputData['old_barcode_product']);
+            $newProduct = ProductApprove::create($inputData);
             DB::commit();
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
         } else {
@@ -151,13 +151,12 @@ class ProductApproveController extends Controller
                     $generate = generateNewBarcode($inputData['new_category_product']);
                     $inputData['new_barcode_product'] = $generate;
                 }
-
+                $this->deleteOldProduct($request->input('old_barcode_product'));
                 $newProduct = ProductApprove::create($inputData);
             }
 
             $this->updateDocumentStatus($request->input('code_document'));
 
-            $this->deleteOldProduct($request->input('old_barcode_product'));
 
             DB::commit();
 
