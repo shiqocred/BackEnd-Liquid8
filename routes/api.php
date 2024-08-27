@@ -56,6 +56,10 @@ Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
 });
 
+Route::middleware(['log.user.activity'])->group(function () {
+   // masukin di sini jika ingin endpoint tersebut di log
+});
+
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi,Team leader'])->group(function () {
    // =========================================== repair station ==================================================
 

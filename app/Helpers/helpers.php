@@ -6,6 +6,7 @@ use App\Models\New_product;
 use Illuminate\Support\Str;
 use App\Models\SaleDocument;
 use App\Models\MigrateDocument;
+use App\Models\UserLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -85,14 +86,14 @@ function generateNewBarcode($category)
 
 function changeBarcodeByDocument($code_document, $init_barcode)
 {
-    set_time_limit(300); 
-    ini_set('memory_limit', '512M'); 
+    set_time_limit(300);
+    ini_set('memory_limit', '512M');
     DB::beginTransaction();
     try {
         $products = New_product::where('code_document', $code_document)->get();
 
         $code_parts = explode('/', $code_document);
-        $code_numeric = $code_parts[0]; 
+        $code_numeric = $code_parts[0];
 
         foreach ($products as $product) {
             $newBarcode = $init_barcode . $code_numeric;
@@ -121,3 +122,17 @@ function changeBarcodeByDocument($code_document, $init_barcode)
     }
 }
 
+if (! function_exists('logUserAction')) {
+    function logUserAction($request, $user, $halaman, $pesan)
+    {
+        UserLog::create([
+            'user_id' => $user->id,
+            'name_user' => $user->name,
+            'page' => $halaman,
+            'info' => $pesan,
+        ]);
+
+        // Tandai bahwa log sudah dibuat untuk request ini
+        $request->attributes->set('log_created', true);
+    }
+}
