@@ -178,6 +178,175 @@ class SaleDocumentController extends Controller
         return $resource->response();
     }
 
+    public function addProductSaleInDocument(Request $request)
+    {
+        DB::beginTransaction();
+        // $userId = auth()->id();
+
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'sale_barcode' => 'required',
+                'sale_document_id' => 'required|numeric',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
+        }
+
+        try {
+
+            $saleDocument = SaleDocument::find($request->sale_document_id);
+
+            if (!$saleDocument) {
+                return (new ResponseResource(false, "sale_document_id tidak di temukan!", []))->response()->setStatusCode(404);
+            }
+
+            $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->first();
+            if ($productSale) {
+                $resource = new ResponseResource(false, "Data sudah dimasukkan!", $productSale);
+                return $resource->response()->setStatusCode(422);
+            }
+
+            $newProduct = New_product::where('new_barcode_product', $request->sale_barcode)->first();
+            $bundle = Bundle::where('barcode_bundle', $request->sale_barcode)->first();
+
+            if (!$newProduct && !$bundle) {
+                return response()->json(['error' => 'Both new product and bundle not found'], 404);
+            }
+
+            if ($newProduct) {
+                $data = [
+                    $newProduct->new_name_product,
+                    $newProduct->new_category_product,
+                    $newProduct->new_barcode_product,
+                    $newProduct->display_price,
+                    $newProduct->new_price_product,
+                    $newProduct->new_discount,
+                    $newProduct->old_price_product,
+                ];
+            } elseif ($bundle) {
+                $data = [
+                    $bundle->name_bundle,
+                    $bundle->category,
+                    $bundle->barcode_bundle,
+                    $bundle->total_price_custom_bundle,
+                    $bundle->total_price_bundle,
+                ];
+            } else {
+                return (new ResponseResource(false, "Barcode tidak ditemukan!", []))->response()->setStatusCode(404);
+            }
+
+            if (!$newProduct) {
+                $bundle->update(['product_status' => 'sale']);
+            } elseif (!$bundle) {
+                $newProduct->update(['new_status_product' => 'sale']);
+            } else {
+                $newProduct->update(['new_status_product' => 'sale']);
+                $bundle->update(['product_status' => 'sale']);
+            }
+
+            $sale = Sale::create(
+                [
+                    'user_id' => auth()->id(),
+                    'code_document_sale' => $saleDocument->code_document_sale,
+                    'product_name_sale' => $data[0],
+                    'product_category_sale' => $data[1],
+                    'product_barcode_sale' => $data[2],
+                    'product_old_price_sale' => $data[6] ?? $data[4],
+                    'product_price_sale' => $data[3],
+                    'product_qty_sale' => 1,
+                    'status_sale' => 'selesai',
+                    'total_discount_sale' => $data[4] - $data[3],
+                    'new_discount' => $data[5] ?? NULL,
+                    'display_price' => $data[3],
+                ]
+            );
+
+            $saleDocument->update([
+                'total_product_document_sale' => $saleDocument->total_product_document_sale + 1,
+                'total_old_price_document_sale' => ($data[6] ?? $data[4]) + $saleDocument->total_old_price_document_sale,
+                'total_price_document_sale' => $data[3] + $saleDocument->total_price_document_sale,
+                'total_display_document_sale' => $data[3] + $saleDocument->total_display_document_sale,
+                // 'voucher' => $request->input('voucher')
+            ]);
+
+
+            $avgPurchaseBuyer = SaleDocument::where('status_document_sale', 'selesai')
+                ->where('buyer_id_document_sale', $saleDocument->buyer_id_document_sale)
+                ->avg('total_price_document_sale');
+
+            $buyer = Buyer::findOrFail($saleDocument->buyer_id_document_sale);
+
+            $buyer->update([
+                'amount_purchase_buyer' => number_format($buyer->amount_purchase_buyer + $saleDocument->total_price_document_sale, 2, '.', ''),
+                'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', ''),
+            ]);
+
+            DB::commit();
+            return new ResponseResource(true, "data berhasil di tambahkan!", $saleDocument->load('sales', 'user'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return (new ResponseResource(false, "Data gagal ditambahkan!", $e->getMessage()))->response()->setStatusCode(500);
+        }
+    }
+
+    public function deleteProductSaleInDocument(SaleDocument $saleDocument, Sale $sale)
+    {
+        try {
+            //note: jika record pada new product yang status nya sudah menjadi sale tidak di temukan atau telah di hapus. maka, fungsi ini tidak akan berjalan dengan semestinya.
+            $newProduct = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
+            $bundle = Bundle::where('barcode_bundle', $sale->product_barcode_sale)->first();
+            if (!$newProduct && !$bundle) {
+                return response()->json(['error' => 'Both new product and bundle not found'], 404);
+            } elseif (!$newProduct) {
+                $bundle->update(['product_status' => 'not sale']);
+            } elseif (!$bundle) {
+                $newProduct->update(['new_status_product' => 'display']);
+            } else {
+                $newProduct->update(['new_status_product' => 'display']);
+                $bundle->update(['product_status' => 'not sale']);
+            }
+
+            $allSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)
+                ->where('status_sale', 'selesai')
+                ->get();
+
+            $saleDocument->update([
+                'total_product_document_sale' => $saleDocument->total_product_document_sale - 1,
+                'total_old_price_document_sale' => $saleDocument->total_old_price_document_sale - $sale->product_old_price_sale,
+                'total_price_document_sale' => $saleDocument->total_price_document_sale - $sale->product_price_sale,
+                'total_display_document_sale' => $saleDocument->total_display_document_sale - $sale->display_price,
+            ]);
+
+            $avgPurchaseBuyer = SaleDocument::where('status_document_sale', 'selesai')
+                ->where('buyer_id_document_sale', $saleDocument->buyer_id_document_sale)
+                ->avg('total_price_document_sale');
+
+            $buyer = Buyer::findOrFail($saleDocument->buyer_id_document_sale);
+
+            $buyer->update([
+                'amount_purchase_buyer' => number_format($buyer->amount_purchase_buyer - $sale->product_price_sale, 2, '.', ''),
+                'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', ''),
+            ]);
+
+            //cek apabila di dalam document sale sudah tidak ada produk sale lagi
+            if ($allSale->count() <= 1) {
+                $buyer->update([
+                    'amount_transaction_buyer' => $buyer->amount_transaction_buyer - 1,
+                ]);
+                $saleDocument->delete();
+            }
+
+            $sale->delete();
+            $resource = new ResponseResource(true, "data berhasil di hapus", $saleDocument->load('sales', 'user'));
+        } catch (\Exception $e) {
+            $resource = new ResponseResource(false, "data gagal di hapus", $e->getMessage());
+        }
+        return $resource->response();
+    }
+
     public function combinedReport(Request $request)
     {
         $user = auth()->user();
