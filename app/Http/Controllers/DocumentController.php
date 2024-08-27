@@ -99,6 +99,27 @@ class DocumentController extends Controller
         return new ResponseResource(true, "list document progress", $documents->paginate(50));
     }
 
+    public function documentDone(Request $request) // halaman list product staging by doc
+    {
+        $query = $request->input('q');
+
+        $documents = Document::latest()->where('status_document', 'done');
+
+        // Jika query pencarian tidak kosong, tambahkan kondisi pencarian
+        if (!empty($query)) {
+            $documents = $documents->where(function ($search) use ($query) {
+                $search->where(function ($baseCode) use ($query) {
+                    $baseCode->where('base_document', 'LIKE', '%' . $query . '%')
+                        ->orWhere('code_document', 'LIKE', '%' . $query . '%');
+                });
+            });
+        }
+
+        // Mengembalikan hasil dalam bentuk paginasi
+        return new ResponseResource(true, "list document progress", $documents->paginate(50));
+    }
+
+
     private function changeBarcodeByDocument($code_document, $init_barcode)
     {
         DB::beginTransaction();
@@ -134,18 +155,18 @@ class DocumentController extends Controller
         }
     }
 
-    public function deleteCustomBarcode(Request $request){
-        try{
-            $validator = Validator::make($request->all(),['code_document' => 'required']);
-            if($validator->fails()){
+    public function deleteCustomBarcode(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), ['code_document' => 'required']);
+            if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
             $document = Document::where('code_document', $request->input('code_document'))->first();
             $document->update(['custom_barcode' => null]);
             return new ResponseResource(true, "custom barcode dihapus", null);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return new ResponseResource(false, "gagal di hapus", $e->getMessage());
         }
     }
-
 }

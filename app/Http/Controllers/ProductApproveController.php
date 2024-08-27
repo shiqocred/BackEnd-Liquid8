@@ -32,19 +32,7 @@ class ProductApproveController extends Controller
                 ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-        })->where('new_status_product', '!=', 'dump')
-            ->where('new_status_product', '!=', 'expired')
-            ->where('new_status_product', '!=', 'sale')
-            ->where('new_status_product', '!=', 'migrate')
-            ->where('new_status_product', '!=', 'repair')
-            ->paginate(100);
-
-        // $startNumber = ($newProducts->currentPage() - 1) * $newProducts->perPage() + 1 ;
-
-        // $newProducts->getCollection()->transform(function($product) use (&$startNumber){
-        //     $product->number = $startNumber++;
-        //     return $product;
-        // });
+        })->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])->paginate(100);
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
@@ -412,7 +400,7 @@ class ProductApproveController extends Controller
     {
         $query = $request->input('q');
 
-        $notifQuery = Notification::with('riwayat_check')->latest();
+        $notifQuery = Notification::with('riwayat_check')->whereNot('status', 'staging')->latest();
 
         if (!empty($query)) {
             $notifQuery->whereHas('riwayat_check', function ($q) use ($query) {
