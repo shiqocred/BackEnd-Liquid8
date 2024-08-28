@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class SaleController extends Controller
 {
@@ -179,9 +181,7 @@ class SaleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Sale $sale)
-    {
-    }
+    public function update(Request $request, Sale $sale) {}
 
     /**
      * Remove the specified resource from storage.
@@ -296,5 +296,84 @@ class SaleController extends Controller
         $sale->product_price_sale = $request->input('update_price_sale');
         $sale->save();
         return new ResponseResource(true, "data berhasil di update", $sale);
+    }
+
+    public function getCategoryNull()
+    {
+        // Meningkatkan batas waktu eksekusi dan memori
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $userHeaders = [
+            'id',
+            'user_id',
+            'code_document_sale',
+            'product_name_sale',
+            'product_category_sale',
+            'product_barcode_sale',
+            'product_old_price_sale',
+            'product_price_sale',
+            'product_qty_sale',
+            'status_sale',
+            'total_discount_sale',
+            'created_at',
+            'updated_at',
+            'new_discount',
+            'display_price',
+        ];
+
+        $columnIndex = 1;
+        foreach ($userHeaders as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        $rowIndex = 2; // Mulai dari baris kedua
+
+        $sales = DB::table('sales')
+            ->whereRaw("TRIM(`product_category_sale`) = ''")
+            ->get();
+
+        foreach ($sales as $data) {
+            $columnIndex = 1;
+
+            // Menuliskan data user ke sheet
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->id);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->user_id);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->code_document_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->product_name_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->product_category_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->product_barcode_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->product_old_price_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->product_price_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->product_qty_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->status_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->total_discount_sale);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->created_at);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->updated_at);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->new_discount);
+            $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $data->display_price);
+
+            $rowIndex++;
+        }
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'sales_category_null.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "unduh", $downloadUrl);
     }
 }

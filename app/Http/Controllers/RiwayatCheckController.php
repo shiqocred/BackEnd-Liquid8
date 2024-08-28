@@ -42,8 +42,6 @@ class RiwayatCheckController extends Controller
 
     public function store(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
         $user = User::find(auth()->id());
 
         if (!$user) {
@@ -233,7 +231,6 @@ class RiwayatCheckController extends Controller
         $totalPercentageAbnormal = ($totalOldPriceAbnormal / $history->total_price) * 100;
         $totalPercentageAbnormal = round($totalPercentageAbnormal, 2);
 
-
         $getProductDiscrepancy = Product_old::where('code_document', $history->code_document)->get();
 
         $totalPriceDiscrepancy = $getProductDiscrepancy->sum('old_price_product');
@@ -309,7 +306,7 @@ class RiwayatCheckController extends Controller
 
     public function update(Request $request, RiwayatCheck $riwayatCheck)
     {
-        //
+        
     }
 
 

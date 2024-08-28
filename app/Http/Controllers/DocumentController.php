@@ -6,6 +6,8 @@ use App\Models\Document;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
 use App\Models\ProductApprove;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -97,6 +99,44 @@ class DocumentController extends Controller
         return new ResponseResource(true, "list document progress", $documents->paginate(50));
     }
 
+    public function documentDone(Request $request) // halaman list product staging by doc
+    {
+        $query = $request->input('q');
+
+        $documents = Document::latest()->where('status_document', 'done');
+
+        // Jika query pencarian tidak kosong, tambahkan kondisi pencarian
+        if (!empty($query)) {
+            $documents = $documents->where(function ($search) use ($query) {
+                $search->where(function ($baseCode) use ($query) {
+                    $baseCode->where('base_document', 'LIKE', '%' . $query . '%')
+                        ->orWhere('code_document', 'LIKE', '%' . $query . '%');
+                });
+            });
+        }
+
+        // Mengembalikan hasil dalam bentuk paginasi
+        return new ResponseResource(true, "list document progress", $documents->paginate(50));
+    }
+
+
+    private function changeBarcodeByDocument($code_document, $init_barcode)
+    {
+        DB::beginTransaction();
+        try {
+            $document = Document::where('code_document', $code_document)->first();
+            $document->custom_barcode = $init_barcode;
+            $document->save();
+
+            DB::commit();
+            return true;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating barcodes: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function changeBarcodeDocument(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -106,13 +146,27 @@ class DocumentController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
+        $generate = $this->changeBarcodeByDocument($request->code_document, $request->init_barcode);
 
-        $generate = changeBarcodeByDocument($request->code_document, $request->init_barcode);
-        
         if ($generate) {
             return new ResponseResource(true, "berhasil mengganti barcode", $request->init_barcode);
         } else {
             return "gagal";
+        }
+    }
+
+    public function deleteCustomBarcode(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), ['code_document' => 'required']);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+            $document = Document::where('code_document', $request->input('code_document'))->first();
+            $document->update(['custom_barcode' => null]);
+            return new ResponseResource(true, "custom barcode dihapus", null);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "gagal di hapus", $e->getMessage());
         }
     }
 }
