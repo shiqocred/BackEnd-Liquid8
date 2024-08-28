@@ -128,11 +128,15 @@ class NotificationController extends Controller
     
                 $notification->update([
                     'notification_name' => 'Approved',
-                    'status' => 'done',
+                    'status' => 'staging',
                 ]);
     
                 if ($notification->riwayat_check_id !== null) {
                     $riwayatCheck = RiwayatCheck::find($notification->riwayat_check_id);
+                    $document = Document::where('code_document', $riwayatCheck->code_document)->first();
+                    $document->update([
+                        'status_document' => 'done'
+                    ]);
     
                     if ($riwayatCheck) {
                         $riwayatCheck->update(['status_approve' => 'done']);
