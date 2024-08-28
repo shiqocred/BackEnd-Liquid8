@@ -71,7 +71,7 @@ class ProductBundleController extends Controller
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
-                    'created_at' => now(),  
+                    'created_at' => now(),
                     'updated_at' => now(),
                 ];
             })->toArray();
@@ -79,6 +79,8 @@ class ProductBundleController extends Controller
             Product_Bundle::insert($insertData);
 
             Product_Filter::where('user_id', $userId)->delete();
+
+            logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle");
 
             DB::commit();
             return new ResponseResource(true, "Bundle berhasil dibuat", $bundle);

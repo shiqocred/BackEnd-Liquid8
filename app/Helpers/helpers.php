@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Models\SaleDocument;
 use App\Models\ProductApprove;
 use App\Models\MigrateDocument;
+use App\Models\UserLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -86,7 +87,7 @@ function generateNewBarcode($category)
 
 function newBarcodeCustom($code_document, $init_barcode)
 {
-    $product = ProductApprove::where('code_document', $code_document)->latest()->first();
+   $product = ProductApprove::where('code_document', $code_document)->latest()->first();
     if ($product) {
         $barcode = $product->new_barcode_product;
         $numericPart = (int) substr($barcode, -4);
@@ -99,5 +100,20 @@ function newBarcodeCustom($code_document, $init_barcode)
         $code_numeric = $code_parts[0]; 
         $newBarcode = $init_barcode . $code_numeric;
         return $newBarcode;
+    }
+}
+
+if (! function_exists('logUserAction')) {
+    function logUserAction($request, $user, $halaman, $pesan)
+    {
+        UserLog::create([
+            'user_id' => $user->id,
+            'name_user' => $user->name,
+            'page' => $halaman,
+            'info' => $pesan,
+        ]);
+
+        // Tandai bahwa log sudah dibuat untuk request ini
+        $request->attributes->set('log_created', true);
     }
 }

@@ -168,6 +168,9 @@ class SaleDocumentController extends Controller
                 'amount_purchase_buyer' => number_format($buyer->amount_purchase_buyer + $saleDocument->total_price_document_sale, 2, '.', ''),
                 'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', ''),
             ]);
+
+            logUserAction($request, $request->user(), "outbound/sale/kasir", "Menekan tombol sale");
+
             DB::commit();
             $resource = new ResponseResource(true, "Data berhasil disimpan!", $saleDocument);
         } catch (\Exception $e) {

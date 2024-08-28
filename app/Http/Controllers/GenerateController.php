@@ -31,8 +31,8 @@ class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
     {
-        set_time_limit(300); 
-        ini_set('memory_limit', '512M'); 
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -45,7 +45,7 @@ class GenerateController extends Controller
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $file->hashName());
 
-        DB::beginTransaction(); 
+        DB::beginTransaction();
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
@@ -214,6 +214,8 @@ class GenerateController extends Controller
                 }
             }
             Generate::query()->delete();
+
+            logUserAction($request, $request->user(), "inbound/data_process/data_input", "Upload inbound batch");
 
             return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => $totalInsertedRows]);
         } catch (\Illuminate\Database\QueryException $qe) {
@@ -546,8 +548,12 @@ class GenerateController extends Controller
 
         // Menentukan headers berdasarkan nama kolom di tabel new_products
         $headers = [
-            'Barcode', 'Description', 'Category', 'Qty',
-            'Price After Discount', 'Unit Price'
+            'Barcode',
+            'Description',
+            'Category',
+            'Qty',
+            'Price After Discount',
+            'Unit Price'
         ];
 
         // Menuliskan headers ke sheet
@@ -557,7 +563,7 @@ class GenerateController extends Controller
             $columnIndex++;
         }
 
-    
+
         // Menyimpan file Excel
         $writer = new Xlsx($spreadsheet);
         $fileName = 'templates_display.xlsx';
@@ -576,9 +582,4 @@ class GenerateController extends Controller
 
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
-    
 }
-
-
-
-
