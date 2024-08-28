@@ -788,7 +788,7 @@ class NewProductController extends Controller
 
 
             if ($products->isEmpty()) {
-                return new ResponseResource(false, "Tidak ada data", null);
+                return new ResponseResource(false, "Tidak ada data", $products);
             }
 
             return new ResponseResource(true, "List damaged dan abnormal", $products);

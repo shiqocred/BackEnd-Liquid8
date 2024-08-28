@@ -400,7 +400,7 @@ class ProductApproveController extends Controller
     {
         $query = $request->input('q');
 
-        $notifQuery = Notification::with('riwayat_check')->whereNot('status', 'staging')->latest();
+        $notifQuery = Notification::with('riwayat_check')->latest();
 
         if (!empty($query)) {
             $notifQuery->whereHas('riwayat_check', function ($q) use ($query) {
@@ -416,6 +416,7 @@ class ProductApproveController extends Controller
 
         return new ResponseResource(true, "Document Approves", $documents);
     }
+
 
     public function productsApproveByDoc(Request $request, $code_document)
     {

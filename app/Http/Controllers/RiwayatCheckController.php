@@ -124,7 +124,7 @@ class RiwayatCheckController extends Controller
 
 
             $code_document = Document::where('code_document', $request['code_document'])->first();
-            $code_document->update(['status_document' => 'done']);
+            $code_document->update(['status_document' => 'in progress']);
 
             //keterangan transaksi
             $keterangan = Notification::create([

@@ -150,7 +150,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    //filters product bundle
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
-   // Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+   Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
 
    //bundle
    Route::get('bundle', [BundleController::class, 'index']);
@@ -251,7 +251,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    //filters product bundle
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
-   // Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+   Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
 
    //bundle
    Route::get('bundle', [BundleController::class, 'index']);
@@ -341,7 +341,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi'])->group
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::get('stagingTransaction/{notificationId}', [NotificationController::class, 'stagingTransaction']);
-   Route::get('documentsApproveStaging', [StagingProductController::class, 'documentsApproveStaging']);
 });
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
 
