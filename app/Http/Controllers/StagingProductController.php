@@ -202,20 +202,27 @@ class StagingProductController extends Controller
 
         return new ResponseResource(true, "List of documents in staging", $notifications);
     }
+
     public function productStagingByDoc(Request $request, $code_document)
     {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
+
         if ($user) {
-            $products = StagingProduct::where('code_document', $code_document)->get();
+            $productsQuery = StagingProduct::where('code_document', $code_document);
+
             if (!empty($query)) {
-                $products->where('new_name_product', $query);
+                $productsQuery->where('new_name_product', 'LIKE', '%' . $query . '%');
             }
+
+            $products = $productsQuery->paginate(50);
+
             return new ResponseResource(true, 'products', $products);
         } else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
+
 
     public function documentStagings(Request $request)
     {
