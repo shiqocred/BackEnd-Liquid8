@@ -15,7 +15,7 @@ class ProductConditionController extends Controller
      */
     public function index()
     {
-        $productConditions = ProductCondition::all();
+        $productConditions = ProductCondition::paginate(20);
         $resource = new ResponseResource(true, "list kondisi", $productConditions);
 
         return $resource->response();

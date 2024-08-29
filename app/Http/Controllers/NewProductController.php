@@ -21,6 +21,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use App\Models\ExcelOldColor;
 use App\Models\ProductApprove;
+use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -525,7 +526,7 @@ class NewProductController extends Controller
         // Variabel penampung barcode double ini adalah $responseBarcode
         $responseBarcode = collect();
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $new_product = New_product::where('new_barcode_product', $barcode)->first();
+            $new_product = StagingProduct::where('new_barcode_product', $barcode)->first();
             if ($new_product) {
                 $responseBarcode->push($barcode);
             }
@@ -554,7 +555,7 @@ class NewProductController extends Controller
                 'display_price' => $mergedData['display_price'][$index] ?? null,
             ];
 
-            New_product::create($newProductData);
+            StagingProduct::create($newProductData);
         }
 
         ExcelOld::query()->delete();
