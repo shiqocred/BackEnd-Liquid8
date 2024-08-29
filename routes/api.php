@@ -414,7 +414,7 @@ Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 
 
 //collab mtc
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Developer'])->group(function () {
    //=========================================== Api For Bulky ==========================================================
    Route::resource('product-brands', ProductBrandController::class);
    Route::resource('product-conditions', ProductConditionController::class);
