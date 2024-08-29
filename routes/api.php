@@ -117,7 +117,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
    Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
 
    //sale
-   Route::resource('sales', SaleController::class)->except(['destroy']);
+   Route::resource('sales', SaleController::class);
    Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
    Route::put('/update_price_sales/{sale}', [SaleController::class, 'livePriceUpdates']);
    Route::resource('sale-documents', SaleDocumentController::class)->except(['destroy']);
@@ -356,7 +356,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    // Tombol delete 
    Route::delete('migrates/{migrate}', [MigrateController::class, 'destroy']);
    Route::delete('migrate-documents/{migrateDocument}', [MigrateDocumentController::class, 'destroy']);
-   Route::delete('sales/{sale}', [SaleController::class, 'destroy']);
    Route::delete('sale-documents/{saleDocument}', [SaleDocumentController::class, 'destroy']);
    Route::delete('buyers/{buyer}', [BuyerController::class, 'destroy']);
    Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
