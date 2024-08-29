@@ -422,17 +422,32 @@ class ProductApproveController extends Controller
     {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
+    
         if ($user) {
-            $products = ProductApprove::where('code_document', $code_document)->get();
-            if (!empty($query)) {
-                $products->where('new_name_product', $query);
-            }
+            // Memulai query builder untuk ProductApprove
+            $productsQuery = ProductApprove::where('code_document', $code_document);
+    
+            // Menambahkan kondisi pencarian jika ada query
+            $productsQuery->when($query, function ($queryBuilder) use ($query) {
+                $queryBuilder->where(function ($subQuery) use ($query) {
+                    $subQuery->whereNotNull('new_category_product')
+                        ->where('new_category_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
+                });
+            });
+    
+            // Mengambil semua hasil query
+            $products = $productsQuery->get();
+    
             return new ResponseResource(true, 'products', $products);
         } else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
-
+    
     public function delete_all_by_codeDocument(Request $request)
     {
         $code_document = $request->input('code_document');
