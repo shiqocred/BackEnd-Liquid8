@@ -12,16 +12,18 @@ use App\Models\BundleQcd;
 use App\Models\Color_tag;
 use App\Models\New_product;
 use App\Models\Product_old;
+use App\Models\Notification;
+use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
+use App\Models\ExcelOldColor;
 use App\Models\ListProductBP;
 use App\Models\RepairProduct;
+use App\Models\ProductApprove;
+use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\ExcelOldColor;
-use App\Models\ProductApprove;
-use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -377,6 +379,7 @@ class NewProductController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
+        $user_id = auth()->id();
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -418,11 +421,12 @@ class NewProductController extends Controller
             }
 
             // Create a new document with the rowCount
-            Document::create([
+           $docs= Document::create([
                 'code_document' => $this->generateDocumentCode(),
                 'base_document' => $fileName,
                 'total_column_document' => count($header),
                 'total_column_in_document' => $rowCount,
+                'status_document' => 'done',
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
@@ -436,6 +440,38 @@ class NewProductController extends Controller
                 DB::rollback();
                 return response()->json($mergeResponseArray, 422);
             }
+           $history= RiwayatCheck::create([
+                'user_id' => $user_id,
+                'code_document' => $docs->code_document,
+                'base_document' => $fileName,
+                'total_data' => $docs->total_column_in_document,
+                'total_data_in' => $docs->total_column_in_document,
+                'total_data_lolos' => $docs->total_column_in_document,
+                'total_data_damaged' => 0,
+                'total_data_abnormal' => 0,
+                'total_discrepancy' => 0,
+                'status_approve' => 'done',
+    
+                // persentase
+                'precentage_total_data' => 0,
+                'percentage_in' => 0,
+                'percentage_lolos' => 0,
+                'percentage_damaged' => 0,
+                'percentage_abnormal' => 0,
+                'percentage_discrepancy' => 0,
+                'total_price' => 0
+            ]);
+
+            Notification::create([
+                'user_id' => $user_id,
+                'notification_name' => 'bulking category',
+                'role' => 'Spv',
+                'read_at' => Carbon::now('Asia/Jakarta'),
+                'riwayat_check_id' =>  $history->id,
+                'repair_id' => null,
+                'status'=> 'staging'
+            ]);
+
 
             DB::commit();
 
