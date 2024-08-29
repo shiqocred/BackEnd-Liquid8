@@ -87,20 +87,21 @@ function generateNewBarcode($category)
 
 function newBarcodeCustom($code_document, $init_barcode)
 {
-   $product = ProductApprove::where('code_document', $code_document)->latest()->first();
-    if ($product) {
-        $barcode = $product->new_barcode_product;
-        $numericPart = (int) substr($barcode, -4);
-        $numericPart = $numericPart + 1;
-        $paddedNumericPart = str_pad($numericPart, 4, '0', STR_PAD_LEFT);
-        $newBarcode = $init_barcode . $paddedNumericPart;
-        return $newBarcode;
-    } else {
-        $code_parts = explode('/', $code_document);
-        $code_numeric = $code_parts[0]; 
-        $newBarcode = $init_barcode . $code_numeric;
-        return $newBarcode;
-    }
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
+
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
+        $newBarcode = $init_barcode . $randomString;
+
+        $exists = ProductApprove::where('new_barcode_product', $newBarcode)->exists();
+    } while ($exists);
+
+    return $newBarcode;
 }
 
 if (! function_exists('logUserAction')) {
