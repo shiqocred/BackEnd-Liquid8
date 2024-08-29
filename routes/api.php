@@ -311,7 +311,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(funct
    ->where('code_document', '.*');
    Route::resource('staging_products', StagingProductController::class)->except(['destroy']);
    Route::get('documentStagings', [StagingProductController::class, 'documentStagings']);
-   Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
 
 });
 

@@ -15,7 +15,7 @@ class ProductBrandController extends Controller
      */
     public function index()
     {
-        $productBrands = ProductBrand::all();
+        $productBrands = ProductBrand::paginate(20);
         $resource = new ResponseResource(true, "list brand", $productBrands);
 
         return $resource->response();

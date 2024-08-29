@@ -54,7 +54,7 @@ class PaletController extends Controller
                             ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
                     });
-            })->paginate(100);
+            })->paginate(20);
         return new ResponseResource(true, "list palet", $palets);
     }
 
