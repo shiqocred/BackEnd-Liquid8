@@ -413,7 +413,8 @@ Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 
 
-Route::middleware('check.api_key')->group(function () {
+//collab mtc
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
    //=========================================== Api For Bulky ==========================================================
    Route::resource('product-brands', ProductBrandController::class);
    Route::resource('product-conditions', ProductConditionController::class);

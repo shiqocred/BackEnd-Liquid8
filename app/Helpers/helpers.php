@@ -113,7 +113,6 @@ if (! function_exists('logUserAction')) {
             'page' => $halaman,
             'info' => $pesan,
         ]);
-
         // Tandai bahwa log sudah dibuat untuk request ini
         $request->attributes->set('log_created', true);
     }

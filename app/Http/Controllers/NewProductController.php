@@ -440,6 +440,7 @@ class NewProductController extends Controller
                 DB::rollback();
                 return response()->json($mergeResponseArray, 422);
             }
+            
            $history= RiwayatCheck::create([
                 'user_id' => $user_id,
                 'code_document' => $docs->code_document,
