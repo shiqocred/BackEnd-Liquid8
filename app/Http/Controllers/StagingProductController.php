@@ -31,7 +31,7 @@ class StagingProductController extends Controller
             })
             ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
             ->whereNull('new_tag_product')
-            ->paginate(100);
+            ->paginate(50);
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
