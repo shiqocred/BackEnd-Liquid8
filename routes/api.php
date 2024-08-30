@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FilterQcdController;
+use App\Http\Controllers\FilterStagingController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\MigrateController;
 use App\Http\Controllers\MigrateDocumentController;
@@ -39,8 +40,12 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SaleDocumentController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SpecialTransactionController;
+use App\Http\Controllers\StagingApproveController;
 use App\Http\Controllers\StagingProductController;
 use App\Http\Controllers\UserController;
+use App\Models\FilterStaging;
+use App\Models\StagingApprove;
+use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Route;
 
 //patokan urutan role : Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,
@@ -309,8 +314,16 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(funct
    Route::get('documentsApproveStaging', [StagingProductController::class, 'documentsApproveStaging']);
    Route::get('productStagingByDoc/{code_document}', [StagingProductController::class, 'productStagingByDoc'])
    ->where('code_document', '.*');
-   Route::resource('staging_products', StagingProductController::class)->except(['destroy']);
    Route::get('documentStagings', [StagingProductController::class, 'documentStagings']);
+   
+   //untuk spv me approve staging ke inventory 
+   Route::resource('staging_approves', StagingApproveController::class);
+
+   //store nya untuk mindah ke approve staging
+   Route::resource('staging_products', StagingProductController::class);
+   Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
+   Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
+   Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
 
 });
 
@@ -341,9 +354,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi'])->group
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
-   Route::get('stagingTransaction/{notificationId}', [NotificationController::class, 'stagingTransaction']);
-
+   //spv approve staging
+   Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 });
+
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
 
    Route::post('register', [AuthController::class, 'register']);

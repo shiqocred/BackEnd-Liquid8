@@ -80,7 +80,7 @@ class ProductApproveController extends Controller
                 $inputData['new_barcode_product'] = $generate;
             }
             $inputData['display_price'] = $inputData['new_price_product'];
-            if ($inputData['new_price_product'] == null) {
+            if ($inputData['new_price_product'] == null) { 
                 $inputData['display_price'] = $inputData['old_price_product'];
             }
             $this->deleteOldProduct($inputData['old_barcode_product']);

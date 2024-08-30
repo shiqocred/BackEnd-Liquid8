@@ -12,6 +12,7 @@ use App\Models\ProductApprove;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\Document;
+use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -109,46 +110,46 @@ class NotificationController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-        
+
         $user = User::with('role')->find(auth()->id());
-    
+
         DB::beginTransaction();
-    
+
         try {
             if ($user && ($user->role && ($user->role->role_name == 'Spv' ||  $user->role->role_name == 'Admin'))) {
                 $notification = Notification::find($notificationId);
-    
+
                 if (!$notification) {
                     return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
                 }
-    
+
                 if ($notification->status == 'staging' || $notification->status == 'done') {
                     return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 422);
-                }                
-    
+                }
+
                 $notification->update([
                     'notification_name' => 'Approved',
-                    'status' => 'staging',
+                    'status' => 'done',
                 ]);
-    
+
                 if ($notification->riwayat_check_id !== null) {
                     $riwayatCheck = RiwayatCheck::find($notification->riwayat_check_id);
                     $document = Document::where('code_document', $riwayatCheck->code_document)->first();
                     $document->update([
                         'status_document' => 'done'
                     ]);
-    
+
                     if ($riwayatCheck) {
                         $riwayatCheck->update(['status_approve' => 'done']);
-    
+
                         $productApprovesTags = ProductApprove::where('code_document', $riwayatCheck->code_document)
                             ->whereNotNull('new_tag_product')
                             ->get();
-    
+
                         $productApprovesCategories = ProductApprove::where('code_document', $riwayatCheck->code_document)
                             ->whereNull('new_tag_product')
                             ->get();
-    
+
                         $productApprovesTags->chunk(100)->each(function ($chunk) {
                             $dataToInsert = [];
                             foreach ($chunk as $productApprove) {
@@ -170,11 +171,11 @@ class NotificationController extends Controller
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ];
-    
+
                                 // Hapus setelah insert ke array untuk mengurangi penggunaan memori
                                 $productApprove->delete();
                             }
-    
+
                             New_product::insert($dataToInsert);
                         });
 
@@ -200,20 +201,20 @@ class NotificationController extends Controller
                                     'created_at' => now(),
                                     'updated_at' => now(),
                                 ];
-    
+
                                 // Hapus setelah insert ke array untuk mengurangi penggunaan memori
                                 $productApprove->delete();
                             }
-    
+
                             StagingProduct::insert($dataToInsert);
                         });
-    
+
                         // Menangani RepairCheck jika ada
                         $repairCheck = Repair::where('user_id', $notification->user_id)->first();
-    
+
                         if ($repairCheck) {
                             $repairCheck->update(['status_approve' => 'done']);
-    
+
                             $repairCheck->repair_products()->chunkById(200, function ($productFilter) {
                                 foreach ($productFilter as $product) {
                                     New_product::create([
@@ -233,17 +234,17 @@ class NotificationController extends Controller
                                         'created_at' => now(),
                                         'updated_at' => now(),
                                     ]);
-    
+
                                     $product->delete();
                                 }
                             });
-    
+
                             // Setelah semua produk terkait dihapus, hapus repairCheck
                             $repairCheck->delete();
                         }
                     }
                 }
-    
+
                 DB::commit();
                 return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
             } else {
@@ -254,7 +255,7 @@ class NotificationController extends Controller
             return new ResponseResource(false, "Gagal mengapprove transaksi", $e->getMessage());
         }
     }
-    
+
 
     public function getNotificationByRole(Request $request)
     {
@@ -294,84 +295,5 @@ class NotificationController extends Controller
         }
     }
 
-    public function stagingTransaction($notificationId)
-    {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
-        $user = User::with('role')->find(auth()->id());
-
-        DB::beginTransaction();
-
-        try {
-            if ($user) {
-                if ($user->role && ($user->role->role_name == 'Admin Kasir' ||  $user->role->role_name == 'Admin')) {
-                    $notification = Notification::where('id', $notificationId)->first();
-
-                    if (!$notification) {
-                        return response()->json(['error' => 'Transaksi tidak ditemukan'], 404);
-                    }
-
-                    if  ($notification->status == 'done')  {
-                        return response()->json(['message' => 'Transaksi sudah disetujui sebelumnya'], 422);
-                    }
-
-                    $notification->update([
-                        'notification_name' => 'Approved staging',
-                        'status' => 'done',
-                    ]);
-
-                    if ($notification->riwayat_check_id !== null) {
-                        $riwayatCheck = RiwayatCheck::find($notification->riwayat_check_id);
-
-                        if ($riwayatCheck) {
-                            $riwayatCheck->update(['status_approve' => 'done']);
-
-                            $productApproves = StagingProduct::where('code_document', $riwayatCheck->code_document)->get();
-
-                            $chunkedProductApproves = $productApproves->chunk(100);
-
-                            foreach ($chunkedProductApproves as $chunk) {
-                                $dataToInsert = [];
-
-                                foreach ($chunk as $productApprove) {
-                                    $dataToInsert[] = [
-                                        'code_document' => $productApprove->code_document,
-                                        'old_barcode_product' => $productApprove->old_barcode_product,
-                                        'new_barcode_product' => $productApprove->new_barcode_product,
-                                        'new_name_product' => $productApprove->new_name_product,
-                                        'new_quantity_product' => $productApprove->new_quantity_product,
-                                        'new_price_product' => $productApprove->new_price_product,
-                                        'old_price_product' => $productApprove->old_price_product,
-                                        'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
-                                        'new_status_product' => $productApprove->new_status_product,
-                                        'new_quality' => $productApprove->new_quality,
-                                        'new_category_product' => $productApprove->new_category_product,
-                                        'new_tag_product' => $productApprove->new_tag_product,
-                                        'new_discount' => $productApprove->new_discount,
-                                        'display_price' => $productApprove->display_price,
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
-                                    ];
-
-                                    $productApprove->delete();
-                                } 
-
-                                New_product::insert($dataToInsert);
-                            }
-                        }
-                    }
-
-                    DB::commit();
-                    return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
-                } else {
-                    return new ResponseResource(false, "notification tidak di temukan", null);
-                }
-            } else {
-                return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
-            }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return new ResponseResource(false, "gagal", $e->getMessage());
-        }
-    }
+  
 }
