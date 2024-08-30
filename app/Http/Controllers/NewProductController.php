@@ -1586,9 +1586,7 @@ class NewProductController extends Controller
         // Validasi Input
         $validator = Validator::make($request->all(), [
             'product_name' => 'required',
-            'qty' => 'required',
             'product_price' => 'required|numeric',
-            'category_id' => 'required|integer|exists:categories,id'
         ]);
     
         if ($validator->fails()) {
