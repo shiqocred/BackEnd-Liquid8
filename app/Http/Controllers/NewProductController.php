@@ -374,7 +374,7 @@ class NewProductController extends Controller
         }
     }
 
-    //inject display
+    //inject category display -> inventory
     public function processExcelFilesCategory(Request $request)
     {
         set_time_limit(300);

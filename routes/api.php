@@ -144,7 +144,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
-   Route::post('/excelOld', [NewProductController::class, 'processExcelFilesCategory']);
+   //bulking
+   Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
+   Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
    Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
 
