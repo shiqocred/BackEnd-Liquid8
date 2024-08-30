@@ -102,7 +102,7 @@ class RiwayatCheckController extends Controller
 
             $riwayat_check = RiwayatCheck::create([
                 'user_id' => $user->id,
-                'code_document' => $request['code_document'],
+                'code_document' => $request['code_document'], 
                 'base_document' => $document->base_document,
                 'total_data' => $document->total_column_in_document,
                 'total_data_in' => $totalData,

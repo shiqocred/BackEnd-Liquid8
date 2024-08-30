@@ -17,7 +17,7 @@ class ProductFilterController extends Controller
      */
 
     public function index()
-    {
+    { 
         $userId = auth()->id();
         $product_filtersByUser = Product_Filter::where('user_id', $userId)->get();
 

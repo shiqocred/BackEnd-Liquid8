@@ -8,8 +8,11 @@ use App\Models\Document;
 use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
+use App\Models\FilterStaging;
+use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 
@@ -50,7 +53,57 @@ class StagingProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        DB::beginTransaction();
+        $userId = auth()->id();
+        try {
+            $product_filters = FilterStaging::where('user_id', $userId)->get();
+            if ($product_filters->isEmpty()) {
+                return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
+            }
+
+            $insertData = $product_filters->map(function ($product) use ($userId) {
+                return [
+                    'code_document' => $product->code_document,
+                    'old_barcode_product' => $product->old_barcode_product,
+                    'new_barcode_product' => $product->new_barcode_product,
+                    'new_name_product' => $product->new_name_product,
+                    'new_quantity_product' => $product->new_quantity_product,
+                    'new_price_product' => $product->new_price_product,
+                    'old_price_product' => $product->old_price_product,
+                    'new_date_in_product' => $product->new_date_in_product,
+                    'new_status_product' =>  $product->new_status_product,
+                    'new_quality' => $product->new_quality,
+                    'new_category_product' => $product->new_category_product,
+                    'new_tag_product' => $product->new_tag_product,
+                    'new_discount' => $product->new_discount,
+                    'display_price' => $product->display_price,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })->toArray();
+            
+            Notification::create([
+                'user_id' => $userId,
+                'notification_name' => 'butuh approvemend untuk product staging',
+                'role' => 'Spv',
+                'read_at' => Carbon::now('Asia/Jakarta'),
+                'riwayat_check_id' => null,
+                'repair_id' => null,
+                'status' => 'done'
+            ]);
+
+            FilterStaging::where('user_id', $userId)->delete();
+            StagingApprove::insert($insertData);
+
+            logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle");
+
+            DB::commit();
+            return new ResponseResource(true, "staging approve berhasil dibuat", null);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Gagal membuat bundle: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke approve', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
