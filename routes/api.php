@@ -311,7 +311,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::resource('notifications', NotificationController::class)->except(['destroy']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(function () {
    Route::post('addStagingToSpv', [StagingProductController::class, 'addStagingToSpv']);
    Route::get('documentsApproveStaging', [StagingProductController::class, 'documentsApproveStaging']);
    Route::get('productStagingByDoc/{code_document}', [StagingProductController::class, 'productStagingByDoc'])

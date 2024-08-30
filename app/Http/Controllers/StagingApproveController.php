@@ -19,6 +19,7 @@ class StagingApproveController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
+        
         $newProducts = StagingApprove::latest()->where(function ($queryBuilder) use ($query) {
             $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -93,7 +94,7 @@ class StagingApproveController extends Controller
         DB::beginTransaction();
         try {
             if ($user) {
-                if ($user->role && ($user->role->role_name == 'Admin Kasir' ||  $user->role->role_name == 'Admin')) {
+                if ($user->role && ($user->role->role_name == 'Admin Kasir' ||  $user->role->role_name == 'Admin' ||  $user->role->role_name == 'Spv')) {
 
                     $productApproves = StagingApprove::get();
 

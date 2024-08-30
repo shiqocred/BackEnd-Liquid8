@@ -26,7 +26,6 @@ class StagingProductController extends Controller
     public function index(Request $request)
     {
         $searchQuery = $request->input('q');
-
         $newProducts = StagingProduct::latest()
             ->where(function ($queryBuilder) use ($searchQuery) {
                 $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
@@ -36,7 +35,7 @@ class StagingProductController extends Controller
             })
             ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
             ->whereNull('new_tag_product')
-            ->paginate(50);
+            ->paginate(20);
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
