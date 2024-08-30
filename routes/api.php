@@ -315,9 +315,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(funct
    Route::post('addStagingToSpv', [StagingProductController::class, 'addStagingToSpv']);
    Route::get('documentsApproveStaging', [StagingProductController::class, 'documentsApproveStaging']);
    Route::get('productStagingByDoc/{code_document}', [StagingProductController::class, 'productStagingByDoc'])
-   ->where('code_document', '.*');
+      ->where('code_document', '.*');
    Route::get('documentStagings', [StagingProductController::class, 'documentStagings']);
-   
+
    //untuk spv me approve staging ke inventory 
    Route::resource('staging_approves', StagingApproveController::class);
 
@@ -326,7 +326,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Admin Kasir'])->group(funct
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
-
 });
 
 
@@ -357,6 +356,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi'])->group
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //spv approve staging
+   Route::resource('staging_approves', StagingApproveController::class);
    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 });
 
