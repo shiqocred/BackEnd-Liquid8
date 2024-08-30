@@ -48,7 +48,7 @@ class StagingApproveController extends Controller
      */
     public function show(StagingApprove $stagingApprove)
     {
-        //
+        return new ResponseResource(true, "data new product", $stagingApprove);
     }
 
     /**
