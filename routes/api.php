@@ -400,7 +400,7 @@ Route::post('login', [AuthController::class, 'login']);
 
 //export urgent
 Route::post('exportBundles', [BundleController::class, 'exportBundles']);
-Route::post('exportStaging', [StagingProductController::class, 'export_product_staging']);
+Route::post('exportStaging', [StagingApproveController::class, 'export_product_staging']);
 Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
