@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Http\Resources\ResponseResource;
 
 class StagingApproveController extends Controller
@@ -141,5 +143,83 @@ class StagingApproveController extends Controller
             DB::rollBack();
             return new ResponseResource(false, "gagal", $e->getMessage());
         }
+    }
+
+    public function export_product_staging(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            'ID',
+            'Code Document',
+            'Old Barcode Product',
+            'New Barcode Product',
+            'New Name Product',
+            'New Quantity Product',
+            'New Price Product',
+            'Old Price Product',
+            'New Date In Product',
+            'New Status Product',
+            'New Quality',
+            'New Category Product',
+            'New Tag Product',
+            'Created At',
+            'Updated At'
+        ];
+
+        // Menuliskan headers ke sheet
+        $columnIndex = 1;
+        foreach ($headers as $header) {
+            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+            $columnIndex++;
+        }
+
+        // Variabel untuk melacak baris
+        $rowIndex = 2;
+
+        // Mengambil data dalam batch
+        StagingProduct::where('code_document', '0003/08/2024')
+            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
+                foreach ($products as $product) {
+                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
+                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
+                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
+                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
+                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
+                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
+                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
+                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
+                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
+                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
+                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
+                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
+                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
+                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
+                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
+                    $rowIndex++;
+                }
+            });
+
+        // Menyimpan file Excel
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'new_products_export.xlsx';
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        // Membuat direktori exports jika belum ada
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
+        }
+
+        $writer->save($filePath);
+
+        // Mengembalikan URL untuk mengunduh file
+        $downloadUrl = url($publicPath . '/' . $fileName);
+
+        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 }

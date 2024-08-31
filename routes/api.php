@@ -90,21 +90,21 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi,Te
    //filters product bundle
    Route::get('repair-mv/filter_product', [RepairFilterController::class, 'index']);
    Route::post('repair-mv/filter_product/{id}/add', [RepairFilterController::class, 'store']);
-   // Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
+   Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
 
    //repair
    Route::get('repair-mv', [RepairController::class, 'index']);
    Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
    Route::post('repair-mv', [RepairProductController::class, 'store']);
-   // Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
+   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
 
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
    Route::get('repair-product-mv/{repairProduct}', [RepairProductController::class, 'show']);
-   // Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
+   Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
 
    Route::put('product-repair/{repairProduct}', [RepairProductController::class, 'update']);
-   // Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
+   Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
 
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::get('new_products', [NewProductController::class, 'index']);
@@ -163,11 +163,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::get('bundle', [BundleController::class, 'index']);
    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
    Route::post('bundle', [ProductBundleController::class, 'store']);
-   // Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
-   // Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
+   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
 
    //promo
    Route::get('promo', [PromoController::class, 'index']);
@@ -306,7 +306,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::resource('historys', RiwayatCheckController::class)->except(['destroy']);
    Route::get('riwayat-document/code_document', [RiwayatCheckController::class, 'getByDocument']);
    Route::post('history/exportToExcel', [RiwayatCheckController::class, 'exportToExcel']);
-   Route::get('/testEmail', [RiwayatCheckController::class, 'sendEmail']);
 
    Route::resource('notifications', NotificationController::class)->except(['destroy']);
 });
@@ -384,12 +383,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('qcd/destroy/{id}', [FilterQcdController::class, 'destroy']);
    Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
    Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
-   Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
-   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
-   Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
-   Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
-   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
-   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
    Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
    Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
@@ -407,6 +400,7 @@ Route::post('login', [AuthController::class, 'login']);
 
 //export urgent
 Route::post('exportBundles', [BundleController::class, 'exportBundles']);
+Route::post('exportStaging', [StagingProductController::class, 'export_product_staging']);
 Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
