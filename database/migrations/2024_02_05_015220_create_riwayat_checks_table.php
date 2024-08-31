@@ -22,7 +22,7 @@ return new class extends Migration
             $table->integer('total_data_damaged');
             $table->integer('total_data_abnormal');
             $table->integer('total_discrepancy');
-            $table->enum('status_approve', ['done', 'pending', 'staging']);
+            $table->enum('status_approve', ['done', 'pending', 'staging','display']);
 
             // Tambahkan kolom untuk persentase
             $table->decimal('precentage_total_data', 5, 2)->nullable(); // Menyimpan persentase data in

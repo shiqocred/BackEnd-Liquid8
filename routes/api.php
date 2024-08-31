@@ -147,7 +147,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    //bulking
    Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
-   Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
+   // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
 
 
@@ -240,7 +240,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Admin 
    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
    //product approve
-   Route::resource('product-approves', ProductApproveController::class)->except(['destroy']);
+   Route::resource('product-approves', ProductApproveController::class);
    Route::get('productApprovesByDoc', [ProductApproveController::class, 'searchByDocument']);
    // Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
 
@@ -347,7 +347,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('exportUsers', [UserController::class, 'exportUsers']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team leader'])->group(function () {
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
    Route::get('product-approveByDoc/{code_document}', [ProductApproveController::class, 'productsApproveByDoc'])
@@ -377,7 +377,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
    Route::delete('color_tags/{color_tag}', [ColorTagController::class, 'destroy']);
    Route::delete('product_olds/{product_old}', [ProductOldController::class, 'destroy']);
-   Route::delete('product-approves/{productApprove}', [ProductApproveController::class, 'destroy']);
    Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);

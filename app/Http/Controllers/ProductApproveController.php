@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\ProductapproveResource;
+use App\Models\FilterStaging;
+use App\Models\StagingApprove;
+use App\Models\StagingProduct;
 
 class ProductApproveController extends Controller
 {
@@ -80,9 +83,10 @@ class ProductApproveController extends Controller
                 $inputData['new_barcode_product'] = $generate;
             }
             $inputData['display_price'] = $inputData['new_price_product'];
-            if ($inputData['new_price_product'] == null) { 
+            if ($inputData['new_price_product'] == null) {
                 $inputData['display_price'] = $inputData['old_price_product'];
             }
+
             $this->deleteOldProduct($inputData['old_barcode_product']);
             $newProduct = ProductApprove::create($inputData);
             DB::commit();
@@ -118,14 +122,35 @@ class ProductApproveController extends Controller
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
 
-            $oldBarcode = New_product::where('old_barcode_product', $request->input('old_barcode_product'))->first();
-            $newBarcode = New_product::where('new_barcode_product', $request->input('new_barcode_product'))->first();
+            $oldBarcode = $request->input('old_barcode_product');
+            $newBarcode = $request->input('new_barcode_product');
 
-            if ($oldBarcode) {
+            $tables = [
+                New_product::class,
+                ProductApprove::class,
+                StagingProduct::class,
+                StagingApprove::class,
+                FilterStaging::class,
+            ];
+
+            $oldBarcodeExists = false;
+            $newBarcodeExists = false;
+
+            foreach ($tables as $table) {
+                if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
+                    $oldBarcodeExists = true;
+                }
+                if ($table::where('new_barcode_product', $newBarcode)->exists()) {
+                    $newBarcodeExists = true;
+                }
+            }
+
+            if ($oldBarcodeExists) {
                 return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
             }
-            if ($newBarcode) {
-                return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
+
+            if ($newBarcodeExists) {
+                return new ProductapproveResource(false, false, "The new barcode already exists", $inputData);
             }
         }
         DB::beginTransaction();
@@ -422,11 +447,11 @@ class ProductApproveController extends Controller
     {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
-    
+
         if ($user) {
             // Memulai query builder untuk ProductApprove
             $productsQuery = ProductApprove::where('code_document', $code_document);
-    
+
             // Menambahkan kondisi pencarian jika ada query
             $productsQuery->when($query, function ($queryBuilder) use ($query) {
                 $queryBuilder->where(function ($subQuery) use ($query) {
@@ -438,16 +463,16 @@ class ProductApproveController extends Controller
                         ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
                 });
             });
-    
+
             // Mengambil semua hasil query
             $products = $productsQuery->get();
-    
+
             return new ResponseResource(true, 'products', $products);
         } else {
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
-    
+
     public function delete_all_by_codeDocument(Request $request)
     {
         $code_document = $request->input('code_document');

@@ -451,7 +451,7 @@ class NewProductController extends Controller
                 'total_data_damaged' => 0,
                 'total_data_abnormal' => 0,
                 'total_discrepancy' => 0,
-                'status_approve' => 'done',
+                'status_approve' => 'display',
     
                 // persentase
                 'precentage_total_data' => 0,
@@ -465,12 +465,12 @@ class NewProductController extends Controller
 
             Notification::create([
                 'user_id' => $user_id,
-                'notification_name' => 'bulking category',
+                'notification_name' => 'bulking category display',
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' =>  $history->id,
                 'repair_id' => null,
-                'status'=> 'staging'
+                'status'=> 'display'
             ]);
 
 
@@ -563,7 +563,7 @@ class NewProductController extends Controller
         // Variabel penampung barcode double ini adalah $responseBarcode
         $responseBarcode = collect();
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $new_product = StagingProduct::where('new_barcode_product', $barcode)->first();
+            $new_product = New_product::where('new_barcode_product', $barcode)->first();
             if ($new_product) {
                 $responseBarcode->push($barcode);
             }
@@ -592,7 +592,7 @@ class NewProductController extends Controller
                 'display_price' => $mergedData['display_price'][$index] ?? null,
             ];
 
-            StagingProduct::create($newProductData);
+            New_product::create($newProductData);
         }
 
         ExcelOld::query()->delete();

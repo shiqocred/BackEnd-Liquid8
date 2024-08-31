@@ -248,7 +248,8 @@ class NotificationController extends Controller
                 DB::commit();
                 return new ResponseResource(true, 'Transaksi berhasil diapprove', $notification);
             } else {
-                return new ResponseResource(false, "User tidak diizinkan atau role tidak valid", null);
+                $response = new ResponseResource(false, "User tidak diizinkan atau role tidak valid", null);
+                return $response->response()->setStatusCode(403);
             }
         } catch (\Exception $e) {
             DB::rollBack();

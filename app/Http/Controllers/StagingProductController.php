@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\New_product;
 use Illuminate\Support\Facades\Validator;
 
 class StagingProductController extends Controller
@@ -383,7 +384,7 @@ class StagingProductController extends Controller
                 'total_data_damaged' => 0,
                 'total_data_abnormal' => 0,
                 'total_discrepancy' => 0,
-                'status_approve' => 'done',
+                'status_approve' => 'staging',
 
                 // persentase
                 'precentage_total_data' => 0,
