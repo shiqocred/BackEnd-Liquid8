@@ -317,24 +317,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('sale-document/add-product', [SaleDocumentController::class, 'addProductSaleInDocument']);
    Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
    Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
-});
 
-//all
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
-   Route::post('/check-price', [NewProductController::class, 'checkPrice']);
-   Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
-
-   //export data by menu
-   Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
-   Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
-   Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
-   Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
-   Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
-   Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
-   Route::post('exportMigrateDetail/{id}', [MigrateDocumentController::class, 'exportMigrateDetail']);
-   Route::post('exportBuyers', [BuyerController::class, 'exportBuyers']);
-   Route::post('exportUsers', [UserController::class, 'exportUsers']);
-
+   
     // Tombol delete 
     Route::delete('migrates/{migrate}', [MigrateController::class, 'destroy']);
     Route::delete('migrate-documents/{migrateDocument}', [MigrateDocumentController::class, 'destroy']);
@@ -354,6 +338,24 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
     Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
     Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
     Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
+});
+
+//all
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+   Route::post('/check-price', [NewProductController::class, 'checkPrice']);
+   Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
+
+   //export data by menu
+   Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
+   Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
+   Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
+   Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
+   Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
+   Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
+   Route::post('exportMigrateDetail/{id}', [MigrateDocumentController::class, 'exportMigrateDetail']);
+   Route::post('exportBuyers', [BuyerController::class, 'exportBuyers']);
+   Route::post('exportUsers', [UserController::class, 'exportUsers']);
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team leader'])->group(function () {
@@ -405,7 +407,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('checkDuplicates', [ProductApproveController::class, 'checkDuplicates']);
+Route::get('checkDuplicates/{code_document}', [ProductApproveController::class, 'checkDuplicates'])->where('code_document', '.*');
+;
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 

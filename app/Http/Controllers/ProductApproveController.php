@@ -85,7 +85,7 @@ class ProductApproveController extends Controller
             // Set display price
             $inputData['display_price'] = $inputData['new_price_product'] ?? $inputData['old_price_product'];
 
-            $this->deleteOldProduct($inputData['old_barcode_product']);
+            $this->deleteOldProduct($inputData['code_document'],$inputData['old_barcode_product']);
 
             $this->updateDocumentStatus($inputData['code_document']);
 
@@ -175,7 +175,7 @@ class ProductApproveController extends Controller
                 return new ProductapproveResource(false, false, "Produk dengan barcode lama tersebut sudah ada.", $inputData);
             }
 
-            $this->deleteOldProduct($request->input('old_barcode_product'));
+            $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
             $newProduct = ProductApprove::create($inputData);
 
@@ -248,9 +248,10 @@ class ProductApproveController extends Controller
         }
     }
 
-    private function deleteOldProduct($old_barcode_product)
+    private function deleteOldProduct($code_document,$old_barcode_product)
     {
-        $affectedRows = DB::table('product_olds')->where('old_barcode_product', $old_barcode_product)->delete();
+        $affectedRows = DB::table('product_olds')->where('code_document', $code_document)
+        ->where('old_barcode_product', $old_barcode_product)->delete();
 
         if ($affectedRows > 0) {
             return true;
@@ -518,16 +519,20 @@ class ProductApproveController extends Controller
     public function checkDuplicates($code_document)
     {
         $duplicates = ProductApprove::select('old_barcode_product', 'new_name_product', DB::raw('COUNT(*) as count'))
-            ->groupBy('old_barcode_product', 'new_name_product')->where('code_document', $code_document)
+            ->where('code_document', $code_document) // Moved the where clause before groupBy
+            ->groupBy('old_barcode_product', 'new_name_product')
             ->havingRaw('COUNT(*) > 1')
             ->get();
     
+        // Fetch additional data (e.g., price, code_document)
         $duplicates->transform(function ($item) {
             $product = ProductApprove::where('old_barcode_product', $item->old_barcode_product)
                 ->where('new_name_product', $item->new_name_product)
+                ->where('code_document', $item->code_document) // Ensure the same code_document
                 ->first();
     
-            // Add price to the item
+            // Add additional fields to the item
+            $item->price = $product->price; // Assuming you also want to add price
             $item->code_document = $product->code_document;
     
             return $item;
@@ -535,6 +540,9 @@ class ProductApproveController extends Controller
     
         return new ResponseResource(true, "duplicates barcode product approve", $duplicates);
     }
+    
+    
+    
     
     
 }
