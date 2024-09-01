@@ -36,14 +36,12 @@ class GenerateController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
-        ], [
-            'file.unique' => 'Nama file sudah ada di database.',
         ]);
 
         $file = $request->file('file');
         $filePath = $file->getPathname();
         $fileName = $file->getClientOriginalName();
-        $file->storeAs('public/ekspedisis', $file->hashName());
+        $file->storeAs('public/ekspedisis', $file->getClientOriginalName());
 
         DB::beginTransaction();
         try {
