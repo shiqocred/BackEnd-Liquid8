@@ -515,13 +515,26 @@ class ProductApproveController extends Controller
         }
     }
 
-    public function checkDuplicates()
+    public function checkDuplicates($code_document)
     {
-        $duplicates = ProductApprove::select('old_barcode_product')
-            ->groupBy('old_barcode_product')
+        $duplicates = ProductApprove::select('old_barcode_product', 'new_name_product', DB::raw('COUNT(*) as count'))
+            ->groupBy('old_barcode_product', 'new_name_product')->where('code_document', $code_document)
             ->havingRaw('COUNT(*) > 1')
             ->get();
-
+    
+        $duplicates->transform(function ($item) {
+            $product = ProductApprove::where('old_barcode_product', $item->old_barcode_product)
+                ->where('new_name_product', $item->new_name_product)
+                ->first();
+    
+            // Add price to the item
+            $item->code_document = $product->code_document;
+    
+            return $item;
+        });
+    
         return new ResponseResource(true, "duplicates barcode product approve", $duplicates);
     }
+    
+    
 }

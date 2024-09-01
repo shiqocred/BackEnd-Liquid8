@@ -407,7 +407,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('checkDuplicates', [ProductApproveController::class, 'checkDuplicates']);
+Route::get('checkDuplicates/{code_document}', [ProductApproveController::class, 'checkDuplicates'])->where('code_document', '.*');
+;
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
