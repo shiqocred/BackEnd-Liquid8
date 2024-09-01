@@ -42,14 +42,26 @@ class RepairProductController extends Controller
         set_time_limit(300);
         ini_set('memory_limit', '512M');
         $userId = auth()->id();
-
+    
         DB::beginTransaction();
         try {
-            $product_filters = RepairFilter::where('user_id', $userId)->get();
-            if ($product_filters->isEmpty()) {
-                return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
+            $productFilters = RepairFilter::where('user_id', $userId)->get();
+    
+            if ($productFilters->isEmpty()) {
+                return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $productFilters);
             }
-
+    
+            $validator = Validator::make($request->all(), [
+                'repair_name' => 'required|unique:repairs,repair_name',
+                'barcode' => 'required|unique:repairs,barcode',
+            ]);
+            
+            if ($validator->fails()) {
+                // Return a response with the validation errors and a 422 status code
+                $response = new ResponseResource(false, $validator->errors()->first(), null);
+                return $response->response()->setStatusCode(422);
+            }
+            
             $repair = Repair::create([
                 'user_id' => $userId,
                 'repair_name' => $request->repair_name,
@@ -59,8 +71,8 @@ class RepairProductController extends Controller
                 'product_status' => 'not sale',
                 'barcode' => $request->barcode,
             ]);
-
-            $insertData = $product_filters->map(function ($product) use ($repair) {
+    
+            $insertData = $productFilters->map(function ($product) use ($repair) {
                 return [
                     'repair_id' => $repair->id,
                     'code_document' => $product->code_document,
@@ -77,32 +89,33 @@ class RepairProductController extends Controller
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
-                    'created_at' => now(),  
+                    'created_at' => now(),
                     'updated_at' => now(),
                 ];
             })->toArray();
-
+    
             RepairProduct::insert($insertData);
-
+    
             RepairFilter::where('user_id', $userId)->delete();
-
-            $keterangan = Notification::create([
+    
+            $notification = Notification::create([
                 'user_id' => $userId,
                 'notification_name' => 'Butuh Approvement untuk Repair',
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => null,
-                'repair_id' => $repair->id
+                'repair_id' => $repair->id,
             ]);
-
+    
             DB::commit();
-            return new ResponseResource(true, "repair berhasil dibuat", [$repair, $keterangan]);
+            return new ResponseResource(true, "Repair berhasil dibuat", [$repair, $notification]);
         } catch (\Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             Log::error("Gagal membuat repair: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke repair', 'error' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan produk ke repair', 'error' => $e->getMessage()], 500);
         }
     }
+    
 
     /**
      * Display the specified resource.

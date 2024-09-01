@@ -77,18 +77,20 @@ class ProductApproveController extends Controller
             $document = Document::where('code_document',  $inputData['code_document'])->first();
             if ($document->custom_barcode) {
                 $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
-                $inputData['new_barcode_product'] = $generate;
             } else {
                 $generate = generateNewBarcode($inputData['new_category_product']);
-                $inputData['new_barcode_product'] = $generate;
             }
-            $inputData['display_price'] = $inputData['new_price_product'];
-            if ($inputData['new_price_product'] == null) {
-                $inputData['display_price'] = $inputData['old_price_product'];
-            }
+            $inputData['new_barcode_product'] = $generate;
+
+            // Set display price
+            $inputData['display_price'] = $inputData['new_price_product'] ?? $inputData['old_price_product'];
 
             $this->deleteOldProduct($inputData['old_barcode_product']);
+
+            $this->updateDocumentStatus($inputData['code_document']);
+
             $newProduct = ProductApprove::create($inputData);
+
             DB::commit();
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
         } else {
@@ -155,21 +157,29 @@ class ProductApproveController extends Controller
         }
         DB::beginTransaction();
         try {
-            if (!isset($newProduct)) {
-                $document = Document::where('code_document',  $request->input('code_document'))->first();
-                if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
-                    $inputData['new_barcode_product'] = $generate;
-                } else {
-                    $generate = generateNewBarcode($inputData['new_category_product']);
-                    $inputData['new_barcode_product'] = $generate;
-                }
-                $this->deleteOldProduct($request->input('old_barcode_product'));
-                $newProduct = ProductApprove::create($inputData);
+
+            $document = Document::where('code_document',  $request->input('code_document'))->first();
+            if ($document->custom_barcode) {
+                $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
+            } else {
+                $generate = generateNewBarcode($inputData['new_category_product']);
+            }
+            $inputData['new_barcode_product'] = $generate;
+
+            $existingProduct = ProductApprove::where('old_barcode_product', $inputData['old_barcode_product'])
+                ->where('new_category_product', $inputData['new_category_product'])
+                ->exists();
+
+            if ($existingProduct) {
+                DB::rollback();
+                return new ProductapproveResource(false, false, "Produk dengan barcode lama tersebut sudah ada.", $inputData);
             }
 
-            $this->updateDocumentStatus($request->input('code_document'));
+            $this->deleteOldProduct($request->input('old_barcode_product'));
 
+            $newProduct = ProductApprove::create($inputData);
+
+            $this->updateDocumentStatus($request->input('code_document'));
 
             DB::commit();
 
@@ -503,5 +513,15 @@ class ProductApproveController extends Controller
             DB::rollBack();
             return new ResponseResource(false, "transaksi salah: ", $e->getMessage());
         }
+    }
+
+    public function checkDuplicates()
+    {
+        $duplicates = ProductApprove::select('old_barcode_product')
+            ->groupBy('old_barcode_product')
+            ->havingRaw('COUNT(*) > 1')
+            ->get();
+
+        return $duplicates;
     }
 }

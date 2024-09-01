@@ -44,6 +44,7 @@ use App\Http\Controllers\StagingApproveController;
 use App\Http\Controllers\StagingProductController;
 use App\Http\Controllers\UserController;
 use App\Models\FilterStaging;
+use App\Models\ProductApprove;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Route;
@@ -78,33 +79,33 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Reparasi,Te
    //qcd
    Route::get('qcd/filter_product', [FilterQcdController::class, 'index']);
    Route::post('qcd/filter_product/{id}/add', [FilterQcdController::class, 'store']);
-   // Route::delete('qcd/destroy/{id}', [FilterQcdController::class, 'destroy']);
+   Route::delete('qcd/destroy/{id}', [FilterQcdController::class, 'destroy']);
    Route::get('bundle/qcd', [BundleQcdController::class, 'index']);
    Route::get('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'show']);
    Route::post('bundle/qcd', [ProductQcdController::class, 'store']);
-   // Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
+   Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
    // Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
 
    // =========================================== repair moving product ==================================================
 
-   //filters product bundle
+   //filters product repair
    Route::get('repair-mv/filter_product', [RepairFilterController::class, 'index']);
    Route::post('repair-mv/filter_product/{id}/add', [RepairFilterController::class, 'store']);
-   // Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
+   Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
 
    //repair
    Route::get('repair-mv', [RepairController::class, 'index']);
    Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
    Route::post('repair-mv', [RepairProductController::class, 'store']);
-   // Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
+   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
 
    Route::get('repair-mv/product', [RepairProductController::class, 'index']);
    Route::get('repair-product-mv/{repairProduct}', [RepairProductController::class, 'show']);
-   // Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
+   Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
 
    Route::put('product-repair/{repairProduct}', [RepairProductController::class, 'update']);
-   // Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
+   Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
 
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::get('new_products', [NewProductController::class, 'index']);
@@ -163,18 +164,18 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::get('bundle', [BundleController::class, 'index']);
    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
    Route::post('bundle', [ProductBundleController::class, 'store']);
-   // Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
-   // Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
+   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
 
    //promo
    Route::get('promo', [PromoController::class, 'index']);
    Route::get('promo/{id}', [PromoController::class, 'show']);
    Route::post('promo', [PromoController::class, 'store']);
    Route::put('promo/{promo}', [PromoController::class, 'update']);
-   // Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
+   Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
 
    //palet filter
    Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
@@ -186,11 +187,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::get('palet', [PaletController::class, 'index']);
    Route::get('palet/{palet}', [PaletController::class, 'show']);
    Route::post('palet', [PaletProductController::class, 'store']);
-   // Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
+   Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
    Route::put('palet/{palet}', [PaletController::class, 'update']);
 
    Route::get('product-palet/{new_product}/{palet}/add', [PaletProductController::class, 'addProductPalet']);
-   // Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
+   Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
 
    //categories discount
    Route::resource('categories', CategoryController::class)->except(['destroy']);
@@ -380,18 +381,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
    Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']);
-   Route::delete('qcd/destroy/{id}', [FilterQcdController::class, 'destroy']);
-   Route::delete('bundle/qcd/{bundleQcd}', [BundleQcdController::class, 'destroy']);
    Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
-   Route::delete('repair-mv/filter_product/destroy/{id}', [RepairFilterController::class, 'destroy']);
-   Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
-   Route::delete('repair-mv/destroy/{id}', [RepairProductController::class, 'destroy']);
-   Route::delete('product-repair/{repairProduct}', [RepairProductController::class, 'destroy']);
-   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
-   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
-   Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
-   Route::delete('palet/{palet}', [PaletController::class, 'destroy']);
-   Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
    Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
    Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
@@ -406,11 +396,15 @@ Route::post('login', [AuthController::class, 'login']);
 
 //export urgent
 Route::post('exportBundles', [BundleController::class, 'exportBundles']);
+Route::post('exportStaging', [StagingApproveController::class, 'export_product_staging']);
 Route::post('exportNp', [NewProductController::class, 'exportNewProducts']);
 
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+
+Route::get('countBast', [StagingApproveController::class, 'countBast']);
+Route::get('checkDuplicates', [ProductApproveController::class, 'checkDuplicates']);
 
 // route untuk cek koneksi
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
@@ -419,7 +413,6 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 Route::post('generateExcel_injectDisplay', [GenerateController::class, 'uploadExcel']);
 Route::post('filter-cleanExcel-injectDisplay', [GenerateController::class, 'filterAndCleanExcelOld']);
 Route::post('injectDisplay', [GenerateController::class, 'insertCleanedData']);
-Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
@@ -453,3 +446,4 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
 });
+  

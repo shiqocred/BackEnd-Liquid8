@@ -15,6 +15,7 @@ use App\Http\Resources\ResponseResource;
 use App\Models\Notification;
 use App\Models\Product_old;
 use App\Models\ProductApprove;
+use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -82,7 +83,6 @@ class RiwayatCheckController extends Controller
                     $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
                 }
             }
-
 
             //product_old
             $getPriceProductOld = Product_old::where('code_document', $request['code_document'])->get();
@@ -166,6 +166,13 @@ class RiwayatCheckController extends Controller
         $getProduct = New_product::where('code_document', $history->code_document)->get();
         $productCategoryCount = $getProduct->whereNotNull('new_category_product')->count();
         $productColorCount = $getProduct->whereNotNull('new_tag_product')->count();
+        $stagingProducts = StagingProduct::where('code_document', $history->code_document)->get();
+        $totalOldPricestaging = $stagingProducts->sum(function ($product) {
+            return $product->old_price_product;
+        });
+
+        $totalPercentageStaging = ($totalOldPricestaging / $history->total_price) * 100;
+        $totalPercentageStaging = round($totalPercentageStaging, 2);
 
         $getProductDamaged = New_product::where('code_document', $history->code_document)
             ->where('new_quality->damaged', '!=', null)
@@ -249,6 +256,7 @@ class RiwayatCheckController extends Controller
             'user_id' => $history->user_id,
             'code_document' => $history->code_document,
             'base_document' => $history->base_document,
+            'stagingProducts' => count($stagingProducts),
             'total_product_category' => $productCategoryCount,
             'total_product_color' => $productColorCount,
             'total_data' => $history->total_data,
@@ -282,6 +290,11 @@ class RiwayatCheckController extends Controller
                 'total_old_price' => $totalOldPriceAbnormal,
                 'price_percentage' => $totalPercentageAbnormal,
             ],
+            'staging' => [
+                'products' => $stagingProducts,
+                'total_old_price' => $totalOldPricestaging,
+                'price_percentage' => $totalOldPricestaging,
+            ],
             'priceDiscrepancy' =>  $totalPriceDiscrepancy,
             'price_percentage' => $totalPercentageDiscrepancy,
 
@@ -289,7 +302,6 @@ class RiwayatCheckController extends Controller
 
         return $response->response();
     }
-
 
     public function getByDocument(Request $request)
     {
