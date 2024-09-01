@@ -522,6 +522,6 @@ class ProductApproveController extends Controller
             ->havingRaw('COUNT(*) > 1')
             ->get();
 
-        return $duplicates;
+        return new ResponseResource(true, "duplicates barcode product approve", $duplicates);
     }
 }
