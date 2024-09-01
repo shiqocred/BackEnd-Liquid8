@@ -144,7 +144,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
-
+ 
    //bulking
    Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
