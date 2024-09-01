@@ -563,7 +563,7 @@ class NewProductController extends Controller
         // Variabel penampung barcode double ini adalah $responseBarcode
         $responseBarcode = collect();
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $new_product = New_product::where('new_barcode_product', $barcode)->first();
+            $new_product = ProductApprove::where('new_barcode_product', $barcode)->first();
             if ($new_product) {
                 $responseBarcode->push($barcode);
             }
@@ -592,7 +592,7 @@ class NewProductController extends Controller
                 'display_price' => $mergedData['display_price'][$index] ?? null,
             ];
 
-            New_product::create($newProductData);
+            ProductApprove::create($newProductData);
         }
 
         ExcelOld::query()->delete();
@@ -910,10 +910,6 @@ class NewProductController extends Controller
                 $inputData['new_price_product'] = $colortag['fixed_price_color'];
                 $inputData['new_tag_product'] = $colortag['name_color'];
             }
-
-
-
-
 
             $product->update($inputData);
 

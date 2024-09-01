@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Http\Resources\ResponseResource;
+use App\Models\Product_old;
+use App\Models\ProductApprove;
 
 class StagingApproveController extends Controller
 {
@@ -21,7 +23,7 @@ class StagingApproveController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        
+
         $newProducts = StagingApprove::latest()->where(function ($queryBuilder) use ($query) {
             $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
                 ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -222,4 +224,26 @@ class StagingApproveController extends Controller
 
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
+
+
+    public function countBast()
+    {
+        $lolos = New_product::where('code_document', '0003/08/2024')
+            ->pluck('old_barcode_product');
+
+        $stagings = StagingProduct::where('code_document', '0003/08/2024')
+            ->pluck('old_barcode_product');
+
+        $product_olds = Product_old::where('code_document', '0004/08/2024')
+            ->pluck('old_barcode_product');
+
+        $combined = $lolos->merge($stagings);
+
+        $unique = $product_olds->diff($combined);
+
+        return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
+    }
+
+   
+    
 }
