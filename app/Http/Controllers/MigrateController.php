@@ -92,11 +92,16 @@ class MigrateController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Migrate $migrate)
+    public function show(Migrate $migrate = null)
     {
-        $resource = new ResponseResource(true, "Data migrate", $migrate);
+        if (is_null($migrate)) {
+            $resource = new ResponseResource(true, "Data migrate", []);
+        } else {
+            $resource = new ResponseResource(true, "Data migrate", $migrate);
+        }
         return $resource->response();
     }
+    
 
     /**
      * Update the specified resource in storage.
