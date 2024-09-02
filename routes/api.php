@@ -46,6 +46,7 @@ use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductScanController;
 use App\Http\Controllers\SpecialTransactionController;
+use App\Models\StagingApprove;
 
 Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
@@ -407,7 +408,7 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('checkDuplicates/{code_document}', [ProductApproveController::class, 'checkDuplicates'])->where('code_document', '.*');
+Route::get('checkDuplicates', [StagingApproveController::class, 'checkDuplicates']);
 ;
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);

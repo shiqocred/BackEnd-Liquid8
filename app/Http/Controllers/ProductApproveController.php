@@ -364,7 +364,7 @@ class ProductApproveController extends Controller
         // Hapus data dari ProductApprove setelah data baru tersimpan
         $productApprove->delete();
 
-        return new ResponseResource(true, "Data berhasil dihapus dan ditambahkan ke New_product", $newProduct);
+        return new ResponseResource(true, "Data berhasil dihapus dan di kembalikan ke list product scan", $newProduct);
     }
 
     public function deleteAll()
@@ -516,30 +516,7 @@ class ProductApproveController extends Controller
         }
     }
 
-    public function checkDuplicates($code_document)
-    {
-        $duplicates = ProductApprove::select('old_barcode_product', 'new_name_product', DB::raw('COUNT(*) as count'))
-            ->where('code_document', $code_document) // Moved the where clause before groupBy
-            ->groupBy('old_barcode_product', 'new_name_product')
-            ->havingRaw('COUNT(*) > 1')
-            ->get();
-    
-        // Fetch additional data (e.g., price, code_document)
-        $duplicates->transform(function ($item) {
-            $product = ProductApprove::where('old_barcode_product', $item->old_barcode_product)
-                ->where('new_name_product', $item->new_name_product)
-                ->where('code_document', $item->code_document) // Ensure the same code_document
-                ->first();
-    
-            // Add additional fields to the item
-            $item->old_barcode_product = $product->old_barcode_product;
-    
-            return $item;
-        });
-    
-        return new ResponseResource(true, "duplicates barcode product approve", $duplicates);
-    }
-    
+   
     
     
     
