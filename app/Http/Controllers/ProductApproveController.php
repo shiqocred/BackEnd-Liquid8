@@ -166,14 +166,14 @@ class ProductApproveController extends Controller
             }
             $inputData['new_barcode_product'] = $generate;
 
-            $existingProduct = ProductApprove::where('old_barcode_product', $inputData['old_barcode_product'])
-                ->where('new_category_product', $inputData['new_category_product'])
-                ->exists();
+            // $existingProduct = ProductApprove::where('old_barcode_product', $inputData['old_barcode_product'])
+            //     ->where('new_category_product', $inputData['new_category_product'])
+            //     ->exists();
 
-            if ($existingProduct) {
-                DB::rollback();
-                return new ProductapproveResource(false, false, "Produk dengan barcode lama tersebut sudah ada.", $inputData);
-            }
+            // if ($existingProduct) {
+            //     DB::rollback();
+            //     return new ProductapproveResource(false, false, "Produk dengan barcode lama tersebut sudah ada.", $inputData);
+            // }
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
