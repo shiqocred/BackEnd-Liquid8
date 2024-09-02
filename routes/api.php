@@ -111,6 +111,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
 
 //manifest inbound, histroy index : Admin,Spv,Team leader,Crew
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
+   
    //product old
    Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
    // Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
@@ -164,16 +165,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 //product by category,color : Admin,Spv,Team leader,Admin Kasir
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir'])->group(function () {
-
-   //colortags dan category
-   Route::get('categories', [CategoryController::class, 'index']);
-
-   Route::get('color_tags', [ColorTagController::class, 'index']);
-   Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
-   Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
-
-
-   Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
 
    //slow moving product
    //list product r
@@ -310,6 +301,14 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
 
 
 //admin
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi'])->group(function () {
+      //colortags dan category
+      Route::get('categories', [CategoryController::class, 'index']);
+      Route::get('color_tags', [ColorTagController::class, 'index']);
+      Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
+      Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
+      Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
+});
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
