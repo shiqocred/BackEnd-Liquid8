@@ -244,6 +244,32 @@ class StagingApproveController extends Controller
         return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
     }
 
+    public function checkDuplicates()
+    {
+        $stagingApproves = StagingProduct::select('new_barcode_product', 'new_name_product')->get();
+    
+        $duplicates = $stagingApproves->filter(function ($item) {
+            return New_product::where('new_barcode_product', $item->new_barcode_product)
+                ->where('new_name_product', $item->new_name_product)
+                ->exists(); 
+        });
+    
+        // $duplicates->transform(function ($item) {
+        //     $product = New_product::where('new_barcode_product', $item->new_barcode_product)
+        //         ->where('new_name_product', $item->new_name_product)
+        //         ->first();
+    
+        //     return $item;
+        // });
+    
+        // Step 4: Return the response
+        return new ResponseResource(true, "duplicates barcode product approve", $duplicates);
+    }
+    
+    
+    
+    
+
    
     
 }
