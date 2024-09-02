@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\ProductScan;
+use App\Models\ScanProduct;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -421,7 +424,7 @@ class NewProductController extends Controller
             }
 
             // Create a new document with the rowCount
-           $docs= Document::create([
+            $docs = Document::create([
                 'code_document' => $this->generateDocumentCode(),
                 'base_document' => $fileName,
                 'total_column_document' => count($header),
@@ -440,8 +443,8 @@ class NewProductController extends Controller
                 DB::rollback();
                 return response()->json($mergeResponseArray, 422);
             }
-            
-           $history= RiwayatCheck::create([
+
+            $history = RiwayatCheck::create([
                 'user_id' => $user_id,
                 'code_document' => $docs->code_document,
                 'base_document' => $fileName,
@@ -452,7 +455,7 @@ class NewProductController extends Controller
                 'total_data_abnormal' => 0,
                 'total_discrepancy' => 0,
                 'status_approve' => 'display',
-    
+
                 // persentase
                 'precentage_total_data' => 0,
                 'percentage_in' => 0,
@@ -470,7 +473,7 @@ class NewProductController extends Controller
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' =>  $history->id,
                 'repair_id' => null,
-                'status'=> 'display'
+                'status' => 'display'
             ]);
 
 
@@ -1577,56 +1580,6 @@ class NewProductController extends Controller
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 
-    public function addProductThirdParty(Request $request)
-    {
-        // Validasi Input
-        $validator = Validator::make($request->all(), [
-            'product_name' => 'required',
-            'product_price' => 'required|numeric',
-        ]);
-    
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-    
-        DB::beginTransaction();
-    
-        try {
-            // Mengambil kategori berdasarkan ID
-            $category = Category::findOrFail($request->input('category_id'));
-    
-            // Menghitung harga setelah diskon
-            $discountPercentage = $category->discount_category;
-            $productPrice = $request->input('product_price');
-            $discountedPrice = $productPrice - ($productPrice * $discountPercentage / 100);
-    
-            // Persiapan data input untuk disimpan
-            $inputData = [
-                'old_price_product' => $productPrice,
-                'new_name_product' => $request->input('product_name'),
-                'new_quantity_product' => $request['qty'],
-                'new_price_product' => $discountedPrice,
-                'new_discount' => 0,
-                'display_price' => $discountedPrice,
-                'new_status_product' => 'display',
-                'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => json_encode('lolos'),
-                'new_category_product' => $category->name_category,
-                'new_barcode_product' => generateNewBarcode($category->name_category),
-                'new_tag_product' => null,
-            ];
-    
-            // Membuat produk baru
-            $newProduct = New_product::create($inputData);
-    
-            DB::commit();
-    
-            return new ResponseResource(true, "berhasil menambah data", $newProduct);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
 
     public function addProductById($id)
     {
@@ -1642,5 +1595,4 @@ class NewProductController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-    
 }
