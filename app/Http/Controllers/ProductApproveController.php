@@ -532,8 +532,7 @@ class ProductApproveController extends Controller
                 ->first();
     
             // Add additional fields to the item
-            $item->price = $product->price; // Assuming you also want to add price
-            $item->code_document = $product->code_document;
+            $item->old_barcode_product = $product->old_barcode_product;
     
             return $item;
         });

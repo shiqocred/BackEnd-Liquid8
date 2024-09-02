@@ -86,7 +86,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
 
    //product approve 
-   Route::resource('product-approves', ProductApproveController::class)->except(['destroy']);
+   Route::resource('product-approves', ProductApproveController::class);
 
    Route::get('productApprovesByDoc', [ProductApproveController::class, 'searchByDocument']);
    // Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
