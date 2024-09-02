@@ -44,6 +44,7 @@ use App\Http\Controllers\StagingProductController;
 use App\Http\Controllers\CheckConnectionController;
 use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
+use App\Http\Controllers\ProductScanController;
 use App\Http\Controllers\SpecialTransactionController;
 
 Route::fallback(function () {
@@ -383,7 +384,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    //================================================product-collab======================================================
 
    //inbound-collab
-   Route::post('addProduct', [NewProductController::class, 'addProductThirdParty']);
+   Route::resource('product_scans', ProductScanController::class);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 
    //get

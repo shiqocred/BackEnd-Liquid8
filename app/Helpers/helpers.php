@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 use App\Models\SaleDocument;
 use App\Models\ProductApprove;
 use App\Models\MigrateDocument;
+use App\Models\StagingApprove;
+use App\Models\StagingProduct;
 use App\Models\UserLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -117,3 +119,31 @@ if (! function_exists('logUserAction')) {
         $request->attributes->set('log_created', true);
     }
 }
+
+function barcodeScan(){
+    return 'SC-' . now()->format('YmdHis');
+}
+
+
+function newBarcodeScan()
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
+
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
+        $newBarcode = "LSC" . $randomString;
+
+        $exists = StagingApprove::where('new_barcode_product', $newBarcode)->exists() ||
+                  StagingProduct::where('new_barcode_product', $newBarcode)->exists() ||
+                  New_product::where('new_barcode_product', $newBarcode)->exists();
+                  
+    } while ($exists);
+
+    return $newBarcode;
+}
+
