@@ -492,13 +492,28 @@ class StagingProductController extends Controller
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
 
-        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
-        // Variabel penampung barcode double ini adalah $responseBarcode
         $responseBarcode = collect();
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $new_product = StagingProduct::where('new_barcode_product', $barcode)->first();
-            if ($new_product) {
-                $responseBarcode->push($barcode);
+            $sources = [];
+
+            if (StagingProduct::where('new_barcode_product', $barcode)->exists()) {
+                $sources[] = 'Product-Staging';
+            }
+
+            if (New_product::where('new_barcode_product', $barcode)->exists()) {
+                $sources[] = 'Product-Inventory';
+            }
+
+            if (StagingApprove::where('new_barcode_product', $barcode)->exists()) {
+                $sources[] = 'Staging-Approve';
+            }
+
+            if (FilterStaging::where('new_barcode_product', $barcode)->exists()) {
+                $sources[] = 'Filter-Staging';
+            }
+
+            if (!empty($sources)) {
+                $responseBarcode->push($barcode . ' - ' . implode(', ', $sources));
             }
         }
 
@@ -506,7 +521,6 @@ class StagingProductController extends Controller
             ExcelOld::query()->delete();
             return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
         }
-
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
             $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty

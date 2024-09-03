@@ -98,15 +98,22 @@ class StagingApproveController extends Controller
         DB::beginTransaction();
         try {
             if ($user) {
-                if ($user->role && ($user->role->role_name == 'Admin Kasir' ||  $user->role->role_name == 'Admin' ||  $user->role->role_name == 'Spv')) {
-
+                if ($user->role && ($user->role->role_name == 'Admin Kasir' || $user->role->role_name == 'Admin' || $user->role->role_name == 'Spv')) {
+    
                     $productApproves = StagingApprove::get();
-
+    
+                    foreach ($productApproves as $productApprove) {
+                        $duplicate = New_product::where('new_barcode_product', $productApprove->new_barcode_product)->exists();
+                        if ($duplicate) {
+                            return new ResponseResource(false, "barcoede product di inventory sudah ada : " . $productApprove->new_barcode_product, null);
+                        }
+                    }
+    
                     $chunkedProductApproves = $productApproves->chunk(100);
-
+    
                     foreach ($chunkedProductApproves as $chunk) {
                         $dataToInsert = [];
-
+    
                         foreach ($chunk as $productApprove) {
                             $dataToInsert[] = [
                                 'code_document' => $productApprove->code_document,
@@ -126,26 +133,29 @@ class StagingApproveController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ];
-
+    
+                            // Hapus data dari StagingApprove
                             $productApprove->delete();
                         }
-
+    
+                        // Masukkan data ke New_product
                         New_product::insert($dataToInsert);
                     }
-
+    
                     DB::commit();
                     return new ResponseResource(true, 'Transaksi berhasil diapprove', null);
                 } else {
-                    return new ResponseResource(false, "notification tidak di temukan", null);
+                    return new ResponseResource(false, "notification tidak ditemukan", null);
                 }
             } else {
                 return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return new ResponseResource(false, "gagal", $e->getMessage());
+            return new ResponseResource(false, "Gagal", $e->getMessage());
         }
     }
+    
 
     public function export_product_staging(Request $request)
     {
