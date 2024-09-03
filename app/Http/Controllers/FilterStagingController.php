@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RepairFilter;
 use Illuminate\Http\Request;
 use App\Models\FilterStaging;
+use App\Models\New_product;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\StagingProduct;
@@ -54,6 +55,12 @@ class FilterStagingController extends Controller
         try {
             $product = StagingProduct::findOrFail($id);
             $product->user_id = $userId;
+
+            $duplicate = New_product::where('new_barcode_product', $product->new_barcode_product)->exists();
+            if ($duplicate) {
+                return new ResponseResource(false, "barcoede product di inventory sudah ada : " . $product->new_barcode_product, null);
+            }
+
             $productFilter = FilterStaging::create($product->toArray());
             $product->delete();
             DB::commit();
