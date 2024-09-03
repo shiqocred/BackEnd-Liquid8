@@ -251,19 +251,17 @@ class StagingApproveController extends Controller
         $duplicates = $stagingApproves->filter(function ($item) {
             return New_product::where('new_barcode_product', $item->new_barcode_product)
                 ->where('new_name_product', $item->new_name_product)
-                ->exists(); 
+                ->exists(); // Check if a matching record exists
         });
     
-        // $duplicates->transform(function ($item) {
-        //     $product = New_product::where('new_barcode_product', $item->new_barcode_product)
-        //         ->where('new_name_product', $item->new_name_product)
-        //         ->first();
-    
-        //     return $item;
-        // });
+        $duplicates->each(function ($item) {
+            New_product::where('new_barcode_product', $item->new_barcode_product)
+                ->where('new_name_product', $item->new_name_product)
+                ->delete(); 
+        });
     
         // Step 4: Return the response
-        return new ResponseResource(true, "duplicates barcode product approve", $duplicates);
+        return new ResponseResource(true, "duplicates barcode product approve and deleted", $duplicates);
     }
     
     
