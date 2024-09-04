@@ -117,7 +117,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    //product old
    Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
    // Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
-   Route::get('product_olds-search', [ProductOldController::class, 'searchByDocument']);
    Route::get('search_barcode_product', [ProductOldController::class, 'searchByBarcode']);
 
    //send approve
@@ -161,7 +160,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 });
 
 //end staging =========================================== Staging ==========================================================
-
 
 //=========================================== Inventory ==========================================================
 //product by category,color : Admin,Spv,Team leader,Admin Kasir
@@ -237,7 +235,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
 });
 
-
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
    //palet filter
    Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
@@ -255,7 +252,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    Route::get('product-palet/{new_product}/{palet}/add', [PaletProductController::class, 'addProductPalet']);
    Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
 });
-
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //colortags dan category
@@ -300,7 +296,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
 
 });
 //end outbound
-
 
 //admin
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi'])->group(function () {
@@ -386,6 +381,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
 
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
+   Route::get('product_scan_search ', [ProductScanController::class, 'product_scan_search']);
+   Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 
    //get
