@@ -27,7 +27,8 @@ class AuthController extends Controller
         return response()->json(['message' => 'Unauthorized'], 401);
     }
 
-    public function register(Request $request){
+    public function register(Request $request)
+    {
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:2',
             'username' => 'required|min:2|unique:users,username',
@@ -41,7 +42,9 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(["errors" => $validator->errors()], 422);
+            $errors = $validator->errors()->all();
+            return (new ResponseResource(false, $errors[0], null))
+                ->response()->setStatusCode(422);
         }
 
         $user = User::create([
