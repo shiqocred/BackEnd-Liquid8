@@ -22,17 +22,16 @@ class ProductScanController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
+    
+        $productScanQuery = ProductScan::with('user')->latest();
+    
         if ($query) {
-            $productScan = ProductScan::latest()
-                ->where('product_name', 'LIKE', '%' . $query . '%')
-                ->paginate(20);
-        } else {
-            $productScan = ProductScan::latest()->paginate(20);
+            $productScanQuery->where('product_name', 'LIKE', '%' . $query . '%');
         }
-
-        return new ResponseResource(true, "list products scan", $productScan);
+        $productScans = $productScanQuery->paginate(20);
+        return new ResponseResource(true, "list products scan", $productScans);
     }
-
+    
 
     /**
      * Show the form for creating a new resource.
