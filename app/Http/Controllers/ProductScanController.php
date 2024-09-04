@@ -142,11 +142,10 @@ class ProductScanController extends Controller
                 $response = ['product' => $product];
     
                 if ($product->product_price <= 99999) { 
-                    $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->old_price_product)
-                        ->where('max_price_color', '>=', $product->old_price_product)
+                    $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->product_price)
+                        ->where('max_price_color', '>=', $product->product_price)
                         ->first();
                 }
-    
                 return new ResponseResource(true, "Data ditemukan", $response);
             } else {
                 return (new ResponseResource(false, "Produk tidak ada", null))
