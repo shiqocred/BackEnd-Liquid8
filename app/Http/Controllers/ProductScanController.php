@@ -212,8 +212,13 @@ class ProductScanController extends Controller
             if ($newBarcodeExists) {
                 return new ResponseResource(false, "The new barcode already exists", $inputData);
             }
-            $this->deleteProductScan($request->input('product_name'));
-            $newProduct = StagingProduct::create($inputData);
+
+            $this->deleteProductScan($request->input('new_name_product'));
+            if ($inputData['new_tag_product'] !== null) {
+                $newProduct = New_product::create($inputData);
+            }else{
+                $newProduct = StagingProduct::create($inputData);
+            }
             DB::commit();
 
             return new ResponseResource(true, "Produk Berhasil ditambah ke staging", $newProduct);
@@ -280,12 +285,14 @@ class ProductScanController extends Controller
 
     private function deleteProductScan($product_name)
     {
-        $affectedRows = DB::table('product_scans')->where('product_name', $product_name)->delete();
-
-        if ($affectedRows > 0) {
-            return true;
+        $product = DB::table('product_scans')->where('product_name', $product_name)->latest()->first();
+        
+        if ($product) {
+            $affectedRows = DB::table('product_scans')->where('id', $product->id)->delete();
+            return $affectedRows > 0;
         } else {
-            return new ResponseResource(false, "Produk Scan Tidak ada.", null);
+            return new ResponseResource(false,'data tidak ditemukan',null); 
         }
     }
+    
 }
