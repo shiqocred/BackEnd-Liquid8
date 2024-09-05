@@ -230,6 +230,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('bundle', [ProductBundleController::class, 'store']);
    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
    Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
+   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
+
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
