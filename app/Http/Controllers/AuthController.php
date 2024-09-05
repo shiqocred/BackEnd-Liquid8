@@ -12,10 +12,12 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $loginField = filter_var($request->input('email_or_username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $credentials = [
+            $loginField => $request->input('email_or_username'),
+            'password' => $request->input('password')
+        ];
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
