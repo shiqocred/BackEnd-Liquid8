@@ -162,7 +162,7 @@ class ProductScanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             // 'code_document' => 'required',
-            'old_barcode_product' => 'required',
+            'old_barcode_product' => 'nullable',
             'new_barcode_product' => 'unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
@@ -252,15 +252,20 @@ class ProductScanController extends Controller
         ]);
 
         $inputData['code_document'] = null;
-        $generate = generateNewBarcode($inputData['new_category_product']);
-        $inputData['new_barcode_product'] = $generate;
-        $inputData['old_barcode_product'] = $generate;
         $inputData['new_status_product'] = "display";
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
         $inputData['new_quality'] = json_encode($qualityData);
         $inputData['new_discount'] = 0;
         $inputData['display_price'] = $inputData['new_price_product'];
 
+        if($inputData['new_category_product'] != null){
+            $generate = generateNewBarcode($inputData['new_category_product']);
+            $inputData['new_barcode_product'] = $generate;
+            $inputData['old_barcode_product'] = $generate;
+        }else {
+            $inputData['new_barcode_product'] = newBarcodeScan();
+            $inputData['old_barcode_product'] = $inputData['new_barcode_product'];
+        }
         if ($status !== 'lolos') {
             $inputData['new_category_product'] = null;
             $inputData['new_price_product'] = null;
