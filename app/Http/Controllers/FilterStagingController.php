@@ -58,7 +58,7 @@ class FilterStagingController extends Controller
 
             $duplicate = New_product::where('new_barcode_product', $product->new_barcode_product)->exists();
             if ($duplicate) {
-                return new ResponseResource(false, "barcoede product di inventory sudah ada : " . $product->new_barcode_product, null);
+                return new ResponseResource(false, "barcode product di inventory sudah ada : " . $product->new_barcode_product, null);
             }
 
             $productFilter = FilterStaging::create($product->toArray());

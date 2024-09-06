@@ -38,6 +38,7 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductStatusController;
 use App\Http\Controllers\RepairProductController;
 use App\Http\Controllers\ArchiveStorageController;
+use App\Http\Controllers\BklController;
 use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\StagingApproveController;
 use App\Http\Controllers\StagingProductController;
@@ -177,7 +178,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::put('promo/{promo}', [PromoController::class, 'update']);
    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
 
-   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
+   Route::resource('new_products', NewProductController::class)->except(['destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Reparasi'])->group(function () {
@@ -400,15 +401,15 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+Route::resource('bkls', BklController::class);
 
 // route untuk cek koneksi
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
 
-
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
 Route::get('checkDuplicates', [StagingApproveController::class, 'checkDuplicates']);
-;
+
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
