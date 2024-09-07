@@ -16,7 +16,7 @@ class BklController extends Controller
     public function index(Request $request)
     {
         $searchQuery = $request->input('q');
-        $newProducts = BKL::latest()
+        $newProducts = Bkl::latest()
             ->where(function ($queryBuilder) use ($searchQuery) {
                 $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
