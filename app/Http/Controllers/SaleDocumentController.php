@@ -432,14 +432,14 @@ class SaleDocumentController extends Controller
                 $categoryReport[] = [
                     'category' => $categoryName,
                     'total_quantity' => $group->sum('product_qty_sale'),
-                    'total_price' => $totalPricePerCategory,
-                    'before_discount' => $PriceBeforeDiscount,
+                    'total_price' => ceil($totalPricePerCategory),
+                    'before_discount' => ceil($PriceBeforeDiscount),
                     'total_discount' => $category ? $category->discount_category : null,
                 ];
             }
         }
 
-        return ["category_list" => $categoryReport, 'total_harga' => $totalPrice, 'total_price_before_discount' => $oldPrice];
+        return ["category_list" => $categoryReport, 'total_harga' => ceil($totalPrice), 'total_price_before_discount' => ceil($oldPrice)];
     }
 
 
