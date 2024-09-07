@@ -182,10 +182,10 @@ class GenerateController extends Controller
                     ? (float)$mergedData['old_price_product'][$index]
                     : 0.0;
 
-                // Validasi panjang old_name_product
-                if ($nama !== null && strlen($nama) > 512) {
-                    return response()->json(['error' => "Nama produk terlalu panjang: {$nama}"], 422);
-                }
+                // // Validasi panjang old_name_product
+                // if ($nama !== null && strlen($nama) > 512) {
+                //     return response()->json(['error' => "Nama produk terlalu panjang: {$nama}"], 422);
+                // }
 
                 $dataToInsert[] = [
                     'code_document' => $request['code_document'],
