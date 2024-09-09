@@ -91,8 +91,9 @@ class GenerateController extends Controller
     private function processRowsFromSheet($sheet, $header)
     {
         $rowCount = 0;
-        $dataToInsert = [];
+        $chunkSize = 500;
 
+        $dataToInsert = [];
         foreach ($sheet->getRowIterator(2) as $row) {
             $rowData = [];
             $cellIterator = $row->getCellIterator();
@@ -104,15 +105,28 @@ class GenerateController extends Controller
 
             $rowData = array_slice(array_pad($rowData, count($header), ''), 0, count($header));
             $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
+
+            if (count($dataToInsert) >= $chunkSize) {
+                $this->insertChunk($dataToInsert);
+                $rowCount += count($dataToInsert);
+                $dataToInsert = []; 
+            }
         }
 
-        $chunkSize = 500;
-        foreach (array_chunk($dataToInsert, $chunkSize) as $chunk) {
-            Generate::insert($chunk);
-            $rowCount += count($chunk);
+        // Insert the remaining data
+        if (!empty($dataToInsert)) {
+            $this->insertChunk($dataToInsert);
+            $rowCount += count($dataToInsert);
         }
 
         return $rowCount;
+    }
+
+    private function insertChunk($data)
+    {
+        DB::transaction(function () use ($data) {
+            Generate::insert($data);
+        });
     }
 
     private function createDocumentEntry($fileName, $columnCount, $rowCount)
@@ -134,7 +148,6 @@ class GenerateController extends Controller
 
         return $code_document;
     }
-
     public function mapAndMergeHeaders(Request $request)
     {
         set_time_limit(300);

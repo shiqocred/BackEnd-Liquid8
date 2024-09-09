@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id(); 
             $table->string('code_document');
             $table->string('old_barcode_product');
-            $table->string('old_name_product',512);
+            $table->string('old_name_product',1024);
             $table->integer('old_quantity_product');
             $table->decimal('old_price_product', 12, 2); 
     

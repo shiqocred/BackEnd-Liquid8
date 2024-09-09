@@ -47,6 +47,7 @@ use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductScanController;
 use App\Http\Controllers\SpecialTransactionController;
+use App\Http\Middleware\CheckApiKey;
 use App\Models\StagingApprove;
 
 Route::fallback(function () {
@@ -391,7 +392,24 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::get('list-categories', [CategoryController::class, 'index']);
 });
 
+Route::middleware('check.api_key')->group(function () {
+   //=========================================== Api For Bulky ==========================================================
+   Route::resource('product-brands', ProductBrandController::class);
+   Route::resource('product-conditions', ProductConditionController::class);
+   Route::resource('product-statuses', ProductStatusController::class);
+   Route::resource('pallet-brands', PalletBrandController::class)->except(['update']);
+   Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update'])->name('pallet-brands.update');
+   Route::resource('pallet-images', PaletImageController::class)->except(['update', 'show']);
+   Route::put('pallet-images/{pallet_id}', [PaletImageController::class, 'update'])->name('pallet-images.update');
+   Route::get('pallet-images/{pallet_id}', [PaletImageController::class, 'show'])->name('pallet-images.show');
+   Route::get('palets', [PaletController::class, 'index']);
+   Route::get('palets-detail/{palet}', [PaletController::class, 'show']);
+   Route::put('palets/{palet}', [PaletController::class, 'update']);
+   Route::post('addPalet', [PaletController::class, 'store']);
+   Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
+});
 //non auth 
+// Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 
 //login
 Route::post('login', [AuthController::class, 'login']);

@@ -106,6 +106,7 @@ function newBarcodeCustom($code_document, $init_barcode)
     return $newBarcode;
 }
 
+
 if (! function_exists('logUserAction')) {
     function logUserAction($request, $user, $halaman, $pesan)
     {
@@ -146,4 +147,5 @@ function newBarcodeScan()
 
     return $newBarcode;
 }
+
 
