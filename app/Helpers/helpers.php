@@ -86,25 +86,53 @@ function generateNewBarcode($category)
 
     return "L{$categoryInitial}{$currentMonth}{$randomString}";
 }
+//old
+// function newBarcodeCustom($code_document, $init_barcode)
+// {
+//     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+//     $newBarcode = '';
 
-function newBarcodeCustom($code_document, $init_barcode)
+//     do {
+//         $randomString = '';
+//         for ($i = 0; $i < 5; $i++) {
+//             $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+//         }
+
+//         $newBarcode = $init_barcode . $randomString;
+
+//         $exists = ProductApprove::where('new_barcode_product', $newBarcode)->exists();
+//     } while ($exists);
+
+//     return $newBarcode;
+// }
+
+
+function newBarcodeCustom($init_barcode)
 {
-    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    $newBarcode = '';
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    $maxRetry = 5;
 
-    do {
-        $randomString = '';
-        for ($i = 0; $i < 5; $i++) {
-            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+    return DB::transaction(function () use ($init_barcode, $characters, $maxRetry) {
+        for ($i = 0; $i < $maxRetry; $i++) {
+            $randomString = '';
+            for ($j = 0; $j < 5; $j++) {
+                $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+            }
+            $newBarcode = $init_barcode . "L" . $randomString;
+            $exists = DB::table('product_approves')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists();
+
+            if (!$exists) {
+                return $newBarcode;
+            }
         }
 
-        $newBarcode = $init_barcode . $randomString;
-
-        $exists = ProductApprove::where('new_barcode_product', $newBarcode)->exists();
-    } while ($exists);
-
-    return $newBarcode;
+        throw new \Exception("terlalu banyak generate, tolong refresh");
+    });
 }
+
 
 
 if (! function_exists('logUserAction')) {
@@ -121,7 +149,8 @@ if (! function_exists('logUserAction')) {
     }
 }
 
-function barcodeScan(){
+function barcodeScan()
+{
     return 'SC-' . now()->format('YmdHis');
 }
 
@@ -140,12 +169,9 @@ function newBarcodeScan()
         $newBarcode = "LSC" . $randomString;
 
         $exists = StagingApprove::where('new_barcode_product', $newBarcode)->exists() ||
-                  StagingProduct::where('new_barcode_product', $newBarcode)->exists() ||
-                  New_product::where('new_barcode_product', $newBarcode)->exists();
-                  
+            StagingProduct::where('new_barcode_product', $newBarcode)->exists() ||
+            New_product::where('new_barcode_product', $newBarcode)->exists();
     } while ($exists);
 
     return $newBarcode;
 }
-
-
