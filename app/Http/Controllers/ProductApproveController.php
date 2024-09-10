@@ -475,8 +475,7 @@ class ProductApproveController extends Controller
                 });
             });
 
-            // Mengambil semua hasil query
-            $products = $productsQuery->get();
+            $products = $productsQuery->paginate(50);
 
             return new ResponseResource(true, 'products', $products);
         } else {
