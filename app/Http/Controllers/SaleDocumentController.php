@@ -407,7 +407,7 @@ class SaleDocumentController extends Controller
                     ->where('new_status_product', 'sale')
                     ->where('new_barcode_product', $sale->product_barcode_sale)
                     ->first();
-                return $product ? $product->new_category_product : 'Unknown';
+                return $product ? strtoupper($product->new_category_product) : 'Unknown';
             });
             foreach ($groupedSales as $categoryName => $group) {
                 $totalPricePerCategory = $group->sum(function ($sale) {
