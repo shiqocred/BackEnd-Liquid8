@@ -424,10 +424,14 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('checkDuplicates', [StagingApproveController::class, 'checkDuplicates']);
+Route::get('findSimilarStagingProducts', [StagingApproveController::class, 'findSimilarStagingProducts']);
 
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
+
+//excel genting
+Route::get('searchdata_to_excel', [StagingApproveController::class, 'searchdata_to_excel']);
+
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
