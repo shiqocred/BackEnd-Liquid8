@@ -75,17 +75,31 @@ class ProductApproveController extends Controller
             DB::beginTransaction();
             $inputData = $request->input('data.resource');
             $document = Document::where('code_document',  $inputData['code_document'])->first();
-            if ($document->custom_barcode) {
-                $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
-            } else {
-                $generate = generateNewBarcode($inputData['new_category_product']);
+            $generate = null;
+
+            $maxRetry = 5;
+            for ($i = 0; $i < $maxRetry; $i++) {
+                if ($document->custom_barcode) {
+                    $generate = newBarcodeCustom($document->custom_barcode);
+                } else {
+                    $generate = generateNewBarcode($inputData['new_category_product']);
+                }
+
+                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
+                    break;
+                }
+
+                if ($i === $maxRetry - 1) {
+                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
+                }
             }
+
             $inputData['new_barcode_product'] = $generate;
 
             // Set display price
             $inputData['display_price'] = $inputData['new_price_product'] ?? $inputData['old_price_product'];
 
-            $this->deleteOldProduct($inputData['code_document'],$inputData['old_barcode_product']);
+            $this->deleteOldProduct($inputData['code_document'], $inputData['old_barcode_product']);
 
             $this->updateDocumentStatus($inputData['code_document']);
 
@@ -159,11 +173,23 @@ class ProductApproveController extends Controller
         try {
 
             $document = Document::where('code_document',  $request->input('code_document'))->first();
-            if ($document->custom_barcode) {
-                $generate = newBarcodeCustom($document->code_document, $document->custom_barcode);
-            } else {
-                $generate = generateNewBarcode($inputData['new_category_product']);
+            $maxRetry = 5;
+            for ($i = 0; $i < $maxRetry; $i++) {
+                if ($document->custom_barcode) {
+                    $generate = newBarcodeCustom($document->custom_barcode);
+                } else {
+                    $generate = generateNewBarcode($inputData['new_category_product']);
+                }
+
+                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
+                    break;
+                }
+
+                if ($i === $maxRetry - 1) {
+                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
+                }
             }
+
             $inputData['new_barcode_product'] = $generate;
 
             // $existingProduct = ProductApprove::where('old_barcode_product', $inputData['old_barcode_product'])
@@ -248,10 +274,10 @@ class ProductApproveController extends Controller
         }
     }
 
-    private function deleteOldProduct($code_document,$old_barcode_product)
+    private function deleteOldProduct($code_document, $old_barcode_product)
     {
         $affectedRows = DB::table('product_olds')->where('code_document', $code_document)
-        ->where('old_barcode_product', $old_barcode_product)->delete();
+            ->where('old_barcode_product', $old_barcode_product)->delete();
 
         if ($affectedRows > 0) {
             return true;
@@ -514,10 +540,4 @@ class ProductApproveController extends Controller
             return new ResponseResource(false, "transaksi salah: ", $e->getMessage());
         }
     }
-
-   
-    
-    
-    
-    
 }
