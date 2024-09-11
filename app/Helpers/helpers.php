@@ -107,18 +107,18 @@ function generateNewBarcode($category)
 // }
 
 
-function newBarcodeCustom($init_barcode)
+function newBarcodeCustom($init_barcode, $userId)
 {
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
     $maxRetry = 5;
 
-    return DB::transaction(function () use ($init_barcode, $characters, $maxRetry) {
+    return DB::transaction(function () use ($init_barcode, $characters, $maxRetry, $userId) {
         for ($i = 0; $i < $maxRetry; $i++) {
             $randomString = '';
             for ($j = 0; $j < 5; $j++) {
                 $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
             }
-            $newBarcode = $init_barcode . "L" . $randomString;
+            $newBarcode = $init_barcode . $userId . $randomString;
             $exists = DB::table('product_approves')
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()

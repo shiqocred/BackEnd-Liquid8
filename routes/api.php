@@ -407,6 +407,10 @@ Route::middleware('check.api_key')->group(function () {
    Route::put('palets/{palet}', [PaletController::class, 'update']);
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
+
+    //get
+    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
+    Route::get('list-categories', [CategoryController::class, 'index']);
 });
 //non auth 
 // Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
