@@ -524,6 +524,7 @@ class StagingProductController extends Controller
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
             $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
+
             $newProductData = [
                 'code_document' => $code_document,
                 'old_barcode_product' => $barcode,
@@ -531,12 +532,13 @@ class StagingProductController extends Controller
                 'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
                 'new_category_product' => $mergedData['new_category_product'][$index] ?? null,
                 'new_quantity_product' => $quantity,
-                'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
-                'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
+                'new_price_product' => isset($mergedData['new_price_product'][$index]) && $mergedData['new_price_product'][$index] !== '' ? str_replace(',', '.', $mergedData['new_price_product'][$index]) : 0.00,
+                'old_price_product' => isset($mergedData['old_price_product'][$index]) && $mergedData['old_price_product'][$index] !== '' ? str_replace(',', '.', $mergedData['old_price_product'][$index]) : 0.00,
                 'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
                 'new_quality' => $mergedData['new_quality'][$index],
                 'new_discount' => 0,
-                'display_price' => $mergedData['display_price'][$index] ?? null,
+                'display_price' => isset($mergedData['display_price'][$index]) && $mergedData['display_price'][$index] !== '' ? str_replace(',', '.', $mergedData['display_price'][$index]) : 0.00,
+
             ];
 
             StagingProduct::create($newProductData);
