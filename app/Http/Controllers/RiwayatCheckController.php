@@ -7,16 +7,16 @@ use App\Models\User;
 use App\Mail\TestEmail;
 use App\Models\Document;
 use App\Models\New_product;
+use App\Models\Product_old;
+use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
-use App\Mail\AdminNotification;
-use Illuminate\Support\Facades\DB;
-use App\Http\Resources\ResponseResource;
-use App\Models\Notification;
-use App\Models\Product_old;
 use App\Models\ProductApprove;
 use App\Models\StagingProduct;
+use App\Mail\AdminNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -312,94 +312,119 @@ class RiwayatCheckController extends Controller
     public function exportToExcel(Request $request)
     {
         $code_document = $request->input('code_document');
-    
+
         // Mengambil history secara efisien
         $getHistory = RiwayatCheck::where('code_document', $code_document)->first();
-    
-        // Menggunakan cursor untuk mengambil Product_old satu per satu
+
+        // Menggunakan chunk untuk mengambil Product_old dalam batch
         $totalOldPriceDiscrepancy = 0;
         $getProductDiscrepancy = [];
         Product_old::where('code_document', $code_document)
-            ->cursor()
-            ->each(function ($product) use (&$getProductDiscrepancy, &$totalOldPriceDiscrepancy) {
-                $getProductDiscrepancy[] = $product;
-                $totalOldPriceDiscrepancy += $product->old_price_product;
+            ->chunk(2000, function ($products) use (&$getProductDiscrepancy, &$totalOldPriceDiscrepancy) {
+                foreach ($products as $product) {
+                    $getProductDiscrepancy[] = $product;
+                    $totalOldPriceDiscrepancy += $product->old_price_product;
+                }
             });
-    
+
         $price_persentage_dp = ($totalOldPriceDiscrepancy / $getHistory->total_price) * 100;
         $price_persentage_dp = round($price_persentage_dp, 2);
-    
-        // Menggunakan cursor untuk pengambilan data "damaged"
+
+        // Menggunakan chunk untuk pengambilan data "damaged"
         $getProductDamaged = [];
         $totalOldPriceDamaged = 0;
-        foreach (New_product::where('code_document', $code_document)
+        New_product::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
-            ->cursor() as $product) {
-            $product->damaged_value = json_decode($product->new_quality)->damaged ?? null;
-            $getProductDamaged[] = $product;
-            $totalOldPriceDamaged += $product->old_price_product;
-        }
-    
+            ->chunk(2000, function ($products) use (&$getProductDamaged, &$totalOldPriceDamaged) {
+                foreach ($products as $product) {
+                    $product->damaged_value = json_decode($product->new_quality)->damaged ?? null;
+                    $getProductDamaged[] = $product;
+                    $totalOldPriceDamaged += $product->old_price_product;
+                }
+            });
+
         $price_persentage_damaged = ($totalOldPriceDamaged / $getHistory->total_price) * 100;
         $price_persentage_damaged = round($price_persentage_damaged, 2);
-    
-        // Menggunakan cursor untuk pengambilan data "lolos"
+
+        // Menggunakan chunk untuk pengambilan data "lolos"
         $getProductLolos = [];
         $totalOldPriceLolos = 0;
-        foreach (New_product::where('code_document', $code_document)
+        New_product::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
-            ->cursor() as $product) {
-            $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
-            $getProductLolos[] = $product;
-            $totalOldPriceLolos += $product->old_price_product;
-        }
-    
+            ->chunk(2000, function ($products) use (&$getProductLolos, &$totalOldPriceLolos) {
+                foreach ($products as $product) {
+                    $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
+                    $getProductLolos[] = $product;
+                    $totalOldPriceLolos += $product->old_price_product;
+                }
+            });
+
         $price_persentage_lolos = ($totalOldPriceLolos / $getHistory->total_price) * 100;
         $price_persentage_lolos = round($price_persentage_lolos, 2);
-    
-        // Menggunakan cursor untuk pengambilan data "abnormal"
+
+        // Menggunakan chunk untuk pengambilan data "abnormal"
         $getProductAbnormal = [];
         $totalOldPriceAbnormal = 0;
-        foreach (New_product::where('code_document', $code_document)
+        New_product::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
-            ->cursor() as $product) {
-            $product->abnormal_value = json_decode($product->new_quality)->abnormal ?? null;
-            $getProductAbnormal[] = $product;
-            $totalOldPriceAbnormal += $product->old_price_product;
-        }
-    
+            ->chunk(2000, function ($products) use (&$getProductAbnormal, &$totalOldPriceAbnormal) {
+                foreach ($products as $product) {
+                    $product->abnormal_value = json_decode($product->new_quality)->abnormal ?? null;
+                    $getProductAbnormal[] = $product;
+                    $totalOldPriceAbnormal += $product->old_price_product;
+                }
+            });
+
         $price_persentage_abnormal = ($totalOldPriceAbnormal / $getHistory->total_price) * 100;
         $price_persentage_abnormal = round($price_persentage_abnormal, 2);
-    
-        // Menggunakan cursor untuk pengambilan data "staging"
+
+        // Menggunakan chunk untuk pengambilan data "staging"
         $getProductStagings = [];
         $totalOldPriceStaging = 0;
-        foreach (StagingProduct::where('code_document', $code_document)->cursor() as $product) {
-            $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
-            $getProductStagings[] = $product;
-            $totalOldPriceStaging += $product->old_price_product;
-        }
-    
+        StagingProduct::where('code_document', $code_document)
+            ->chunk(2000, function ($products) use (&$getProductStagings, &$totalOldPriceStaging) {
+                foreach ($products as $product) {
+                    $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
+                    $getProductStagings[] = $product;
+                    $totalOldPriceStaging += $product->old_price_product;
+                }
+            });
+
         $price_persentage_staging = ($totalOldPriceStaging / $getHistory->total_price) * 100;
         $price_persentage_staging = round($price_persentage_staging, 2);
-    
+
         // Validasi jika data kosong
         $checkHistory = RiwayatCheck::where('code_document', $code_document)->get();
         if ($checkHistory->isEmpty()) {
             return response()->json(['status' => false, 'message' => "Data kosong, tidak bisa di export"], 422);
         }
-    
-        // Proses pembuatan file Excel sama seperti sebelumnya
+
+        // Proses pembuatan file Excel
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
+
         // Set data ke lembar Excel
         $headers = [
-            'ID', 'User ID', 'Code Document', 'Base Document', 'Total Data', 'Total Data In', 'Total Data Lolos', 
-            'Total Data Damaged', 'Total Data Abnormal', 'Total Discrepancy', 'Status Approve', 'Percentage Total Data',
-            'Percentage In', 'Percentage Lolos', 'Percentage Damaged', 'Percentage Abnormal', 'Percentage Discrepancy', 'Total Price'
+            'ID',
+            'User ID',
+            'Code Document',
+            'Base Document',
+            'Total Data',
+            'Total Data In',
+            'Total Data Lolos',
+            'Total Data Damaged',
+            'Total Data Abnormal',
+            'Total Discrepancy',
+            'Status Approve',
+            'Percentage Total Data',
+            'Percentage In',
+            'Percentage Lolos',
+            'Percentage Damaged',
+            'Percentage Abnormal',
+            'Percentage Discrepancy',
+            'Total Price'
         ];
-        
+
         $currentRow = 1;
         foreach ($checkHistory as $riwayatCheck) {
             foreach ($headers as $index => $header) {
@@ -413,104 +438,39 @@ class RiwayatCheckController extends Controller
             }
             $currentRow++;
         }
-    
+
         // Buat file Excel untuk setiap kategori produk
         $this->createExcelSheet($spreadsheet, 'Damaged', $getProductDamaged, $totalOldPriceDamaged, $price_persentage_damaged);
         $this->createExcelSheet($spreadsheet, 'Lolos', $getProductLolos, $totalOldPriceLolos, $price_persentage_lolos);
         $this->createExcelSheet($spreadsheet, 'Abnormal', $getProductAbnormal, $totalOldPriceAbnormal, $price_persentage_abnormal);
         $this->createExcelSheet($spreadsheet, 'Staging', $getProductStagings, $totalOldPriceStaging, $price_persentage_staging);
-        $this->createExcelSheet($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);
-    
+        $this->createExcelSheetDiscrepancy($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);
+
         $firstItem = $checkHistory->first();
-    
+
         $writer = new Xlsx($spreadsheet);
         $fileName = $firstItem->base_document;
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
-    
+
         if (!file_exists(public_path($publicPath))) {
             mkdir(public_path($publicPath), 0777, true);
         }
-    
+
         $writer->save($filePath);
-    
+
         $downloadUrl = url($publicPath . '/' . $fileName);
-    
+
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
     }
-    
+
     private function createExcelSheet($spreadsheet, $title, $data, $totalOldPrice, $pricePercentage)
     {
         $sheet = $spreadsheet->createSheet();
         $sheet->setTitle($title);
-        $currentRow = 1;
-    
-        // Panggil setSheetDataProductAD atau setSheetDataProductLolos atau lainnya tergantung jenis produk
-        if ($title === 'Damaged') {
-            $this->setSheetDataProductAD($sheet, $data, $currentRow, $totalOldPrice, $pricePercentage);
-        } elseif ($title === 'Abnormal') {
-            $this->setSheetDataProductLolos($sheet, $data, $currentRow, $totalOldPrice, $pricePercentage);
-        } elseif ($title === 'Staging') {
-            $this->setSheetDataProductLolos($sheet, $data, $currentRow, $totalOldPrice, $pricePercentage);
-        } elseif ($title === 'Lolos') {
-            $this->setSheetDataProductLolos($sheet, $data, $currentRow, $totalOldPrice, $pricePercentage);
-        } elseif ($title === 'Discrepancy') {
-            $this->setSheetDataProductDiscrepancy($sheet, $data, $currentRow, $totalOldPrice, $pricePercentage);
-        }
-    
-        $sheet->setCellValueByColumnAndRow(1, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(2, $currentRow, $totalOldPrice);
-        $sheet->setCellValueByColumnAndRow(3, $currentRow, 'Price Percentage');
-        $sheet->setCellValueByColumnAndRow(4, $currentRow, $pricePercentage);
-    }
-    
 
-
-    private function setSheetHeaderProduct($sheet, $headers, &$currentRow)
-    {
-        foreach ($headers as $index => $header) {
-            $sheet->setCellValueByColumnAndRow($index + 1, $currentRow, $header);
-        }
-    }
-
-    private function setSheetDataProductAD($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
-    {
-        // Set header
-        $this->setSheetHeaderProduct($sheet, [
-            'Code Document',
-            'Old Barcode',
-            'New Barcode',
-            'Name Product',
-            'Keterangan',
-            'Qty',
-            'Unit Price',
-            'Price Persentage'
-        ], $currentRow);
-
-        foreach ($data as $item) {
-            // Increment currentRow for the data
-            $currentRow++;
-
-            $sheet->setCellValueByColumnAndRow(1, $currentRow, $item->code_document);
-            $sheet->setCellValueByColumnAndRow(2, $currentRow, $item->old_barcode_product);
-            $sheet->setCellValueByColumnAndRow(3, $currentRow, $item->new_barcode_product);
-            $sheet->setCellValueByColumnAndRow(4, $currentRow, $item->new_name_product);
-            $sheet->setCellValueByColumnAndRow(5, $currentRow, $item->damaged_value);
-            $sheet->setCellValueByColumnAndRow(6, $currentRow, $item->new_quantity_product);
-            $sheet->setCellValueByColumnAndRow(7, $currentRow, $item->old_price_product);
-        }
-        $sheet->setCellValueByColumnAndRow(8, $currentRow, $price_persentage);
-
-        // Menambahkan total harga produk rusak di akhir lembar kerja
-        $currentRow++;
-        $sheet->setCellValueByColumnAndRow(10, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(11, $currentRow, $totalOldPrice);
-    }
-
-    private function setSheetDataProductLolos($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
-    {
-        // Set header
-        $this->setSheetHeaderProduct($sheet, [
+        // Menetapkan header
+        $headers = [
             'Code Document',
             'Old Barcode',
             'New Barcode',
@@ -522,62 +482,95 @@ class RiwayatCheckController extends Controller
             'Diskon',
             'After Diskon',
             'Price Percentage'
-        ], $currentRow);
+        ];
 
+        // Menulis header langsung ke lembar kerja
+        $sheet->fromArray($headers, null, 'A1');
+
+        // Memproses data dan menyiapkan array untuk dimasukkan ke Excel
+        $dataArray = [];
         foreach ($data as $item) {
-            // Pindah ke baris berikutnya untuk setiap item
-            $currentRow++;
-            // $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
+            $diskon = 0;
             if ($item->old_price_product != 0) {
                 $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
-            } else {
-                $diskon = 0;
             }
 
-            $sheet->setCellValueByColumnAndRow(1, $currentRow, $item->code_document);
-            $sheet->setCellValueByColumnAndRow(2, $currentRow, $item->old_barcode_product);
-            $sheet->setCellValueByColumnAndRow(3, $currentRow, $item->new_barcode_product);
-            $sheet->setCellValueByColumnAndRow(4, $currentRow, $item->new_name_product);
-            $sheet->setCellValueByColumnAndRow(5, $currentRow, $item->lolos_value); // Menggunakan lolos_value sebagai keterangan
-            $sheet->setCellValueByColumnAndRow(6, $currentRow, $item->new_quantity_product);
-            $sheet->setCellValueByColumnAndRow(7, $currentRow, $item->old_price_product);
-            $sheet->setCellValueByColumnAndRow(8, $currentRow, $item->new_category_product); // Kolom kategori
-            $sheet->setCellValueByColumnAndRow(9, $currentRow, $diskon);
-            $sheet->setCellValueByColumnAndRow(10, $currentRow, $item->new_price_product); // Harga setelah diskon
+            $keterangan = $item->lolos_value ?? $item->damaged_value ?? $item->abnormal_value ?? 'null';
 
+            // Menambahkan data ke array
+            $dataArray[] = [
+                $item->code_document ?? 'null',
+                $item->old_barcode_product ?? 'null',
+                $item->new_barcode_product ?? 'null',
+                $item->new_name_product ?? 'null',
+                $keterangan,
+                $item->new_quantity_product ?? 'null',
+                $item->old_price_product ?? 'null',
+                $item->new_category_product ?? 'null',
+                $diskon ?? 'null',
+                $item->new_price_product ?? 'null',
+                $pricePercentage
+            ];
         }
-        $sheet->setCellValueByColumnAndRow(11, $currentRow, $price_persentage);
 
-        $currentRow++;
-        $sheet->setCellValueByColumnAndRow(13, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(14, $currentRow, $totalOldPrice);
+        // Menulis data dalam bentuk array ke lembar Excel mulai dari baris ke-2
+        $sheet->fromArray($dataArray, null, 'A2');
+
+        // Menambahkan total dan persentase di bagian akhir
+        $totalRow = count($dataArray) + 2; // Baris setelah data
+        $sheet->setCellValue("A{$totalRow}", 'Total Price');
+        $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
+        $sheet->setCellValue("C{$totalRow}", 'Price Percentage');
+        $sheet->setCellValue("D{$totalRow}", $pricePercentage);
     }
 
-    private function setSheetDataProductDiscrepancy($sheet, $data, &$currentRow, $totalOldPrice, $price_persentage)
+    private function createExcelSheetDiscrepancy($spreadsheet, $title, $data, $totalOldPrice, $pricePercentage)
     {
-        // Set header
-        $this->setSheetHeaderProduct($sheet, [
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle($title);
+
+        // Menetapkan header
+        $headers = [
             'Code Document',
             'Old Barcode',
             'Name Product',
             'Qty',
             'Unit Price',
-            'Price Percentage'
-        ], $currentRow);
+        ];
 
+        // Menulis header langsung ke lembar kerja
+        $sheet->fromArray($headers, null, 'A1');
+
+        // Memproses data dan menyiapkan array untuk dimasukkan ke Excel
+        $dataArray = [];
         foreach ($data as $item) {
-            $currentRow++;
-            $sheet->setCellValueByColumnAndRow(1, $currentRow, $item->code_document);
-            $sheet->setCellValueByColumnAndRow(2, $currentRow, $item->old_barcode_product);
-            $sheet->setCellValueByColumnAndRow(3, $currentRow, $item->old_name_product);
-            $sheet->setCellValueByColumnAndRow(4, $currentRow, $item->old_quantity_product);
-            $sheet->setCellValueByColumnAndRow(5, $currentRow, $item->old_price_product);
-        }
-        $sheet->setCellValueByColumnAndRow(6, $currentRow, $price_persentage);
+            $diskon = 0;
+            if ($item->old_price_product != 0) {
+                $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
+            }
 
-        // Menambahkan total harga produk discrepancy di akhir lembar kerja
-        $currentRow++;
-        $sheet->setCellValueByColumnAndRow(8, $currentRow, 'Total Price');
-        $sheet->setCellValueByColumnAndRow(9, $currentRow, $totalOldPrice);
+            $keterangan = $item->lolos_value ?? $item->damaged_value ?? $item->abnormal_value ?? 'null';
+
+            // Menambahkan data ke array
+            $dataArray[] = [
+                $item->code_document ?? 'null',
+                $item->old_barcode_product ?? 'null',
+                $item->old_name_product ?? 'null',
+                $item->old_quantity_product ?? 'null',
+                $item->old_price_product ?? 'null',
+ 
+            ];
+        }
+
+        // Menulis data dalam bentuk array ke lembar Excel mulai dari baris ke-2
+        $sheet->fromArray($dataArray, null, 'A2');
+
+        // Menambahkan total dan persentase di bagian akhir
+        $totalRow = count($dataArray) + 2; // Baris setelah data
+        $sheet->setCellValue("A{$totalRow}", 'Total Price');
+        $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
+   
     }
+
+  
 }
