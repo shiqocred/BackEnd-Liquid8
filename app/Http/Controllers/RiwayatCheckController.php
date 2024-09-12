@@ -428,6 +428,7 @@ class RiwayatCheckController extends Controller
         $this->createExcelSheet($spreadsheet, 'Lolos', $getProductLolos, $totalOldPriceLolos, $price_persentage_lolos);
         $this->createExcelSheet($spreadsheet, 'Abnormal', $getProductAbnormal, $totalOldPriceAbnormal, $price_persentage_abnormal);
         $this->createExcelSheet($spreadsheet, 'Staging', $getProductStagings, $totalOldPriceStaging, $price_persentage_staging);
+        $this->createExcelSheet($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);
     
         $firstItem = $checkHistory->first();
     
