@@ -71,6 +71,7 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
+        $userId = auth()->id();
         if ($request->input('data.needConfirmation') === true) {
             DB::beginTransaction();
             $inputData = $request->input('data.resource');
@@ -80,7 +81,7 @@ class ProductApproveController extends Controller
             $maxRetry = 5;
             for ($i = 0; $i < $maxRetry; $i++) {
                 if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->custom_barcode);
+                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
                 } else {
                     $generate = generateNewBarcode($inputData['new_category_product']);
                 }
@@ -176,7 +177,7 @@ class ProductApproveController extends Controller
             $maxRetry = 5;
             for ($i = 0; $i < $maxRetry; $i++) {
                 if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->custom_barcode);
+                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
                 } else {
                     $generate = generateNewBarcode($inputData['new_category_product']);
                 }
