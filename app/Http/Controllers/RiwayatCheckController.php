@@ -156,7 +156,7 @@ class RiwayatCheckController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
-            $resource->response()->setStatusCode(500);
+           return $resource->response()->setStatusCode(500);
         }
     }
 
