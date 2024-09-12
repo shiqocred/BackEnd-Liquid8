@@ -40,66 +40,63 @@ class RiwayatCheckController extends Controller
     {
         //
     }
-
+    
     public function store(Request $request)
     {
         $user = User::find(auth()->id());
-
+    
         if (!$user) {
             $resource = new ResponseResource(false, "User tidak dikenali", null);
             return $resource->response()->setStatusCode(422);
         }
-
+    
         $validator = Validator::make($request->all(), [
             'code_document' => 'required|unique:riwayat_checks,code_document',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
+    
         $document = Document::where('code_document', $request['code_document'])->firstOrFail();
-
+    
         if ($document->total_column_in_document == 0) {
             return response()->json(['error' => 'Total data di document tidak boleh 0'], 422);
         }
-
+    
         DB::beginTransaction();
-
+    
         try {
-
-            $newProducts = ProductApprove::where('code_document', $request['code_document'])->get();
-
-            $totalData = $newProducts->count();
-
             $totalLolos = $totalDamaged = $totalAbnormal = 0;
-
-            foreach ($newProducts as $product) {
-                $newQualityData = json_decode($product->new_quality, true);
-
-                if (is_array($newQualityData)) {
-                    $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
-                    $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
-                    $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
-                }
-            }
-
-            //product_old
-            $getPriceProductOld = Product_old::where('code_document', $request['code_document'])->get();
-            $priceProductOld = $getPriceProductOld->sum(function ($product) {
-                return $product->old_price_product;
-            });
-
-            //approve
-            $getPriceProductApprove = ProductApprove::where('code_document', $request['code_document'])->get();
-            $priceProductApprove = $getPriceProductApprove->sum(function ($product) {
-                return $product->old_price_product;
-            });
-
+            $totalData = 0;
+    
+            // Proses data dengan chunking untuk menghindari penggunaan memori yang tinggi
+            ProductApprove::where('code_document', $request['code_document'])
+                ->chunk(100, function ($products) use (&$totalLolos, &$totalDamaged, &$totalAbnormal, &$totalData) {
+                    foreach ($products as $product) {
+                        $newQualityData = json_decode($product->new_quality, true);
+    
+                        if (is_array($newQualityData)) {
+                            $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
+                            $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
+                            $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
+                        }
+                    }
+                    $totalData += count($products);
+                });
+    
+            // Menghitung harga produk dengan chunking
+            $priceProductOld = Product_old::where('code_document', $request['code_document'])
+                ->sum('old_price_product');
+    
+            $priceProductApprove = ProductApprove::where('code_document', $request['code_document'])
+                ->sum('old_price_product');
+    
             $totalPrice = $priceProductOld + $priceProductApprove;
-            $getDataPO = Product_old::where('code_document', $request['code_document'])->get();
-            $productDiscrepancy = $getDataPO->count();
-
+    
+            $productDiscrepancy = Product_old::where('code_document', $request['code_document'])
+                ->count();
+    
             $riwayat_check = RiwayatCheck::create([
                 'user_id' => $user->id,
                 'code_document' => $request['code_document'],
@@ -111,7 +108,7 @@ class RiwayatCheckController extends Controller
                 'total_data_abnormal' => $totalAbnormal,
                 'total_discrepancy' => $document->total_column_in_document - $totalData,
                 'status_approve' => 'pending',
-
+    
                 // persentase
                 'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
                 'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
@@ -121,12 +118,10 @@ class RiwayatCheckController extends Controller
                 'percentage_discrepancy' => ($productDiscrepancy / $document->total_column_in_document) * 100,
                 'total_price' => $totalPrice
             ]);
-
-
+    
             $code_document = Document::where('code_document', $request['code_document'])->first();
             $code_document->update(['status_document' => 'in progress']);
-
-            //keterangan transaksi
+    
             $keterangan = Notification::create([
                 'user_id' => $user->id,
                 'notification_name' => 'Butuh approvement untuk List Product',
@@ -135,20 +130,11 @@ class RiwayatCheckController extends Controller
                 'riwayat_check_id' => $riwayat_check->id,
                 'repair_id' => null
             ]);
-
-            // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
-
-            // if ($adminUser) {
-            //     Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
-            // } else {
-            //     $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
-            //     return $resource->response()->setStatusCode(403);
-            // }
-
+    
             logUserAction($request, $request->user(), "inbound/check_product/multi_check", "Done check all");
-
+    
             DB::commit();
-
+    
             return new ResponseResource(true, "Data berhasil ditambah", [
                 $riwayat_check,
                 $keterangan
@@ -156,9 +142,130 @@ class RiwayatCheckController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
-           return $resource->response()->setStatusCode(500);
+            return $resource->response()->setStatusCode(500);
         }
     }
+    
+
+    //old
+    // public function store(Request $request)
+    // {
+    //     $user = User::find(auth()->id());
+
+    //     if (!$user) {
+    //         $resource = new ResponseResource(false, "User tidak dikenali", null);
+    //         return $resource->response()->setStatusCode(422);
+    //     }
+
+    //     $validator = Validator::make($request->all(), [
+    //         'code_document' => 'required|unique:riwayat_checks,code_document',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => $validator->errors()], 422);
+    //     }
+
+    //     $document = Document::where('code_document', $request['code_document'])->firstOrFail();
+
+    //     if ($document->total_column_in_document == 0) {
+    //         return response()->json(['error' => 'Total data di document tidak boleh 0'], 422);
+    //     }
+
+    //     DB::beginTransaction();
+
+    //     try {
+
+    //         $newProducts = ProductApprove::where('code_document', $request['code_document'])->get();
+
+    //         $totalData = $newProducts->count();
+
+    //         $totalLolos = $totalDamaged = $totalAbnormal = 0;
+
+    //         foreach ($newProducts as $product) {
+    //             $newQualityData = json_decode($product->new_quality, true);
+
+    //             if (is_array($newQualityData)) {
+    //                 $totalLolos += !empty($newQualityData['lolos']) ? 1 : 0;
+    //                 $totalDamaged += !empty($newQualityData['damaged']) ? 1 : 0;
+    //                 $totalAbnormal += !empty($newQualityData['abnormal']) ? 1 : 0;
+    //             }
+    //         }
+
+    //         //product_old
+    //         $getPriceProductOld = Product_old::where('code_document', $request['code_document'])->get();
+    //         $priceProductOld = $getPriceProductOld->sum(function ($product) {
+    //             return $product->old_price_product;
+    //         });
+
+    //         //approve
+    //         $getPriceProductApprove = ProductApprove::where('code_document', $request['code_document'])->get();
+    //         $priceProductApprove = $getPriceProductApprove->sum(function ($product) {
+    //             return $product->old_price_product;
+    //         });
+
+    //         $totalPrice = $priceProductOld + $priceProductApprove;
+    //         $getDataPO = Product_old::where('code_document', $request['code_document'])->get();
+    //         $productDiscrepancy = $getDataPO->count();
+
+    //         $riwayat_check = RiwayatCheck::create([
+    //             'user_id' => $user->id,
+    //             'code_document' => $request['code_document'],
+    //             'base_document' => $document->base_document,
+    //             'total_data' => $document->total_column_in_document,
+    //             'total_data_in' => $totalData,
+    //             'total_data_lolos' => $totalLolos,
+    //             'total_data_damaged' => $totalDamaged,
+    //             'total_data_abnormal' => $totalAbnormal,
+    //             'total_discrepancy' => $document->total_column_in_document - $totalData,
+    //             'status_approve' => 'pending',
+
+    //             // persentase
+    //             'precentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
+    //             'percentage_in' => ($totalData / $document->total_column_in_document) * 100,
+    //             'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
+    //             'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
+    //             'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
+    //             'percentage_discrepancy' => ($productDiscrepancy / $document->total_column_in_document) * 100,
+    //             'total_price' => $totalPrice
+    //         ]);
+
+
+    //         $code_document = Document::where('code_document', $request['code_document'])->first();
+    //         $code_document->update(['status_document' => 'in progress']);
+
+    //         //keterangan transaksi
+    //         $keterangan = Notification::create([
+    //             'user_id' => $user->id,
+    //             'notification_name' => 'Butuh approvement untuk List Product',
+    //             'role' => 'Spv',
+    //             'read_at' => Carbon::now('Asia/Jakarta'),
+    //             'riwayat_check_id' => $riwayat_check->id,
+    //             'repair_id' => null
+    //         ]);
+
+    //         // $adminUser = User::where('email', 'isagagah3@gmail.com')->first();
+
+    //         // if ($adminUser) {
+    //         //     Mail::to($adminUser->email)->send(new AdminNotification($adminUser, $keterangan->id));
+    //         // } else {
+    //         //     $resource = new ResponseResource(false, "email atau transaksi tidak ditemukan", null);
+    //         //     return $resource->response()->setStatusCode(403);
+    //         // }
+
+    //         logUserAction($request, $request->user(), "inbound/check_product/multi_check", "Done check all");
+
+    //         DB::commit();
+
+    //         return new ResponseResource(true, "Data berhasil ditambah", [
+    //             $riwayat_check,
+    //             $keterangan
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         $resource = new ResponseResource(false, "Data gagal ditambahkan, terjadi kesalahan pada server : " . $e->getMessage(), null);
+    //        return $resource->response()->setStatusCode(500);
+    //     }
+    // }
 
 
     public function show(RiwayatCheck $history)
