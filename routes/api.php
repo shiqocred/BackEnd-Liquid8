@@ -129,7 +129,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    //riwayat
    Route::get('historys', [RiwayatCheckController::class, 'index']);
-   Route::post('historys', [RiwayatCheckController::class, 'store']);
+   // Route::post('historys', [RiwayatCheckController::class, 'store']);
 });
 
 //inbound bulking
