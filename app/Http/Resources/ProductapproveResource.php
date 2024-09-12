@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class     ProductapproveResource extends JsonResource
+class  ProductapproveResource extends JsonResource
 {
     protected $status, $message, $needConfirmation;
 

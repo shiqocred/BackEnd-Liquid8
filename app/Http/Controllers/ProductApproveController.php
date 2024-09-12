@@ -222,7 +222,7 @@ class ProductApproveController extends Controller
         return [
             'lolos' => $status === 'lolos' ? 'lolos' : null,
             'damaged' => $status === 'damaged' ? $description : null,
-            'abnormal' => $status === 'abnormal' ? $description : null
+            'abnormal' => $status === 'abnormal' ? $description : null,
         ];
     }
 
