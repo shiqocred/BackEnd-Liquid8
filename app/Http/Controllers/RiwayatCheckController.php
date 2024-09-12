@@ -7,16 +7,16 @@ use App\Models\User;
 use App\Mail\TestEmail;
 use App\Models\Document;
 use App\Models\New_product;
+use App\Models\Product_old;
+use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
-use App\Mail\AdminNotification;
-use Illuminate\Support\Facades\DB;
-use App\Http\Resources\ResponseResource;
-use App\Models\Notification;
-use App\Models\Product_old;
 use App\Models\ProductApprove;
 use App\Models\StagingProduct;
+use App\Mail\AdminNotification;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -444,7 +444,7 @@ class RiwayatCheckController extends Controller
         $this->createExcelSheet($spreadsheet, 'Lolos', $getProductLolos, $totalOldPriceLolos, $price_persentage_lolos);
         $this->createExcelSheet($spreadsheet, 'Abnormal', $getProductAbnormal, $totalOldPriceAbnormal, $price_persentage_abnormal);
         $this->createExcelSheet($spreadsheet, 'Staging', $getProductStagings, $totalOldPriceStaging, $price_persentage_staging);
-        $this->createExcelSheet($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);
+        $this->createExcelSheetDiscrepancy($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);
 
         $firstItem = $checkHistory->first();
 
@@ -468,7 +468,7 @@ class RiwayatCheckController extends Controller
     {
         $sheet = $spreadsheet->createSheet();
         $sheet->setTitle($title);
-    
+
         // Menetapkan header
         $headers = [
             'Code Document',
@@ -483,10 +483,10 @@ class RiwayatCheckController extends Controller
             'After Diskon',
             'Price Percentage'
         ];
-    
+
         // Menulis header langsung ke lembar kerja
-        $sheet->fromArray($headers, null, 'A1'); 
-    
+        $sheet->fromArray($headers, null, 'A1');
+
         // Memproses data dan menyiapkan array untuk dimasukkan ke Excel
         $dataArray = [];
         foreach ($data as $item) {
@@ -494,9 +494,9 @@ class RiwayatCheckController extends Controller
             if ($item->old_price_product != 0) {
                 $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
             }
-    
+
             $keterangan = $item->lolos_value ?? $item->damaged_value ?? $item->abnormal_value ?? 'null';
-    
+
             // Menambahkan data ke array
             $dataArray[] = [
                 $item->code_document ?? 'null',
@@ -512,10 +512,10 @@ class RiwayatCheckController extends Controller
                 $pricePercentage
             ];
         }
-    
+
         // Menulis data dalam bentuk array ke lembar Excel mulai dari baris ke-2
         $sheet->fromArray($dataArray, null, 'A2');
-    
+
         // Menambahkan total dan persentase di bagian akhir
         $totalRow = count($dataArray) + 2; // Baris setelah data
         $sheet->setCellValue("A{$totalRow}", 'Total Price');
@@ -523,8 +523,54 @@ class RiwayatCheckController extends Controller
         $sheet->setCellValue("C{$totalRow}", 'Price Percentage');
         $sheet->setCellValue("D{$totalRow}", $pricePercentage);
     }
-    
 
+    private function createExcelSheetDiscrepancy($spreadsheet, $title, $data, $totalOldPrice, $pricePercentage)
+    {
+        $sheet = $spreadsheet->createSheet();
+        $sheet->setTitle($title);
 
+        // Menetapkan header
+        $headers = [
+            'Code Document',
+            'Old Barcode',
+            'Name Product',
+            'Qty',
+            'Unit Price',
+        ];
 
+        // Menulis header langsung ke lembar kerja
+        $sheet->fromArray($headers, null, 'A1');
+
+        // Memproses data dan menyiapkan array untuk dimasukkan ke Excel
+        $dataArray = [];
+        foreach ($data as $item) {
+            $diskon = 0;
+            if ($item->old_price_product != 0) {
+                $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
+            }
+
+            $keterangan = $item->lolos_value ?? $item->damaged_value ?? $item->abnormal_value ?? 'null';
+
+            // Menambahkan data ke array
+            $dataArray[] = [
+                $item->code_document ?? 'null',
+                $item->old_barcode_product ?? 'null',
+                $item->old_name_product ?? 'null',
+                $item->old_quantity_product ?? 'null',
+                $item->old_price_product ?? 'null',
+ 
+            ];
+        }
+
+        // Menulis data dalam bentuk array ke lembar Excel mulai dari baris ke-2
+        $sheet->fromArray($dataArray, null, 'A2');
+
+        // Menambahkan total dan persentase di bagian akhir
+        $totalRow = count($dataArray) + 2; // Baris setelah data
+        $sheet->setCellValue("A{$totalRow}", 'Total Price');
+        $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
+   
+    }
+
+  
 }
