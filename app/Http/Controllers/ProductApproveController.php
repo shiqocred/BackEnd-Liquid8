@@ -68,108 +68,70 @@ class ProductApproveController extends Controller
      */
 
 
-
     public function store(Request $request)
     {
         $userId = auth()->id();
-        if ($request->input('data.needConfirmation') === true) {
-            DB::beginTransaction();
-            $inputData = $request->input('data.resource');
-            $document = Document::where('code_document',  $inputData['code_document'])->first();
-            $generate = null;
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'required',
+            'old_barcode_product' => 'required',
+            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|integer',
+            'new_price_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
+            // 'new_date_in_product' => 'required|date',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+            'condition' => 'required|in:lolos,damaged,abnormal',
+            'new_category_product' => 'nullable|exists:categories,name_category',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
 
-            $maxRetry = 5;
-            for ($i = 0; $i < $maxRetry; $i++) {
-                if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
-                } else {
-                    $generate = generateNewBarcode($inputData['new_category_product']);
-                }
+        ], [
+            'new_barcode_product.unique' => 'barcode sudah ada',
+            'old_barcode_product.exists' => 'barcode tidak ada'
+        ]);
 
-                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
-                    break;
-                }
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-                if ($i === $maxRetry - 1) {
-                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
-                }
+        $status = $request->input('condition');
+        $description = $request->input('deskripsi', '');
+
+        $qualityData = $this->prepareQualityData($status, $description);
+
+        $inputData = $this->prepareInputData($request, $status, $qualityData);
+
+        $oldBarcode = $request->input('old_barcode_product');
+        $newBarcode = $request->input('new_barcode_product');
+
+        $tables = [
+            New_product::class,
+            ProductApprove::class,
+            StagingProduct::class,
+            StagingApprove::class,
+            FilterStaging::class,
+        ];
+
+        $oldBarcodeExists = false;
+        $newBarcodeExists = false;
+
+        foreach ($tables as $table) {
+            if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
+                $oldBarcodeExists = true;
             }
-
-            $inputData['new_barcode_product'] = $generate;
-
-            // Set display price
-            $inputData['display_price'] = $inputData['new_price_product'] ?? $inputData['old_price_product'];
-
-            $this->deleteOldProduct($inputData['code_document'], $inputData['old_barcode_product']);
-
-            $this->updateDocumentStatus($inputData['code_document']);
-
-            $newProduct = ProductApprove::create($inputData);
-
-            DB::commit();
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
-        } else {
-            $validator = Validator::make($request->all(), [
-                'code_document' => 'required',
-                'old_barcode_product' => 'required',
-                // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
-                'new_name_product' => 'required',
-                'new_quantity_product' => 'required|integer',
-                'new_price_product' => 'required|numeric',
-                'old_price_product' => 'required|numeric',
-                // 'new_date_in_product' => 'required|date',
-                'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
-                'condition' => 'required|in:lolos,damaged,abnormal',
-                'new_category_product' => 'nullable|exists:categories,name_category',
-                'new_tag_product' => 'nullable|exists:color_tags,name_color',
-
-            ], [
-                'new_barcode_product.unique' => 'barcode sudah ada',
-                'old_barcode_product.exists' => 'barcode tidak ada'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json($validator->errors(), 422);
-            }
-
-            $status = $request->input('condition');
-            $description = $request->input('deskripsi', '');
-
-            $qualityData = $this->prepareQualityData($status, $description);
-
-            $inputData = $this->prepareInputData($request, $status, $qualityData);
-
-            $oldBarcode = $request->input('old_barcode_product');
-            $newBarcode = $request->input('new_barcode_product');
-
-            $tables = [
-                New_product::class,
-                ProductApprove::class,
-                StagingProduct::class,
-                StagingApprove::class,
-                FilterStaging::class,
-            ];
-
-            $oldBarcodeExists = false;
-            $newBarcodeExists = false;
-
-            foreach ($tables as $table) {
-                if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
-                    $oldBarcodeExists = true;
-                }
-                if ($table::where('new_barcode_product', $newBarcode)->exists()) {
-                    $newBarcodeExists = true;
-                }
-            }
-
-            if ($oldBarcodeExists) {
-                return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
-            }
-
-            if ($newBarcodeExists) {
-                return new ProductapproveResource(false, false, "The new barcode already exists", $inputData);
+            if ($table::where('new_barcode_product', $newBarcode)->exists()) {
+                $newBarcodeExists = true;
             }
         }
+
+        if ($oldBarcodeExists) {
+            return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
+        }
+
+        if ($newBarcodeExists) {
+            return new ProductapproveResource(false, false, "The new barcode already exists", $inputData);
+        }
+
         DB::beginTransaction();
         try {
 
@@ -192,15 +154,6 @@ class ProductApproveController extends Controller
             }
 
             $inputData['new_barcode_product'] = $generate;
-
-            // $existingProduct = ProductApprove::where('old_barcode_product', $inputData['old_barcode_product'])
-            //     ->where('new_category_product', $inputData['new_category_product'])
-            //     ->exists();
-
-            // if ($existingProduct) {
-            //     DB::rollback();
-            //     return new ProductapproveResource(false, false, "Produk dengan barcode lama tersebut sudah ada.", $inputData);
-            // }
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
@@ -284,6 +237,54 @@ class ProductApproveController extends Controller
             return true;
         } else {
             return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
+        }
+    }
+
+    public function addProductOld(Request $request)
+    {
+        $userId = auth()->id();
+        try{
+
+        if ($request->input('data.needConfirmation') === true) {
+            DB::beginTransaction();
+            $inputData = $request->input('data.resource');
+            $document = Document::where('code_document',  $inputData['code_document'])->first();
+            $generate = null;
+
+            $maxRetry = 5;
+            for ($i = 0; $i < $maxRetry; $i++) {
+                if ($document->custom_barcode) {
+                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
+                } else {
+                    $generate = generateNewBarcode($inputData['new_category_product']);
+                }
+
+                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
+                    break;
+                }
+
+                if ($i === $maxRetry - 1) {
+                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
+                }
+            }
+
+            $inputData['new_barcode_product'] = $generate;
+
+            // Set display price
+            $inputData['display_price'] = $inputData['new_price_product'] ?? $inputData['old_price_product'];
+
+            $this->deleteOldProduct($inputData['code_document'], $inputData['old_barcode_product']);
+
+            $this->updateDocumentStatus($inputData['code_document']);
+
+            $newProduct = ProductApprove::create($inputData);
+
+            DB::commit();
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
+        }
+        }catch(\Exception $e){
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

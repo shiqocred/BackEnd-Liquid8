@@ -123,6 +123,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    //send approve
    Route::post('product-approves', [ProductApproveController::class, 'store']);
+   Route::post('addProductOld', [ProductApproveController::class, 'addProductOld']);
 
    //document
    Route::resource('/documents', DocumentController::class)->except(['destroy']);
