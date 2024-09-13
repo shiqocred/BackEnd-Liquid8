@@ -587,7 +587,7 @@ class RiwayatCheckController extends Controller
             ->where('new_quality->damaged', '!=', null)
             ->paginate(50);
 
-        return new ResponseResource(true, "list lolos", $products);
+        return new ResponseResource(true, "list damaged", $products);
     }
     public function getProductAbnormal($code_document)
     {
@@ -595,12 +595,12 @@ class RiwayatCheckController extends Controller
             ->where('new_quality->abnormal', '!=', null)
             ->paginate(50);
 
-        return new ResponseResource(true, "list lolos", $products);
+        return new ResponseResource(true, "list abnormal", $products);
     }
     public function discrepancy($code_document)
     {
         $products = Product_old::where('code_document', $code_document)->paginate(50);
 
-        return new ResponseResource(true, "list lolos", $products);
+        return new ResponseResource(true, "list discrepancy", $products);
     }
 }

@@ -129,7 +129,7 @@ class ProductApproveController extends Controller
         }
 
         if ($newBarcodeExists) {
-            return new ProductapproveResource(false, false, "The new barcode already exists", $inputData);
+            return new ResponseResource(false, "The new barcode already exists", $inputData);
         }
 
         DB::beginTransaction();
