@@ -65,6 +65,7 @@ function codeDocumentSale($userId)
 
 function generateNewBarcode($category)
 {
+    $userId = auth()->id();
     $bulanIndo = [
         1 => 'Januari',
         2 => 'Februari',
@@ -87,15 +88,24 @@ function generateNewBarcode($category)
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     $maxRetry = 5;
 
-    return DB::transaction(function () use ($categoryInitial, $currentMonth, $characters, $maxRetry) {
+    return DB::transaction(function () use ($categoryInitial, $currentMonth, $characters, $maxRetry, $userId) {
         for ($i = 0; $i < $maxRetry; $i++) {
             $randomString = '';
             for ($j = 0; $j < 5; $j++) {
                 $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
             }
-            $newBarcode = "L{$categoryInitial}{$currentMonth}{$randomString}";
-            
-            $exists = DB::table('product_approves')
+            $newBarcode = "L{$userId}{$categoryInitial}{$currentMonth}{$randomString}";
+
+            // Check uniqueness across multiple tables with shared lock
+            $exists = DB::table('staging_approves')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists() ||
+                DB::table('staging_products')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists() ||
+                DB::table('new_products')
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists();
@@ -108,6 +118,8 @@ function generateNewBarcode($category)
         throw new \Exception("Terlalu banyak generate, tolong refresh.");
     });
 }
+
+
 
 //old
 // function newBarcodeCustom($code_document, $init_barcode)
@@ -142,14 +154,23 @@ function newBarcodeCustom($init_barcode, $userId)
                 $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
             }
             $newBarcode = $init_barcode . $userId . $randomString;
-            $exists = DB::table('product_approves')
-                ->where('new_barcode_product', $newBarcode)
-                ->sharedLock()
-                ->exists();
+             // Check uniqueness across multiple tables with shared lock
+             $exists = DB::table('staging_approves')
+             ->where('new_barcode_product', $newBarcode)
+             ->sharedLock()
+             ->exists() ||
+             DB::table('staging_products')
+             ->where('new_barcode_product', $newBarcode)
+             ->sharedLock()
+             ->exists() ||
+             DB::table('new_products')
+             ->where('new_barcode_product', $newBarcode)
+             ->sharedLock()
+             ->exists();
 
-            if (!$exists) {
-                return $newBarcode;
-            }
+         if (!$exists) {
+             return $newBarcode;
+         }
         }
 
         throw new \Exception("terlalu banyak generate, tolong refresh");
