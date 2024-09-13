@@ -71,7 +71,7 @@ class ProductOldController extends Controller
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
         $document = Document::where('code_document', $request->input('search'))->first();
-    
+
         if ($document && $document->custom_barcode) {
             foreach ($code_documents as $code_document) {
                 $code_document->custom_barcode = $document->custom_barcode;
@@ -81,14 +81,14 @@ class ProductOldController extends Controller
                 $code_document->custom_barcode = null;
             }
         }
-    
+
         if ($code_documents->isNotEmpty()) {
             return new ResponseResource(true, "list product_old", $code_documents);
         } else {
             return new ResponseResource(false, "code document tidak ada", null);
         }
     }
-    
+
 
     public function index()
     {
