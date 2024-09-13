@@ -149,7 +149,7 @@ class RiwayatCheckController extends Controller
 
     public function show(RiwayatCheck $history)
     {
-        // Gunakan cursor untuk mengambil produk satu per satu
+        //product category
         $getProduct = New_product::where('code_document', $history->code_document)->cursor();
         $productCategoryCount = $getProduct->filter(function ($product) {
             return $product->new_category_product !== null;
@@ -161,13 +161,11 @@ class RiwayatCheckController extends Controller
 
         // Proses produk yang rusak (damaged) menggunakan chunk
         $totalOldPriceDamaged = 0;
-        $getProductDamaged = [];
         New_product::where('code_document', $history->code_document)
             ->where('new_quality->damaged', '!=', null)
             ->chunk(1000, function ($products) use (&$getProductDamaged, &$totalOldPriceDamaged) {
                 foreach ($products as $product) {
                     $product->damaged_value = json_decode($product->new_quality)->damaged ?? null;
-                    $getProductDamaged[] = $product;
                     $totalOldPriceDamaged += $product->old_price_product;
                 }
             });
@@ -177,13 +175,11 @@ class RiwayatCheckController extends Controller
 
         // Proses produk lolos (lolos) menggunakan chunk
         $totalOldPriceLolos = 0;
-        $getProductLolos = [];
         New_product::where('code_document', $history->code_document)
             ->where('new_quality->lolos', '!=', null)
             ->chunk(1000, function ($products) use (&$getProductLolos, &$totalOldPriceLolos) {
                 foreach ($products as $product) {
                     $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
-                    $getProductLolos[] = $product;
                     $totalOldPriceLolos += $product->old_price_product;
                 }
             });
@@ -193,13 +189,11 @@ class RiwayatCheckController extends Controller
 
         // Proses produk abnormal (abnormal) menggunakan chunk
         $totalOldPriceAbnormal = 0;
-        $getProductAbnormal = [];
         New_product::where('code_document', $history->code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->chunk(1000, function ($products) use (&$getProductAbnormal, &$totalOldPriceAbnormal) {
                 foreach ($products as $product) {
                     $product->abnormal_value = json_decode($product->new_quality)->abnormal ?? null;
-                    $getProductAbnormal[] = $product;
                     $totalOldPriceAbnormal += $product->old_price_product;
                 }
             });
@@ -252,26 +246,6 @@ class RiwayatCheckController extends Controller
             'total_price' => $history->total_price,
             'created_at' => $history->created_at,
             'updated_at' => $history->updated_at,
-            'damaged' => [
-                'products' => $getProductDamaged,
-                'total_old_price' => $totalOldPriceDamaged,
-                'price_percentage' => $totalPercentageDamaged,
-            ],
-            'lolos' => [
-                'products' => $getProductLolos,
-                'total_old_price' => $totalOldPriceLolos,
-                'price_percentage' => $totalPercentageLolos,
-            ],
-            'abnormal' => [
-                'products' => $getProductAbnormal,
-                'total_old_price' => $totalOldPriceAbnormal,
-                'price_percentage' => $totalPercentageAbnormal,
-            ],
-            'staging' => [
-                'products' => $stagingProducts,
-                'total_old_price' => $totalOldPricestaging,
-                'price_percentage' => $totalPercentageStaging,
-            ],
             'priceDiscrepancy' =>  $totalPriceDiscrepancy,
             'price_percentage' => $totalPercentageDiscrepancy,
         ]);
@@ -560,7 +534,7 @@ class RiwayatCheckController extends Controller
                 $item->old_name_product ?? 'null',
                 $item->old_quantity_product ?? 'null',
                 $item->old_price_product ?? 'null',
- 
+
             ];
         }
 
@@ -571,8 +545,36 @@ class RiwayatCheckController extends Controller
         $totalRow = count($dataArray) + 2; // Baris setelah data
         $sheet->setCellValue("A{$totalRow}", 'Total Price');
         $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
-   
     }
 
-  
+    public function getProductLolos($code_document)
+    {
+        $products = New_product::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->paginate(50);
+
+        return new ResponseResource(true, "list lolos", $products);
+    }
+    public function getProductDamaged($code_document)
+    {
+        $products = New_product::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->paginate(50);
+
+        return new ResponseResource(true, "list lolos", $products);
+    }
+    public function getProductAbnormal($code_document)
+    {
+        $products = New_product::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->paginate(50);
+
+        return new ResponseResource(true, "list lolos", $products);
+    }
+    public function discrepancy($code_document)
+    {
+        $products = Product_old::where('code_document', $code_document)->paginate(50);
+
+        return new ResponseResource(true, "list lolos", $products);
+    }
 }

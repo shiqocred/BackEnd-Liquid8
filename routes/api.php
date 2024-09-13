@@ -130,7 +130,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    //riwayat
    Route::get('historys', [RiwayatCheckController::class, 'index']);
-   // Route::post('historys', [RiwayatCheckController::class, 'store']);
+   Route::post('historys', [RiwayatCheckController::class, 'store']);
+   Route::get('getProductLolos/{code_document}', [RiwayatCheckController::class, 'getProductLolos'])->where('code_document', '.*');
+   Route::get('getProductDamaged/{code_document}', [RiwayatCheckController::class, 'getProductDamaged'])->where('code_document', '.*');
+   Route::get('getProductAbnormal/{code_document}', [RiwayatCheckController::class, 'getProductAbnormal'])->where('code_document', '.*');
+   Route::get('discrepancy/{code_document}', [RiwayatCheckController::class, 'discrepancy'])->where('code_document', '.*');
 });
 
 //inbound bulking
@@ -409,12 +413,15 @@ Route::middleware('check.api_key')->group(function () {
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
 
-    //get
-    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
-    Route::get('list-categories', [CategoryController::class, 'index']);
+   //get
+   Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
+   Route::get('list-categories', [CategoryController::class, 'index']);
 });
 //non auth 
 // Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
+
+
+
 
 //login
 Route::post('login', [AuthController::class, 'login']);
