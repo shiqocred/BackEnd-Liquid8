@@ -245,9 +245,14 @@ class ProductApproveController extends Controller
         $userId = auth()->id();
         try{
 
-        if ($request->input('data.needConfirmation') === true) {
             DB::beginTransaction();
-            $inputData = $request->input('data.resource');
+            $status = $request->input('condition');
+            $description = $request->input('deskripsi', '');
+
+            $qualityData = $this->prepareQualityData($status, $description);
+
+            $inputData = $this->prepareInputData($request, $status, $qualityData);
+
             $document = Document::where('code_document',  $inputData['code_document'])->first();
             $generate = null;
 
@@ -281,7 +286,7 @@ class ProductApproveController extends Controller
 
             DB::commit();
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
-        }
+        
         }catch(\Exception $e){
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
