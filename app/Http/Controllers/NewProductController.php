@@ -897,10 +897,6 @@ class NewProductController extends Controller
             $quality['lolos'] = 'lolos';
             $inputData['new_quality'] = json_encode($quality);
 
-            if ($inputData['new_price_product'] > 100000) {
-                $inputData['new_category_product'] = null;
-            }
-
             if ($inputData['old_price_product'] < 100000) {
 
                 $inputData['new_category_product'] = null;
@@ -1111,7 +1107,7 @@ class NewProductController extends Controller
 
             $mergedQuery = $productQuery->union($bundleQuery)
                 ->orderBy('created_at', 'desc')
-                ->paginate(10);
+                ->paginate(50);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }

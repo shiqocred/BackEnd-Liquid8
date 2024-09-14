@@ -193,6 +193,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Reparasi'])->group(function () {
    //tabel kiri repair
    Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
+
+   //to display 
+   Route::get('getProductRepair', [RepairController::class, 'getProductRepair']);
+
    //qcd
    Route::get('qcd/filter_product', [FilterQcdController::class, 'index']);
    Route::post('qcd/filter_product/{id}/add', [FilterQcdController::class, 'store']);

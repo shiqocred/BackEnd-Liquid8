@@ -480,7 +480,7 @@ class ProductApproveController extends Controller
             });
         }
 
-        $documents = $notifQuery->get();
+        $documents = $notifQuery->paginate(20);
 
         return new ResponseResource(true, "Document Approves", $documents);
     }
