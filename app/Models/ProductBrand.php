@@ -15,12 +15,12 @@ class ProductBrand extends Model
     protected static function booted()
     {
         static::updated(function ($productBrand) {
-            // Update pallet_brand_name dengan menggunakan relasi Eloquent
-            $palletBrands = PalletBrand::where('brand_id', $productBrand->id)->get();
+            // Update palet_brand_name dengan menggunakan relasi Eloquent
+            $paletBrands = paletBrand::where('brand_id', $productBrand->id)->get();
 
-            foreach ($palletBrands as $palletBrand) {
-                $palletBrand->pallet_brand_name = $productBrand->brand_name;
-                $palletBrand->save();
+            foreach ($paletBrands as $paletBrand) {
+                $paletBrand->palet_brand_name = $productBrand->brand_name;
+                $paletBrand->save();
             }
         });
     }
