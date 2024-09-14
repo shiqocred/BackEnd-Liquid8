@@ -30,7 +30,7 @@ class ProductOldController extends Controller
             ->exists();
 
         if ($checkBarcode) {
-            return new ResponseResource(false, "tidak bisa scan product yang sudah ada.", null);
+            return new ResponseResource(false, "tidak bisa scan product yang sudah ada.", []);
         }
 
         $product = Product_old::where('code_document', $codeDocument)
@@ -38,7 +38,7 @@ class ProductOldController extends Controller
             ->first();
 
         if (!$product) {
-            return new ResponseResource(false, "Produk tidak ditemukan.", null);
+            return new ResponseResource(false, "Produk tidak ditemukan.", []);
         }
 
         // $newBarcode = $this->generateUniqueBarcode();

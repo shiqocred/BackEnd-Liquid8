@@ -99,21 +99,21 @@ class StagingApproveController extends Controller
         try {
             if ($user) {
                 if ($user->role && ($user->role->role_name == 'Admin Kasir' || $user->role->role_name == 'Admin' || $user->role->role_name == 'Spv')) {
-    
+
                     $productApproves = StagingApprove::get();
-    
+
                     foreach ($productApproves as $productApprove) {
                         $duplicate = New_product::where('new_barcode_product', $productApprove->new_barcode_product)->exists();
                         if ($duplicate) {
                             return new ResponseResource(false, "barcoede product di inventory sudah ada : " . $productApprove->new_barcode_product, null);
                         }
                     }
-    
+
                     $chunkedProductApproves = $productApproves->chunk(100);
-    
+
                     foreach ($chunkedProductApproves as $chunk) {
                         $dataToInsert = [];
-    
+
                         foreach ($chunk as $productApprove) {
                             $dataToInsert[] = [
                                 'code_document' => $productApprove->code_document,
@@ -133,15 +133,15 @@ class StagingApproveController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ];
-    
+
                             // Hapus data dari StagingApprove
                             $productApprove->delete();
                         }
-    
+
                         // Masukkan data ke New_product
                         New_product::insert($dataToInsert);
                     }
-    
+
                     DB::commit();
                     return new ResponseResource(true, 'Transaksi berhasil diapprove', null);
                 } else {
@@ -155,7 +155,7 @@ class StagingApproveController extends Controller
             return new ResponseResource(false, "Gagal", $e->getMessage());
         }
     }
-    
+
 
     public function export_product_staging(Request $request)
     {
@@ -257,12 +257,12 @@ class StagingApproveController extends Controller
     public function findSimilarStagingProducts()
     {
         // Tentukan awalan yang ingin diperiksa
-        $prefix = '176'; 
-    
+        $prefix = '179';
+
         // Mengambil semua data dari StagingProduct yang 'old_barcode_product'-nya diawali dengan $prefix
         $similarStagingProducts = StagingProduct::where('old_barcode_product', 'like', $prefix . '%')->get();
         $count = count($similarStagingProducts);
-    
+
         // Mengembalikan respon dengan data yang ditemukan
         return new ResponseResource(true, "Products with similar barcode prefix found", $count);
     }
@@ -304,8 +304,8 @@ class StagingApproveController extends Controller
         $rowIndex = 2;
 
         // Tentukan awalan yang ingin diperiksa
-        $prefix = '176'; 
-    
+        $prefix = '176';
+
         // Mengambil semua data dari StagingProduct yang 'old_barcode_product'-nya diawali dengan $prefix
         $similarStagingProducts = StagingProduct::where('old_barcode_product', 'like', $prefix . '%')
             ->chunk(1000, function ($similarStagingProducts) use ($sheet, &$rowIndex) {
@@ -347,15 +347,15 @@ class StagingApproveController extends Controller
 
         return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
-    
-    
-    
-    
-    
-    
-    
-    
 
-   
-    
+    public function findSimilarTabel(Request $request)
+    {
+        $stagings = StagingProduct::where('code_document', '0057/09/2024')
+            ->pluck('new_barcode_product');
+
+        $approves = ProductApprove::whereIn('new_barcode_product', $stagings)
+            ->pluck('new_barcode_product');
+
+        return $approves;
+    }
 }
