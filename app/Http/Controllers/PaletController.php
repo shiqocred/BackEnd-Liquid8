@@ -43,7 +43,7 @@ class PaletController extends Controller
 
         $query = $request->input('q');
         $palets = Palet::latest()
-            ->with('paletProducts', 'paletImages')
+            ->with('paletProducts', 'paletImages', 'paletBrands')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%')
                     ->orWhere('category_palet', 'LIKE', '%' . $query . '%')
@@ -183,8 +183,8 @@ class PaletController extends Controller
         try {
             // Validasi request
             $validator = Validator::make($request->all(), [
-                'images' => 'array|nullable', 
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', 
+                'images' => 'array|nullable',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'name_palet' => 'required|string',
                 'category_palet' => 'required|string',
                 'total_price_palet' => 'required|numeric',
@@ -239,8 +239,8 @@ class PaletController extends Controller
 
                 // Simpan gambar baru
                 foreach ($request->file('images') as $image) {
-                    $imageName = $image->hashName(); 
-                    $image->storeAs('product-images', $imageName, 'public'); 
+                    $imageName = $image->hashName();
+                    $image->storeAs('product-images', $imageName, 'public');
 
                     PaletImage::create([
                         'palet_id' => $palet->id,
@@ -307,7 +307,7 @@ class PaletController extends Controller
     }
 
 
-    public function exportPalletsDetail($id)
+    public function exportpaletsDetail($id)
     {
         // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);

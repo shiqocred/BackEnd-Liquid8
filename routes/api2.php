@@ -25,7 +25,7 @@ use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\ProductQcdController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\PaletFilterController;
-use App\Http\Controllers\PalletBrandController;
+use App\Http\Controllers\paletBrandController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaletProductController;
 use App\Http\Controllers\ProductBrandController;
@@ -154,7 +154,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //untuk spv me approve staging ke inventory 
    Route::resource('staging_approves', StagingApproveController::class);
    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
-
 });
 
 //end staging =========================================== Staging ==========================================================
@@ -285,26 +284,23 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::get('displayMigrate', [MigrateController::class, 'displayMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
    Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
-   
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(function () {
-    //sale
-    Route::resource('sales', SaleController::class);
-    Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
-    Route::put('/update_price_sales/{sale}', [SaleController::class, 'livePriceUpdates']);
-    Route::resource('sale-documents', SaleDocumentController::class)->except(['destroy']);
-    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
-    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
-    Route::get('sale-report-by-product', [SaleDocumentController::class, 'combinedReport']);
-    Route::get('sale-products', [SaleController::class, 'products']);
- 
-    Route::apiResource('buyers', BuyerController::class)->except(['destroy']);
- 
-    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
-    Route::get('new_products', [NewProductController::class, 'index']);
+   //sale
+   Route::resource('sales', SaleController::class);
+   Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
+   Route::put('/update_price_sales/{sale}', [SaleController::class, 'livePriceUpdates']);
+   Route::resource('sale-documents', SaleDocumentController::class)->except(['destroy']);
+   Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
+   Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
+   Route::get('sale-report-by-product', [SaleDocumentController::class, 'combinedReport']);
+   Route::get('sale-products', [SaleController::class, 'products']);
 
+   Route::apiResource('buyers', BuyerController::class)->except(['destroy']);
+
+   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
+   Route::get('new_products', [NewProductController::class, 'index']);
 });
 //end outbound
 
@@ -318,26 +314,26 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
    Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 
-   
-    // Tombol delete 
-    Route::delete('migrates/{migrate}', [MigrateController::class, 'destroy']);
-    Route::delete('migrate-documents/{migrateDocument}', [MigrateDocumentController::class, 'destroy']);
-    Route::delete('sale-documents/{saleDocument}', [SaleDocumentController::class, 'destroy']);
-    Route::delete('buyers/{buyer}', [BuyerController::class, 'destroy']);
-    Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
-    Route::delete('color_tags/{color_tag}', [ColorTagController::class, 'destroy']);
-    Route::delete('product_olds/{product_old}', [ProductOldController::class, 'destroy']);
-    Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
-    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
-    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
-    Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']);
-    Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
-    Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
-    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
-    Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
-    Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
-    Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
-    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
+
+   // Tombol delete 
+   Route::delete('migrates/{migrate}', [MigrateController::class, 'destroy']);
+   Route::delete('migrate-documents/{migrateDocument}', [MigrateDocumentController::class, 'destroy']);
+   Route::delete('sale-documents/{saleDocument}', [SaleDocumentController::class, 'destroy']);
+   Route::delete('buyers/{buyer}', [BuyerController::class, 'destroy']);
+   Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
+   Route::delete('color_tags/{color_tag}', [ColorTagController::class, 'destroy']);
+   Route::delete('product_olds/{product_old}', [ProductOldController::class, 'destroy']);
+   Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
+   Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
+   Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
+   Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']);
+   Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
+   Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
+   Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
+   Route::delete('delete_all_by_codeDocument', [ProductApproveController::class, 'delete_all_by_codeDocument']);
+   Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
+   Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
+   Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
 });
 
 //all
@@ -350,18 +346,16 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
    Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
    Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
-   Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
+   Route::post('exportpaletsDetail/{id}', [PaletController::class, 'exportpaletsDetail']);
    Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
    Route::post('exportMigrateDetail/{id}', [MigrateDocumentController::class, 'exportMigrateDetail']);
    Route::post('exportBuyers', [BuyerController::class, 'exportBuyers']);
    Route::post('exportUsers', [UserController::class, 'exportUsers']);
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team leader'])->group(function () {
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
-
 });
 
 //collab mtc
@@ -370,11 +364,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::resource('product-brands', ProductBrandController::class);
    Route::resource('product-conditions', ProductConditionController::class);
    Route::resource('product-statuses', ProductStatusController::class);
-   Route::resource('pallet-brands', PalletBrandController::class)->except(['update']);
-   Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update'])->name('pallet-brands.update');
-   Route::resource('pallet-images', PaletImageController::class)->except(['update', 'show']);
-   Route::put('pallet-images/{pallet_id}', [PaletImageController::class, 'update'])->name('pallet-images.update');
-   Route::get('pallet-images/{pallet_id}', [PaletImageController::class, 'show'])->name('pallet-images.show');
+   Route::resource('palet-brands', paletBrandController::class)->except(['update']);
+   Route::put('palet-brands/{palet_id}', [paletBrandController::class, 'update'])->name('palet-brands.update');
+   Route::resource('palet-images', PaletImageController::class)->except(['update', 'show']);
+   Route::put('palet-images/{palet_id}', [PaletImageController::class, 'update'])->name('palet-images.update');
+   Route::get('palet-images/{palet_id}', [PaletImageController::class, 'show'])->name('palet-images.show');
    Route::get('palets', [PaletController::class, 'index']);
    Route::get('palets-detail/{palet}', [PaletController::class, 'show']);
    Route::put('palets/{palet}', [PaletController::class, 'update']);
@@ -407,8 +401,7 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('checkDuplicates/{code_document}', [ProductApproveController::class, 'checkDuplicates'])->where('code_document', '.*');
-;
+Route::get('checkDuplicates/{code_document}', [ProductApproveController::class, 'checkDuplicates'])->where('code_document', '.*');;
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 

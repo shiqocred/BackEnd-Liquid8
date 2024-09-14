@@ -11,11 +11,16 @@ class Palet extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
-    public function paletProducts(){
+    public function paletProducts()
+    {
         return $this->hasMany(PaletProduct::class);
     }
     public function paletImages()
     {
         return $this->hasMany(PaletImage::class, 'palet_id');
+    }
+    public function paletBrands()
+    {
+        return $this->hasMany(paletBrand::class, 'palet_id');
     }
 }

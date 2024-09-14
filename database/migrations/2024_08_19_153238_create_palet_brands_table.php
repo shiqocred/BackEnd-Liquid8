@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pallet_brands', function (Blueprint $table) {
+        Schema::create('palet_brands', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('pallet_id');
+            $table->foreignId('palet_id');
             $table->foreignId('brand_id');
-            $table->string('pallet_brand_name');
+            $table->string('palet_brand_name');
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pallet_brands');
+        Schema::dropIfExists('palet_brands');
     }
 };

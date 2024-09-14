@@ -22,7 +22,7 @@ use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
 use App\Http\Controllers\PaletImageController;
 use App\Http\Controllers\PaletProductController;
-use App\Http\Controllers\PalletBrandController;
+use App\Http\Controllers\paletBrandController;
 use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\ProductBrandController;
 use App\Http\Controllers\ProductBundleController;
@@ -144,7 +144,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
- 
+
    //bulking
    Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
@@ -340,7 +340,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
    Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
    Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
-   Route::post('exportPalletsDetail/{id}', [PaletController::class, 'exportPalletsDetail']);
+   Route::post('exportpaletsDetail/{id}', [PaletController::class, 'exportpaletsDetail']);
    Route::post('exportRepairDetail/{id}', [RepairController::class, 'exportRepairDetail']);
    Route::post('exportMigrateDetail/{id}', [MigrateDocumentController::class, 'exportMigrateDetail']);
    Route::post('exportBuyers', [BuyerController::class, 'exportBuyers']);
@@ -425,11 +425,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::resource('product-brands', ProductBrandController::class);
    Route::resource('product-conditions', ProductConditionController::class);
    Route::resource('product-statuses', ProductStatusController::class);
-   Route::resource('pallet-brands', PalletBrandController::class)->except(['update']);
-   Route::put('pallet-brands/{pallet_id}', [PalletBrandController::class, 'update'])->name('pallet-brands.update');
-   Route::resource('pallet-images', PaletImageController::class)->except(['update', 'show']);
-   Route::put('pallet-images/{pallet_id}', [PaletImageController::class, 'update'])->name('pallet-images.update');
-   Route::get('pallet-images/{pallet_id}', [PaletImageController::class, 'show'])->name('pallet-images.show');
+   Route::resource('palet-brands', paletBrandController::class)->except(['update']);
+   Route::put('palet-brands/{palet_id}', [paletBrandController::class, 'update'])->name('palet-brands.update');
+   Route::resource('palet-images', PaletImageController::class)->except(['update', 'show']);
+   Route::put('palet-images/{palet_id}', [PaletImageController::class, 'update'])->name('palet-images.update');
+   Route::get('palet-images/{palet_id}', [PaletImageController::class, 'show'])->name('palet-images.show');
    Route::get('palets', [PaletController::class, 'index']);
    Route::get('palets-detail/{palet}', [PaletController::class, 'show']);
    Route::put('palets/{palet}', [PaletController::class, 'update']);
@@ -446,4 +446,3 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
 });
-  
