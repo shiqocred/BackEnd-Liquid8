@@ -96,7 +96,7 @@ class DocumentController extends Controller
             $documents = $documents->where('status_document', '!=', 'pending');
         }
 
-        return new ResponseResource(true, "list document progress", $documents->paginate(50));
+        return new ResponseResource(true, "list document progress", $documents->paginate(30));
     }
 
     public function documentDone(Request $request) // halaman list product staging by doc
