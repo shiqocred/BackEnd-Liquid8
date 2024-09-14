@@ -21,6 +21,6 @@ class Palet extends Model
     }
     public function paletBrands()
     {
-        return $this->hasMany(paletBrand::class, 'palet_id');
+        return $this->hasMany(PaletBrand::class, 'palet_id');
     }
 }

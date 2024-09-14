@@ -16,7 +16,7 @@ class PaletBrandController extends Controller
      */
     public function index()
     {
-        $paletBrand = paletBrand::all();
+        $paletBrand = PaletBrand::all();
         $resource = new ResponseResource(true, "list brand palet", $paletBrand);
 
         return $resource->response();
@@ -53,7 +53,7 @@ class PaletBrandController extends Controller
             $createdBrands = [];
             foreach ($brands as $brandId) {
                 $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
-                $paletBrand = paletBrand::create([
+                $paletBrand = PaletBrand::create([
                     'palet_id' => $paletId,
                     'brand_id' => $brandId,
                     'palet_brand_name' => $paletBrandName,
@@ -71,7 +71,7 @@ class PaletBrandController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(paletBrand $paletBrand)
+    public function show(PaletBrand $paletBrand)
     {
         try {
             // Kirimkan data dalam response
@@ -120,7 +120,7 @@ class PaletBrandController extends Controller
                 $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
 
                 // Gunakan updateOrCreate untuk memperbarui atau membuat data baru jika belum ada
-                $paletBrand = paletBrand::updateOrCreate(
+                $paletBrand = PaletBrand::updateOrCreate(
                     ['palet_id' => $paletId, 'brand_id' => $brandId],
                     ['palet_brand_name' => $paletBrandName]
                 );

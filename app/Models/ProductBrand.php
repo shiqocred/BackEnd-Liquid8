@@ -16,7 +16,7 @@ class ProductBrand extends Model
     {
         static::updated(function ($productBrand) {
             // Update palet_brand_name dengan menggunakan relasi Eloquent
-            $paletBrands = paletBrand::where('brand_id', $productBrand->id)->get();
+            $paletBrands = PaletBrand::where('brand_id', $productBrand->id)->get();
 
             foreach ($paletBrands as $paletBrand) {
                 $paletBrand->palet_brand_name = $productBrand->brand_name;
