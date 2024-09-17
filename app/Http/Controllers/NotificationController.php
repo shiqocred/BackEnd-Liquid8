@@ -150,64 +150,9 @@ class NotificationController extends Controller
                             ->whereNull('new_tag_product')
                             ->get();
 
-                        $productApprovesTags->chunk(100)->each(function ($chunk) {
-                            $dataToInsert = [];
-                            foreach ($chunk as $productApprove) {
-                                $dataToInsert[] = [
-                                    'code_document' => $productApprove->code_document,
-                                    'old_barcode_product' => $productApprove->old_barcode_product,
-                                    'new_barcode_product' => $productApprove->new_barcode_product,
-                                    'new_name_product' => $productApprove->new_name_product,
-                                    'new_quantity_product' => $productApprove->new_quantity_product,
-                                    'new_price_product' => $productApprove->new_price_product,
-                                    'old_price_product' => $productApprove->old_price_product,
-                                    'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
-                                    'new_status_product' => $productApprove->new_status_product,
-                                    'new_quality' => $productApprove->new_quality,
-                                    'new_category_product' => $productApprove->new_category_product,
-                                    'new_tag_product' => $productApprove->new_tag_product,
-                                    'new_discount' => $productApprove->new_discount,
-                                    'display_price' => $productApprove->display_price,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ];
-
-                                // Hapus setelah insert ke array untuk mengurangi penggunaan memori
-                                $productApprove->delete();
-                            }
-
-                            New_product::insert($dataToInsert);
-                        });
-
-                        // Chunking untuk memproses data dalam batch yang new_tag_product == null
-                        $productApprovesCategories->chunk(200)->each(function ($chunk) {
-                            $dataToInsert = [];
-                            foreach ($chunk as $productApprove) {
-                                $dataToInsert[] = [
-                                    'code_document' => $productApprove->code_document,
-                                    'old_barcode_product' => $productApprove->old_barcode_product,
-                                    'new_barcode_product' => $productApprove->new_barcode_product,
-                                    'new_name_product' => $productApprove->new_name_product,
-                                    'new_quantity_product' => $productApprove->new_quantity_product,
-                                    'new_price_product' => $productApprove->new_price_product,
-                                    'old_price_product' => $productApprove->old_price_product,
-                                    'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
-                                    'new_status_product' => $productApprove->new_status_product,
-                                    'new_quality' => $productApprove->new_quality,
-                                    'new_category_product' => $productApprove->new_category_product,
-                                    'new_tag_product' => $productApprove->new_tag_product,
-                                    'new_discount' => $productApprove->new_discount,
-                                    'display_price' => $productApprove->display_price,
-                                    'created_at' => now(),
-                                    'updated_at' => now(),
-                                ];
-
-                                // Hapus setelah insert ke array untuk mengurangi penggunaan memori
-                                $productApprove->delete();
-                            }
-
-                            StagingProduct::insert($dataToInsert);
-                        });
+                        // Fungsi untuk insert dan hapus data
+                        $this->processProductApproves($productApprovesTags, New_product::class, 100);
+                        $this->processProductApproves($productApprovesCategories, StagingProduct::class, 200);
 
                         // Menangani RepairCheck jika ada
                         $repairCheck = Repair::where('user_id', $notification->user_id)->first();
@@ -257,22 +202,55 @@ class NotificationController extends Controller
         }
     }
 
+    private function processProductApproves($productApproves, $modelClass, $chunkSize)
+    {
+        $productApproves->chunk($chunkSize)->each(function ($chunk) use ($modelClass) {
+            $dataToInsert = [];
+
+            foreach ($chunk as $productApprove) {
+                $dataToInsert[] = [
+                    'code_document' => $productApprove->code_document,
+                    'old_barcode_product' => $productApprove->old_barcode_product,
+                    'new_barcode_product' => $productApprove->new_barcode_product,
+                    'new_name_product' => $productApprove->new_name_product,
+                    'new_quantity_product' => $productApprove->new_quantity_product,
+                    'new_price_product' => $productApprove->new_price_product,
+                    'old_price_product' => $productApprove->old_price_product,
+                    'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                    'new_status_product' => $productApprove->new_status_product,
+                    'new_quality' => $productApprove->new_quality,
+                    'new_category_product' => $productApprove->new_category_product,
+                    'new_tag_product' => $productApprove->new_tag_product,
+                    'new_discount' => $productApprove->new_discount,
+                    'display_price' => $productApprove->display_price,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // Insert ke model yang ditentukan
+            $modelClass::insert($dataToInsert);
+
+            // Hapus data setelah berhasil insert
+            ProductApprove::destroy($chunk->pluck('id'));
+        });
+    }
 
     public function getNotificationByRole(Request $request)
     {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
-        if ($user) {
+
+        if ($user && $user->role) {
             $notifQuery = Notification::query()->latest();
-            if ($user->role && $user->role->role_name == 'Spv') {
-                $notifQuery->where('role', $user->role->role_name);
-            } elseif ($user->role && $user->role->role_name == 'Crew') {
-                $notifQuery->where('user_id', $user->id);
+
+            if ($user->role->role_name === 'Spv') {
+                $notifQuery->where('role', 'Spv');
             } else {
                 $notifQuery->where('user_id', $user->id);
             }
 
-            if (!empty($query)) {
+            if ($query) {
                 $notifQuery->where('status', 'LIKE', '%' . $query . '%');
             }
 
@@ -290,11 +268,11 @@ class NotificationController extends Controller
                 return $notification;
             });
 
+            // Kembalikan hasil dalam format ResponseResource
             return new ResponseResource(true, "Notifications", $notifPaginated);
-        } else {
-            return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
-    }
 
-  
+        // Jika user tidak ditemukan
+        return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
+    }
 }

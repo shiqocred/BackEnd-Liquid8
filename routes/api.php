@@ -353,6 +353,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
+   Route::post('/partial-staging/{code_document}', [StagingProductController::class, 'partial'])->where('code_document', '.*');
 
    //export data by menu
    Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
@@ -442,6 +443,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
 Route::get('findSimilarStagingProducts', [StagingApproveController::class, 'findSimilarStagingProducts']);
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+
+
 
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
