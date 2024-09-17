@@ -175,20 +175,22 @@ class RepairProductController extends Controller
     {
         DB::beginTransaction();
         try {
+            // Data untuk new_quality
             $qualityData = [
                 'lolos' => 'lolos',
                 'damaged' => null,
-                'abnormal' =>  null,
+                'abnormal' => null,
             ];
-
+    
+            // Insert ke New_product
             New_product::create([
                 'code_document' => $repairProduct->code_document,
                 'old_barcode_product' => $repairProduct->old_barcode_product,
                 'new_barcode_product' => $repairProduct->new_barcode_product,
                 'new_name_product' => $repairProduct->new_name_product,
                 'new_quantity_product' => $repairProduct->new_quantity_product,
-                'new_price_product' => $repairProduct->new_price_product,
-                'old_price_product' => $repairProduct->new_price_product,
+                'new_price_product' => $repairProduct->old_price_product,
+                'old_price_product' => $repairProduct->old_price_product,
                 'new_date_in_product' => $repairProduct->new_date_in_product,
                 'new_status_product' => 'display',
                 'new_quality' => json_encode($qualityData),
@@ -197,23 +199,38 @@ class RepairProductController extends Controller
                 'new_discount' => $repairProduct->new_discount,
                 'display_price' => $repairProduct->display_price,
             ]);
-
+    
+            // Update data repair
             $repair = Repair::findOrFail($repairProduct->repair_id);
+            $updatedPrice = $repairProduct->old_price_product;
+    
             $repair->update([
                 'total_products' => $repair->total_products - 1,
+                'total_price' => $repair->total_price - $updatedPrice,
+                'total_custom_price' => $repair->total_custom_price - $updatedPrice,
             ]);
+    
+            // Hapus repairProduct setelah update
             $repairProduct->delete();
-
+    
+            // Jika tidak ada produk tersisa, hapus repair juga
             if ($repair->fresh()->total_products == 0) {
-                $repair->delete(); 
+                $repair->delete();
             }
+    
+            // Commit transaksi
             DB::commit();
+    
+            // Return respons berhasil
             return new ResponseResource(true, "Produk repair berhasil dihapus", $repairProduct);
+    
         } catch (\Exception $e) {
-            DB::rollback();
+            // Rollback transaksi jika ada kesalahan
+            DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Gagal menghapus produk repair', 'error' => $e->getMessage()], 500);
         }
     }
+    
 
     public function updateRepair($id)
     {

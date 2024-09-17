@@ -161,13 +161,11 @@ class RiwayatCheckController extends Controller
 
         // Proses produk yang rusak (damaged) menggunakan chunk
         $totalOldPriceDamaged = 0;
-        $getProductDamaged = [];
         New_product::where('code_document', $history->code_document)
             ->where('new_quality->damaged', '!=', null)
             ->chunk(1000, function ($products) use (&$getProductDamaged, &$totalOldPriceDamaged) {
                 foreach ($products as $product) {
                     $product->damaged_value = json_decode($product->new_quality)->damaged ?? null;
-                    $getProductDamaged[] = $product;
                     $totalOldPriceDamaged += $product->old_price_product;
                 }
             });
@@ -177,13 +175,11 @@ class RiwayatCheckController extends Controller
 
         // Proses produk lolos (lolos) menggunakan chunk
         $totalOldPriceLolos = 0;
-        $getProductLolos = [];
         New_product::where('code_document', $history->code_document)
             ->where('new_quality->lolos', '!=', null)
             ->chunk(1000, function ($products) use (&$getProductLolos, &$totalOldPriceLolos) {
                 foreach ($products as $product) {
                     $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
-                    $getProductLolos[] = $product;
                     $totalOldPriceLolos += $product->old_price_product;
                 }
             });
@@ -193,13 +189,11 @@ class RiwayatCheckController extends Controller
 
         // Proses produk abnormal (abnormal) menggunakan chunk
         $totalOldPriceAbnormal = 0;
-        $getProductAbnormal = [];
         New_product::where('code_document', $history->code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->chunk(1000, function ($products) use (&$getProductAbnormal, &$totalOldPriceAbnormal) {
                 foreach ($products as $product) {
                     $product->abnormal_value = json_decode($product->new_quality)->abnormal ?? null;
-                    $getProductAbnormal[] = $product;
                     $totalOldPriceAbnormal += $product->old_price_product;
                 }
             });
