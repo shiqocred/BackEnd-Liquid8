@@ -22,7 +22,7 @@ class RepairProductController extends Controller
      */
     public function index()
     {
-        $product_repairs = RepairProduct::latest()->paginate(100);
+        $product_repairs = RepairProduct::latest()->paginate(20);
         return new ResponseResource(true, "list product repair", $product_repairs);
     }
 
@@ -42,26 +42,26 @@ class RepairProductController extends Controller
         set_time_limit(300);
         ini_set('memory_limit', '512M');
         $userId = auth()->id();
-    
+
         DB::beginTransaction();
         try {
             $productFilters = RepairFilter::where('user_id', $userId)->get();
-    
+
             if ($productFilters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $productFilters);
             }
-    
+
             $validator = Validator::make($request->all(), [
                 'repair_name' => 'required|unique:repairs,repair_name',
                 'barcode' => 'required|unique:repairs,barcode',
             ]);
-            
+
             if ($validator->fails()) {
                 // Return a response with the validation errors and a 422 status code
                 $response = new ResponseResource(false, $validator->errors()->first(), null);
                 return $response->response()->setStatusCode(422);
             }
-            
+
             $repair = Repair::create([
                 'user_id' => $userId,
                 'repair_name' => $request->repair_name,
@@ -71,7 +71,7 @@ class RepairProductController extends Controller
                 'product_status' => 'not sale',
                 'barcode' => $request->barcode,
             ]);
-    
+
             $insertData = $productFilters->map(function ($product) use ($repair) {
                 return [
                     'repair_id' => $repair->id,
@@ -93,11 +93,11 @@ class RepairProductController extends Controller
                     'updated_at' => now(),
                 ];
             })->toArray();
-    
+
             RepairProduct::insert($insertData);
-    
+
             RepairFilter::where('user_id', $userId)->delete();
-    
+
             $notification = Notification::create([
                 'user_id' => $userId,
                 'notification_name' => 'Butuh Approvement untuk Repair',
@@ -106,7 +106,7 @@ class RepairProductController extends Controller
                 'riwayat_check_id' => null,
                 'repair_id' => $repair->id,
             ]);
-    
+
             DB::commit();
             return new ResponseResource(true, "Repair berhasil dibuat", [$repair, $notification]);
         } catch (\Exception $e) {
@@ -115,7 +115,7 @@ class RepairProductController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan produk ke repair', 'error' => $e->getMessage()], 500);
         }
     }
-    
+
 
     /**
      * Display the specified resource.
@@ -175,6 +175,12 @@ class RepairProductController extends Controller
     {
         DB::beginTransaction();
         try {
+            $qualityData = [
+                'lolos' => 'lolos',
+                'damaged' => null,
+                'abnormal' =>  null,
+            ];
+
             New_product::create([
                 'code_document' => $repairProduct->code_document,
                 'old_barcode_product' => $repairProduct->old_barcode_product,
@@ -185,7 +191,7 @@ class RepairProductController extends Controller
                 'old_price_product' => $repairProduct->new_price_product,
                 'new_date_in_product' => $repairProduct->new_date_in_product,
                 'new_status_product' => 'display',
-                'new_quality' => $repairProduct->new_quality,
+                'new_quality' => json_encode($qualityData),
                 'new_category_product' => $repairProduct->new_category_product,
                 'new_tag_product' => $repairProduct->new_tag_product,
                 'new_discount' => $repairProduct->new_discount,
@@ -196,9 +202,11 @@ class RepairProductController extends Controller
             $repair->update([
                 'total_products' => $repair->total_products - 1,
             ]);
-
             $repairProduct->delete();
 
+            if ($repair->fresh()->total_products == 0) {
+                $repair->delete(); 
+            }
             DB::commit();
             return new ResponseResource(true, "Produk repair berhasil dihapus", $repairProduct);
         } catch (\Exception $e) {

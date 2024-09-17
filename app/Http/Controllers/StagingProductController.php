@@ -6,17 +6,18 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Document;
 use App\Models\ExcelOld;
+use App\Models\New_product;
 use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
 use App\Models\FilterStaging;
+use App\Models\ProductApprove;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\New_product;
 use Illuminate\Support\Facades\Validator;
 
 class StagingProductController extends Controller
@@ -550,4 +551,73 @@ class StagingProductController extends Controller
 
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
+
+    public function partial($code_document)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+    
+        try {
+            $document = Document::where('code_document', $code_document)->first();
+            if ($document) {
+    
+                $productApprovesTags = ProductApprove::where('code_document', $code_document)
+                    ->whereNotNull('new_tag_product')
+                    ->get();
+    
+                $productApprovesCategories = ProductApprove::where('code_document', $code_document)
+                    ->whereNull('new_tag_product')
+                    ->get();
+    
+                DB::beginTransaction();
+    
+                $this->processProductApproves($productApprovesTags, New_product::class, 100);
+                $this->processProductApproves($productApprovesCategories, StagingProduct::class, 200);
+    
+                $total = count($productApprovesTags) + count($productApprovesCategories);
+    
+                DB::commit();
+                return new ResponseResource(true, "Berhasil ke staging", $total);
+    
+            } else {
+                return new ResponseResource(false, "Code document tidak ada", $code_document);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return new ResponseResource(false, "Gagal mengapprove transaksi", $e->getMessage());
+        }
+    }
+    
+    private function processProductApproves($productApproves, $modelClass, $chunkSize)
+    {
+        $productApproves->chunk($chunkSize)->each(function ($chunk) use ($modelClass) {
+            $dataToInsert = [];
+    
+            foreach ($chunk as $productApprove) {
+                $dataToInsert[] = [
+                    'code_document' => $productApprove->code_document,
+                    'old_barcode_product' => $productApprove->old_barcode_product,
+                    'new_barcode_product' => $productApprove->new_barcode_product,
+                    'new_name_product' => $productApprove->new_name_product,
+                    'new_quantity_product' => $productApprove->new_quantity_product,
+                    'new_price_product' => $productApprove->new_price_product,
+                    'old_price_product' => $productApprove->old_price_product,
+                    'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                    'new_status_product' => $productApprove->new_status_product,
+                    'new_quality' => $productApprove->new_quality,
+                    'new_category_product' => $productApprove->new_category_product,
+                    'new_tag_product' => $productApprove->new_tag_product,
+                    'new_discount' => $productApprove->new_discount,
+                    'display_price' => $productApprove->display_price,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+    
+            $modelClass::insert($dataToInsert);
+    
+            ProductApprove::destroy($chunk->pluck('id'));
+        });
+    }
+    
 }
