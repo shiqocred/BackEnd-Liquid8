@@ -247,22 +247,18 @@ class RiwayatCheckController extends Controller
             'created_at' => $history->created_at,
             'updated_at' => $history->updated_at,
             'damaged' => [
-                'products' => $getProductDamaged,
                 'total_old_price' => $totalOldPriceDamaged,
                 'price_percentage' => $totalPercentageDamaged,
             ],
             'lolos' => [
-                'products' => $getProductLolos,
                 'total_old_price' => $totalOldPriceLolos,
                 'price_percentage' => $totalPercentageLolos,
             ],
             'abnormal' => [
-                'products' => $getProductAbnormal,
                 'total_old_price' => $totalOldPriceAbnormal,
                 'price_percentage' => $totalPercentageAbnormal,
             ],
             'staging' => [
-                'products' => $stagingProducts,
                 'total_old_price' => $totalOldPricestaging,
                 'price_percentage' => $totalPercentageStaging,
             ],
