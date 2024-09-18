@@ -373,7 +373,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
 });
 
 //collab mtc
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Developer'])->group(function () {
+
+
+Route::middleware(['auth:sanctum','auth.multiple:Admin,Spv,Team leader,Crew,Developer'])->group(function () {
    //=========================================== Api For Bulky ==========================================================
    Route::resource('product-brands', ProductBrandController::class);
    Route::resource('product-conditions', ProductConditionController::class);
@@ -389,7 +391,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
 
-   //================================================product-collab======================================================
+   //get
+   Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
+   Route::get('list-categories', [CategoryController::class, 'index']);
+
+    //================================================product-collab======================================================
 
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
@@ -397,30 +403,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew,Develo
    Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 
-   //get
-   Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
-   Route::get('list-categories', [CategoryController::class, 'index']);
-});
 
-Route::middleware('check.api_key')->group(function () {
-   //=========================================== Api For Bulky ==========================================================
-   Route::resource('product-brands', ProductBrandController::class);
-   Route::resource('product-conditions', ProductConditionController::class);
-   Route::resource('product-statuses', ProductStatusController::class);
-   Route::resource('palet-brands', PaletBrandController::class)->except(['update']);
-   Route::put('palet-brands/{palet_id}', [PaletBrandController::class, 'update'])->name('palet-brands.update');
-   Route::resource('palet-images', PaletImageController::class)->except(['update', 'show']);
-   Route::put('palet-images/{palet_id}', [PaletImageController::class, 'update'])->name('palet-images.update');
-   Route::get('palet-images/{palet_id}', [PaletImageController::class, 'show'])->name('palet-images.show');
-   Route::get('palets', [PaletController::class, 'index']);
-   Route::get('palets-detail/{palet}', [PaletController::class, 'show']);
-   Route::put('palets/{palet}', [PaletController::class, 'update']);
-   Route::post('addPalet', [PaletController::class, 'store']);
-   Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
-
-   //get
-   Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
-   Route::get('list-categories', [CategoryController::class, 'index']);
 });
 //non auth 
 // Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
