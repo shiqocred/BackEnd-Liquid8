@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductStagingsExport;
 use Carbon\Carbon;
+use ProductsExport;
 use App\Models\User;
 use App\Models\Document;
 use App\Models\ExcelOld;
@@ -16,9 +18,11 @@ use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
+
 
 class StagingProductController extends Controller
 {
@@ -556,29 +560,28 @@ class StagingProductController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-    
+
         try {
             $document = Document::where('code_document', $code_document)->first();
             if ($document) {
-    
+
                 $productApprovesTags = ProductApprove::where('code_document', $code_document)
                     ->whereNotNull('new_tag_product')
                     ->get();
-    
+
                 $productApprovesCategories = ProductApprove::where('code_document', $code_document)
                     ->whereNull('new_tag_product')
                     ->get();
-    
+
                 DB::beginTransaction();
-    
+
                 $this->processProductApproves($productApprovesTags, New_product::class, 100);
                 $this->processProductApproves($productApprovesCategories, StagingProduct::class, 200);
-    
+
                 $total = count($productApprovesTags) + count($productApprovesCategories);
-    
+
                 DB::commit();
                 return new ResponseResource(true, "Berhasil ke staging", $total);
-    
             } else {
                 return new ResponseResource(false, "Code document tidak ada", $code_document);
             }
@@ -587,12 +590,12 @@ class StagingProductController extends Controller
             return new ResponseResource(false, "Gagal mengapprove transaksi", $e->getMessage());
         }
     }
-    
+
     private function processProductApproves($productApproves, $modelClass, $chunkSize)
     {
         $productApproves->chunk($chunkSize)->each(function ($chunk) use ($modelClass) {
             $dataToInsert = [];
-    
+
             foreach ($chunk as $productApprove) {
                 $dataToInsert[] = [
                     'code_document' => $productApprove->code_document,
@@ -613,11 +616,21 @@ class StagingProductController extends Controller
                     'updated_at' => now(),
                 ];
             }
-    
+
             $modelClass::insert($dataToInsert);
-    
+
             ProductApprove::destroy($chunk->pluck('id'));
         });
     }
-    
+
+    public function export()
+    {
+        try {
+            // Mencoba mengunduh file Excel
+            return Excel::download(new ProductStagingsExport, 'product-staging.xlsx');
+        } catch (\Exception $e) {
+            // Tangkap error jika terjadi
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
+        }
+    }
 }
