@@ -375,7 +375,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
 //collab mtc
 
 
-Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(function () {
+Route::middleware(['auth:sanctum','auth.multiple:Admin,Spv,Team leader,Crew,Developer'])->group(function () {
    //=========================================== Api For Bulky ==========================================================
    Route::resource('product-brands', ProductBrandController::class);
    Route::resource('product-conditions', ProductConditionController::class);
