@@ -427,9 +427,6 @@ Route::get('countBast', [StagingApproveController::class, 'countBast']);
 Route::get('findSimilarStagingProducts', [StagingApproveController::class, 'findSimilarStagingProducts']);
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
 
-
-
-
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 
 //excel genting
