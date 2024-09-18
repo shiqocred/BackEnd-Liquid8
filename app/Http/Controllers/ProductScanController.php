@@ -136,7 +136,7 @@ class ProductScanController extends Controller
     public function product_scan_search(Request $request)
     {
         try {
-            $product = ProductScan::where('product_name', $request->input('product_name'))->latest()->first();
+            $product = ProductScan::where('id', $request->input('id'))->latest()->first();
     
             if ($product) {
                 $response = ['product' => $product];
