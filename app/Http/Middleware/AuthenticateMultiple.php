@@ -1,13 +1,12 @@
-<?php 
+<?php
 namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Log;
-use App\Models\User; // Pastikan ini ada
-
 
 class AuthenticateMultiple
 {
@@ -28,34 +27,33 @@ class AuthenticateMultiple
             $user = Auth::guard('sanctum')->user(); // Ambil pengguna dari Auth guard
 
             if (!$user) {
-                // Jika pengguna masih null, kembalikan respon Unauthorized
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
 
             // Eager load relasi 'role'
             $user->load('role');
 
-            // Debug: Coba ambil peran pengguna
-            if ($user->role) {
-                Log::info('User role:', ['role_name' => $user->role->role_name]);
-            } else {
-                Log::info('User has no role.');
-            }
-
-            // Cek jika pengguna memiliki peran yang benar seperti pada middleware CheckRole
+            // Cek jika pengguna memiliki peran yang benar
             if (!in_array($user->role->role_name, $roles)) {
                 $resource = new ResponseResource(false, "anda tidak berhak mengakses halaman ini", null);
                 return $resource->response()->setStatusCode(403);
             }
 
+            // Set user secara manual untuk memastikan auth()->id() dapat diakses di luar middleware
+            Auth::login($user);
+
             return $next($request);
         }
 
-        // 2. Cek otentikasi menggunakan API key (jika header Authorization tidak mengandung 'Bearer')
+        // 2. Cek otentikasi menggunakan API key
         if ($authorizationHeader && strpos($authorizationHeader, 'Bearer ') !== 0) {
             $apiKey = $authorizationHeader;
 
-            if (User::where('api_key', $apiKey)->exists()) {
+            $user = User::where('api_key', $apiKey)->first();
+            if ($user) {
+                // Set user secara manual untuk permintaan ini
+                Auth::login($user);
+
                 return $next($request);
             }
         }
