@@ -158,6 +158,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
 });
+Route::get('export-staging', [StagingProductController::class, 'export']);
 //product staging approve
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //untuk spv me approve staging ke inventory 
@@ -395,15 +396,13 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
 
-    //================================================product-collab======================================================
+   //================================================product-collab======================================================
 
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
    Route::get('product_scan_search ', [ProductScanController::class, 'product_scan_search']);
    Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
-
-
 });
 //non auth 
 // Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
@@ -428,9 +427,6 @@ Route::get('findSimilarStagingProducts', [StagingApproveController::class, 'find
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
-
-//excel genting
-Route::get('searchdata_to_excel', [StagingApproveController::class, 'searchdata_to_excel']);
 
 
 //download template

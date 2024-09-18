@@ -1,18 +1,20 @@
-<?php 
-use Maatwebsite\Excel\Concerns\FromQuery;
+<?php
+
+namespace App\Exports;
+
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\Exportable;
 use App\Models\StagingProduct;
+use Maatwebsite\Excel\Concerns\FromCollection;
 
-class ProductStagingsExport implements FromQuery, WithHeadings, WithChunkReading
+class ProductStagingsExport implements FromCollection, WithHeadings
 {
     use Exportable;
 
-    public function query()
+    public function collection()
     {
         return StagingProduct::whereNotNull('new_category_product')
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])->get();
     }
 
     public function headings(): array
@@ -35,11 +37,4 @@ class ProductStagingsExport implements FromQuery, WithHeadings, WithChunkReading
             'Updated At'
         ];
     }
-
-    public function chunkSize(): int
-    {
-        return 1000;
-    }
 }
-
-?>

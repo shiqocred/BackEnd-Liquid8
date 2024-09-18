@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductStagingsExport;
 use Carbon\Carbon;
 use ProductsExport;
 use App\Models\User;
@@ -21,7 +22,6 @@ use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
-use ProductStagingsExport;
 
 
 class StagingProductController extends Controller
@@ -623,15 +623,14 @@ class StagingProductController extends Controller
         });
     }
 
-    public function export_product_staging(Request $request)
+    public function export()
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
-
-        // Data yang akan di-export
-        $products = StagingProduct::whereNotNull('new_category_product')
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])->get();
-        // Menggunakan maatwebsite/excel untuk export
-        return Excel::download(new ProductStagingsExport($products), 'new_products_export.xlsx');
+        try {
+            // Mencoba mengunduh file Excel
+            return Excel::download(new ProductStagingsExport, 'product-staging.xlsx');
+        } catch (\Exception $e) {
+            // Tangkap error jika terjadi
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
+        }
     }
 }
