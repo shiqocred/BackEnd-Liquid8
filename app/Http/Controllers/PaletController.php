@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Palet;
+use App\Models\Category;
 use App\Models\PaletImage;
 use App\Models\New_product;
 use Illuminate\Http\Request;
@@ -43,7 +44,7 @@ class PaletController extends Controller
 
         $query = $request->input('q');
         $palets = Palet::latest()
-            ->with('paletProducts', 'paletImages', 'paletBrands')
+            ->with('paletProducts', 'paletImages', 'paletBrands', 'category', 'product_status', 'destination', 'product_condition')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%')
                     ->orWhere('category_palet', 'LIKE', '%' . $query . '%')
@@ -86,9 +87,9 @@ class PaletController extends Controller
                 'file_pdf' => 'nullable|mimes:pdf|max:2048',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
-                'warehouse' => 'nullable|required|string',
-                'condition' => 'nullable|required|string',
-                'status' => 'nullable|required|string',
+                'warehouse' => 'nullable|string',
+                'condition' => 'nullable|string',
+                'status' => 'nullable|string',
                 'is_sale' => 'boolean',
             ]);
 
@@ -403,5 +404,20 @@ class PaletController extends Controller
         $downloadUrl = url($publicPath . '/' . $fileName);
 
         return new ResponseResource(true, "unduh", $downloadUrl);
+    }
+
+    public function updateCategoryPalet(Request $request)
+    {
+        $palets = Palet::all();
+
+        foreach ($palets as $palet) {
+            $category = Category::where('name_category', $palet->category_palet)->first();
+
+            if ($category) {
+                $palet->category_id = $category->id;
+                $palet->save();
+            }
+        }
+        return new ResponseResource(true, "berhasil di update", []);
     }
 }

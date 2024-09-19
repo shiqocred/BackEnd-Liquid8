@@ -10,4 +10,9 @@ class ProductCondition extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
+
+    public function palets()
+    {
+        return $this->hasMany(Palet::class, 'product_condition_id');
+    }
 }
