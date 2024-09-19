@@ -2,19 +2,19 @@
 
 namespace App\Exports;
 
+use App\Models\StagingProduct;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\Exportable;
-use App\Models\StagingProduct;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
 
-class ProductStagingsExport implements FromCollection, WithHeadings
+class ProductStagingsExport implements FromQuery, WithHeadings
 {
     use Exportable;
 
-    public function collection()
+    public function query()
     {
-        return StagingProduct::whereNotNull('new_category_product')
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])->get();
+        return StagingProduct::query()
+        ->whereNull('new_tag_product');
     }
 
     public function headings(): array
@@ -33,8 +33,11 @@ class ProductStagingsExport implements FromCollection, WithHeadings
             'New Quality',
             'New Category Product',
             'New Tag Product',
-            'Created At',
-            'Updated At'
+            'New Discount',
+            'Display Price',
+            'created_at',
+            'updated_at',
+            'Days Since Created'
         ];
     }
 }
