@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ProductStagingsExport;
 use Carbon\Carbon;
 use ProductsExport;
 use App\Models\User;
@@ -19,6 +18,7 @@ use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductStagingsExport;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -625,12 +625,28 @@ class StagingProductController extends Controller
 
     public function export()
     {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+    
         try {
-            // Mencoba mengunduh file Excel
-            return Excel::download(new ProductStagingsExport, 'product-staging.xlsx');
+            $fileName = 'product-staging.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+    
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+    
+            Excel::store(new ProductStagingsExport, $publicPath . '/' . $fileName, 'public');
+    
+            // URL download menggunakan public_path
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+    
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
         } catch (\Exception $e) {
-            // Tangkap error jika terjadi
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
+    
 }
