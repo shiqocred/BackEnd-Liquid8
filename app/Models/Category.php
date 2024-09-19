@@ -9,4 +9,9 @@ class Category extends Model
 {
     use HasFactory;
     protected $guarded = ['id'];
+
+    public function palets()
+    {
+        return $this->hasMany(Palet::class, 'category_id');
+    }
 }

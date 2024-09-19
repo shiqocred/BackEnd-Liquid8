@@ -10,4 +10,9 @@ class ProductStatus extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
+
+    public function palets()
+    {
+        return $this->hasMany(Palet::class, 'product_status_id');
+    }
 }

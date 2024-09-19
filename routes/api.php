@@ -375,7 +375,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
 
 //collab mtc
 
-
 Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(function () {
    //=========================================== Api For Bulky ==========================================================
    Route::resource('product-brands', ProductBrandController::class);
@@ -416,6 +415,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
+Route::get('updateCategoryPalet', [PaletController::class, 'updateCategoryPalet']);
 
 
 // route untuk cek koneksi
