@@ -157,8 +157,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
+   Route::get('export-staging', [StagingProductController::class, 'export']);
 });
-Route::get('export-staging', [StagingProductController::class, 'export']);
 //product staging approve
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //untuk spv me approve staging ke inventory 

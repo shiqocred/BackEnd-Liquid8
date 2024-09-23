@@ -22,16 +22,16 @@ class ProductScanController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-    
+
         $productScanQuery = ProductScan::with('user')->latest();
-    
+
         if ($query) {
             $productScanQuery->where('product_name', 'LIKE', '%' . $query . '%');
         }
         $productScans = $productScanQuery->paginate(20);
         return new ResponseResource(true, "list products scan", $productScans);
     }
-    
+
 
     /**
      * Show the form for creating a new resource.
@@ -137,15 +137,19 @@ class ProductScanController extends Controller
     {
         try {
             $product = ProductScan::where('id', $request->input('id'))->latest()->first();
-    
+
             if ($product) {
+                $generate = newBarcodeScan();
                 $response = ['product' => $product];
-    
-                if ($product->product_price <= 99999) { 
+                $response['product']['new_barcode_product'] = $generate;
+                $response['product']['old_barcode_product'] = $generate;
+
+                if ($product->product_price <= 99999) {
                     $response['color_tags'] = Color_tag::where('min_price_color', '<=', $product->product_price)
                         ->where('max_price_color', '>=', $product->product_price)
                         ->first();
                 }
+
                 return new ResponseResource(true, "Data ditemukan", $response);
             } else {
                 return (new ResponseResource(false, "Produk tidak ada", null))
@@ -156,14 +160,14 @@ class ProductScanController extends Controller
                 ->response()->setStatusCode(500);
         }
     }
-    
+
 
     public function move_to_staging(Request $request)
     {
         $validator = Validator::make($request->all(), [
             // 'code_document' => 'required',
             'old_barcode_product' => 'nullable',
-            'new_barcode_product' => 'unique:new_products,new_barcode_product',
+            'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
@@ -216,7 +220,7 @@ class ProductScanController extends Controller
             $this->deleteProductScan($request->input('new_name_product'));
             if ($inputData['new_tag_product'] !== null) {
                 $newProduct = New_product::create($inputData);
-            }else{
+            } else {
                 $newProduct = StagingProduct::create($inputData);
             }
             DB::commit();
@@ -256,6 +260,7 @@ class ProductScanController extends Controller
 
         ]);
 
+        $inputData['old_barcode_product'] = $inputData['new_barcode_product'];
         $inputData['code_document'] = null;
         $inputData['new_status_product'] = "display";
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
@@ -263,14 +268,6 @@ class ProductScanController extends Controller
         $inputData['new_discount'] = 0;
         $inputData['display_price'] = $inputData['new_price_product'];
 
-        if($inputData['new_category_product'] != null){
-            $generate = generateNewBarcode($inputData['new_category_product']);
-            $inputData['new_barcode_product'] = $generate;
-            $inputData['old_barcode_product'] = $generate;
-        }else {
-            $inputData['new_barcode_product'] = newBarcodeScan();
-            $inputData['old_barcode_product'] = $inputData['new_barcode_product'];
-        }
         if ($status !== 'lolos') {
             $inputData['new_category_product'] = null;
             $inputData['new_price_product'] = null;
@@ -286,13 +283,12 @@ class ProductScanController extends Controller
     private function deleteProductScan($product_name)
     {
         $product = DB::table('product_scans')->where('product_name', $product_name)->latest()->first();
-        
+
         if ($product) {
             $affectedRows = DB::table('product_scans')->where('id', $product->id)->delete();
             return $affectedRows > 0;
         } else {
-            return new ResponseResource(false,'data tidak ditemukan',null); 
+            return new ResponseResource(false, 'data tidak ditemukan', null);
         }
     }
-    
 }
