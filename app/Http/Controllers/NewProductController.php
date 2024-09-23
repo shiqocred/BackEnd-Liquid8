@@ -652,7 +652,6 @@ class NewProductController extends Controller
                 ExcelOldColor::insert($chunk);
             }
 
-
             // Create a new document with the rowCount
             Document::create([
                 'code_document' => $this->generateDocumentCode(),
@@ -707,8 +706,6 @@ class NewProductController extends Controller
         $ekspedisiData = ExcelOldColor::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-
-
 
         $mergedData = [
             'old_barcode_product' => [],
@@ -779,7 +776,7 @@ class NewProductController extends Controller
             $newProductData = [
                 'code_document' => $code_document,
                 'old_barcode_product' => $barcode,
-                'new_barcode_product' => $mergedData['new_barcode_product'][$index] ?? null,
+                'new_barcode_product' => newBarcodeScan(),
                 'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
                 'new_category_product' => null,
                 'new_tag_product' => $mergedData['new_tag_product'][$index] ?? null,
