@@ -696,17 +696,17 @@ class NewProductController extends Controller
             'old_price_product' => ['Nilai Barang Satuan'],
             'new_date_in_product' => ['Date'],
         ];
-
+    
         $latestDocument = Document::latest()->first();
         if (!$latestDocument) {
             return response()->json(['error' => 'No documents found.'], 404);
         }
         $code_document = $latestDocument->code_document;
-
+    
         $ekspedisiData = ExcelOldColor::all()->map(function ($item) {
             return json_decode($item->data, true);
         });
-
+    
         $mergedData = [
             'old_barcode_product' => [],
             'new_barcode_product' => [],
@@ -721,7 +721,7 @@ class NewProductController extends Controller
             'new_discount' => [],
             'display_price' => [],
         ];
-
+    
         foreach ($ekspedisiData as $dataItem) {
             foreach ($headerMappings as $templateHeader => $selectedHeaders) {
                 foreach ($selectedHeaders as $userSelectedHeader) {
@@ -730,48 +730,54 @@ class NewProductController extends Controller
                     }
                 }
             }
-
+    
             $status = $dataItem['Status'] ?? 'unknown';
             $description = $dataItem['Description'] ?? '';
-
+    
             $qualityData = [
                 'lolos' => $status === 'lolos' ? true : null,
                 'damaged' => $status === 'damaged' ? $description : null,
                 'abnormal' => $status === 'abnormal' ? $description : null,
             ];
-
+    
             $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
         }
-
+    
         // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
         // Variabel penampung barcode double ini adalah $responseBarcode
-        $responseBarcode = collect();
-        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $new_product = New_product::where('new_barcode_product', $barcode)->first();
-            if ($new_product) {
-                $responseBarcode->push($barcode);
-            }
-        }
-
-        if ($responseBarcode->isNotEmpty()) {
-            ExcelOldColor::query()->delete();
-            return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
-        }
-
-
+        // $responseBarcode = collect();
+        // foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+        //     $new_product = New_product::where('new_barcode_product', $barcode)->first();
+        //     if ($new_product) {
+        //         $responseBarcode->push($barcode);
+        //     }
+        // }
+    
+        // if ($responseBarcode->isNotEmpty()) {
+        //     ExcelOldColor::query()->delete();
+        //     return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
+        // }
+    
         // Menyimpan data yang digabungkan ke dalam model New_product
         foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+            // Skip jika old_price_product >= 100000
+            if (isset($mergedData['old_price_product'][$index]) && $mergedData['old_price_product'][$index] >= 100000) {
+                continue;
+            }
+    
+            // Hanya memproses harga <= 99999
             if ($mergedData['old_price_product'][$index] <= 99999) {
                 $colors = Color_tag::where('min_price_color', '<=', $mergedData['old_price_product'][$index])
                     ->where('max_price_color', '>=', $mergedData['old_price_product'][$index])
                     ->first();
-
+    
                 if ($colors) {
                     $mergedData['new_tag_product'][$index] = $colors->name_color;
                     $mergedData['display_price'][$index] = $colors->fixed_price_color;
                     $mergedData['new_price_product'][$index] = $colors->fixed_price_color;
                 }
             }
+    
             $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
             $newProductData = [
                 'code_document' => $code_document,
@@ -788,15 +794,15 @@ class NewProductController extends Controller
                 'new_discount' => 0,
                 'display_price' => $mergedData['display_price'][$index] ?? null,
             ];
-
+    
             New_product::create($newProductData);
         }
-
+    
         ExcelOldColor::query()->delete();
-
-
+    
         return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
+    
     //end inject tag warna
 
 
