@@ -144,7 +144,7 @@ function generateNewBarcode($category)
 
 function newBarcodeCustom($init_barcode, $userId)
 {
-    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-';
     $maxRetry = 5;
 
     return DB::transaction(function () use ($init_barcode, $characters, $maxRetry, $userId) {
