@@ -2,19 +2,20 @@
 
 namespace App\Exports;
 
+use App\Models\New_product;
 use App\Models\StagingProduct;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromQuery;
 
-class ProductStagingsExport implements FromQuery, WithHeadings
+class ProductCategoryAndColorNull implements FromQuery, WithHeadings
 {
     use Exportable;
 
     public function query()
     {
-        return StagingProduct::query()
-        ->whereNull('new_tag_product');
+        return New_product::whereNull('new_tag_product')
+            ->whereNull('new_category_product');
     }
 
     public function headings(): array
@@ -33,10 +34,10 @@ class ProductStagingsExport implements FromQuery, WithHeadings
             'New Quality',
             'New Category Product',
             'New Tag Product',
-            'New Discount',
-            'Display Price',
             'created_at',
             'updated_at',
+            'New Discount',
+            'Display Price',
             'Days Since Created'
         ];
     }

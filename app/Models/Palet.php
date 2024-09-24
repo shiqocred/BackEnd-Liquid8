@@ -23,4 +23,20 @@ class Palet extends Model
     {
         return $this->hasMany(PaletBrand::class, 'palet_id');
     }
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+    public function product_status()
+    {
+        return $this->belongsTo(ProductStatus::class, 'product_status_id');
+    }
+    public function destination()
+    {
+        return $this->belongsTo(Destination::class, 'destination_id');
+    }
+    public function product_condition()
+    {
+        return $this->belongsTo(ProductCondition::class, 'product_condition_id');
+    }
 }
