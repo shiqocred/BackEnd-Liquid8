@@ -33,10 +33,10 @@ class ProductStagingsExport implements FromQuery, WithHeadings
             'New Quality',
             'New Category Product',
             'New Tag Product',
-            'New Discount',
-            'Display Price',
             'created_at',
             'updated_at',
+            'New Discount',
+            'Display Price',
             'Days Since Created'
         ];
     }
