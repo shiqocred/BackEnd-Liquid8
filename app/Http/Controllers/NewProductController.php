@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use App\Models\Sale;
+use ProductsExport;
 use App\Models\Bundle;
 use App\Models\Category;
 use App\Models\Document;
@@ -16,21 +16,16 @@ use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
 use App\Models\ExcelOldColor;
-use App\Models\ListProductBP;
-use App\Models\RepairProduct;
-use App\Models\ProductApprove;
-use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductStagingsExport;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
-use App\Models\ProductScan;
-use App\Models\ScanProduct;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
+use App\Exports\ProductCategoryAndColorNull;
 
 class NewProductController extends Controller
 {
@@ -1592,6 +1587,32 @@ class NewProductController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function export()
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        try {
+            $fileName = 'product-category-color-null.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+
+            Excel::store(new ProductCategoryAndColorNull, $publicPath . '/' . $fileName, 'public');
+
+            // URL download menggunakan public_path
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
 }

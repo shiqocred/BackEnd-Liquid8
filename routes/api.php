@@ -48,6 +48,7 @@ use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductScanController;
 use App\Http\Controllers\SpecialTransactionController;
 use App\Http\Middleware\CheckApiKey;
+use App\Models\New_product;
 use App\Models\StagingApprove;
 
 Route::fallback(function () {
@@ -432,3 +433,6 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
+
+//excel
+Route::get('export-category-color-null', [NewProductController::class, 'export']);
