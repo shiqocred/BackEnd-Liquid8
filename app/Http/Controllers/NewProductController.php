@@ -1252,6 +1252,11 @@ class NewProductController extends Controller
             'new_barcode_product.unique' => 'barcode sudah ada'
         ]);
 
+        $validator->sometimes('new_category_product', 'required', function ($input) {
+            // $input di sini adalah seluruh data request yang masuk
+            return $input->new_price_product >= 100000;
+        });
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
