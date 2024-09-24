@@ -15,9 +15,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('cron:expiredProduct')->everyTwoHours();
 
         // Jadwalkan command untuk dijalankan pada pukul 23:59 pada hari terakhir bulan
-        $schedule->command('end-of-month:task')->monthlyOn(28, '23:59')->when(function () {
-            return now()->endOfMonth()->isToday();
-        });
+        $schedule->command('end-of-month:task')->when(function () {
+            return now()->isLastOfMonth();
+        })->dailyAt('23:59');
     }
 
     /**

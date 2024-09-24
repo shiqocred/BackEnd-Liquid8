@@ -388,6 +388,26 @@ class DashboardController extends Controller
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
             ->first();
 
+        $tagProductCount = New_product::selectRaw('
+                new_tag_product as tag_product,
+                COUNT(new_tag_product) as total_tag_product,
+                SUM(new_price_product) as total_price_tag_product
+            ')
+            ->whereNotNull('new_tag_product')
+            ->where('new_category_product', NULL)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->groupBy('new_tag_product')
+            ->get();
+
+        $tagProductCountAll = New_product::selectRaw('
+                COUNT(new_tag_product) as total_all_tag_product,
+                SUM(new_price_product) as total_all_price_tag_product
+            ')
+            ->whereNotNull('new_tag_product')
+            ->where('new_category_product', NULL)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->first();
+
         $resource = new ResponseResource(
             true,
             "Laporan Data Perkategori",
@@ -398,9 +418,14 @@ class DashboardController extends Controller
                         'year' => $currentYear,
                     ],
                 ],
-                'chart' => $categoryCount,
+                'chart' => [
+                    'category' => $categoryCount,
+                    'tag_product' => $tagProductCount,
+                ],
                 'total_all_category' => $categoryCountAll['total_all_category'],
-                'total_all_price_category' => $categoryCountAll['total_all_price_category']
+                'total_all_price_category' => $categoryCountAll['total_all_price_category'],
+                'total_all_tag_product' => $tagProductCountAll['total_all_tag_product'],
+                'total_all_price_tag_product' => $tagProductCountAll['total_all_price_tag_product'],
             ]
         );
 
