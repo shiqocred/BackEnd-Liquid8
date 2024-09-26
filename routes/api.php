@@ -358,7 +358,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::post('/partial-staging/{code_document}', [StagingProductController::class, 'partial'])->where('code_document', '.*');
 
    //export data by menu
-   Route::post('export_product_byCategory', [NewProductController::class, 'export_product_byCategory']);
+   Route::post('export_product_byCategory', [NewProductController::class, 'exportProductByCategory']);
    Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
    Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
    Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);

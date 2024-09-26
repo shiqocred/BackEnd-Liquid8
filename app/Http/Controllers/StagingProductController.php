@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ProductStagingsExport;
+use App\Exports\ProductsExportCategory ;
 use Carbon\Carbon;
-use ProductsExport;
 use App\Models\User;
 use App\Models\Document;
-use App\Models\ExcelOld;
 use App\Models\New_product;
 use App\Models\Notification;
 use App\Models\RiwayatCheck;
@@ -828,7 +826,7 @@ class StagingProductController extends Controller
                 mkdir(dirname($filePath), 0777, true);
             }
 
-            Excel::store(new ProductStagingsExport, $publicPath . '/' . $fileName, 'public');
+            Excel::store(new ProductsExportCategory(StagingProduct::class), $publicPath . '/' . $fileName, 'public');
 
             // URL download menggunakan public_path
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);

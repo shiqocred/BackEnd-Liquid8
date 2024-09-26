@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use ProductsExport;
 use App\Models\Bundle;
 use App\Models\Category;
 use App\Models\Document;
@@ -19,11 +18,13 @@ use App\Models\ExcelOldColor;
 use App\Models\FilterStaging;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use App\Exports\ProductsExport;
 use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductStagingsExport;
+use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -1465,162 +1466,30 @@ class NewProductController extends Controller
         return new ResponseResource(true, "list data product by color", $countByColor);
     }
 
-    public function exportNewProducts()
+    public function exportProductByCategory()
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        try {
+            $fileName = 'product-inventory.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
 
-        $headers = [
-            'ID',
-            'Code Document',
-            'Old Barcode Product',
-            'New Barcode Product',
-            'New Name Product',
-            'New Quantity Product',
-            'New Price Product',
-            'Old Price Product',
-            'New Date In Product',
-            'New Status Product',
-            'New Quality',
-            'New Category Product',
-            'New Tag Product',
-            'Created At',
-            'Updated At'
-        ];
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
 
-        $columnIndex = 1;
-        foreach ($headers as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
-            $columnIndex++;
+            Excel::store(new ProductsExportCategory(New_product::class), $publicPath . '/' . $fileName, 'public');
+
+            // URL download menggunakan public_path
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
-
-        // Variabel untuk melacak baris
-        $rowIndex = 2;
-
-        // Mengambil data dalam batch
-        New_product::where('new_status_product', '!=', 'sale')
-            ->where('new_status_product', '!=', 'migrate')
-            ->whereNull('new_tag_product')
-            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
-                foreach ($products as $product) {
-                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
-                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
-                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
-                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
-                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
-                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
-                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
-                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
-                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
-                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
-                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
-                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
-                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
-                    $rowIndex++;
-                }
-            });
-
-        // Menyimpan file Excel
-        $writer = new Xlsx($spreadsheet);
-        $fileName = 'new_products_export.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-
-        $writer->save($filePath);
-
-        // Mengembalikan URL untuk mengunduh file
-        $downloadUrl = url($publicPath . '/' . $fileName);
-
-        return new ResponseResource(true, "file diunduh", $downloadUrl);
-    }
-
-    public function export_product_byCategory(Request $request)
-    {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
-
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
-        $headers = [
-            'ID',
-            'Code Document',
-            'Old Barcode Product',
-            'New Barcode Product',
-            'New Name Product',
-            'New Quantity Product',
-            'New Price Product',
-            'Old Price Product',
-            'New Date In Product',
-            'New Status Product',
-            'New Quality',
-            'New Category Product',
-            'New Tag Product',
-            'Created At',
-            'Updated At'
-        ];
-
-        // Menuliskan headers ke sheet
-        $columnIndex = 1;
-        foreach ($headers as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
-            $columnIndex++;
-        }
-
-        // Variabel untuk melacak baris
-        $rowIndex = 2;
-
-        // Mengambil data dalam batch
-        New_product::whereNotNull('new_category_product')
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
-            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
-                foreach ($products as $product) {
-                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
-                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
-                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
-                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
-                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
-                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
-                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
-                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
-                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
-                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
-                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
-                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
-                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
-                    $rowIndex++;
-                }
-            });
-
-        // Menyimpan file Excel
-        $writer = new Xlsx($spreadsheet);
-        $fileName = 'new_products_export.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-
-        $writer->save($filePath);
-
-        // Mengembalikan URL untuk mengunduh file
-        $downloadUrl = url($publicPath . '/' . $fileName);
-
-        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 
     public function export_product_expired(Request $request)
