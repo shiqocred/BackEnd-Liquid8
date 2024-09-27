@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
 use App\Models\Palet;
-use App\Models\paletBrand;
+use App\Models\PaletBrand;
 use App\Models\ProductBrand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -86,7 +86,7 @@ class PaletBrandController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(paletBrand $paletBrand)
+    public function edit(PaletBrand $paletBrand)
     {
         //
     }
@@ -139,7 +139,7 @@ class PaletBrandController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(paletBrand $paletBrand)
+    public function destroy(PaletBrand $paletBrand)
     {
         try {
             $paletBrand->delete();
