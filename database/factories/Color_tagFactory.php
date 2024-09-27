@@ -26,7 +26,7 @@ class Color_tagFactory extends Factory
                 'hexa_code_color' => '#FF0000',
                 'name_color' => 'merah',
                 'min_price_color' => 0,
-                'max_price_color' => 49000,
+                'max_price_color' => 49999,
                 'fixed_price_color' => 25000
             ];
         });
@@ -38,7 +38,7 @@ class Color_tagFactory extends Factory
                 'hexa_code_color' => '#0000FF',
                 'name_color' => 'biru',
                 'min_price_color' => 49999,
-                'max_price_color' => 99000,
+                'max_price_color' => 99999,
                 'fixed_price_color' => 50000
             ];
         });

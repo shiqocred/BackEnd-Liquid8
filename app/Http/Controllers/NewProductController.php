@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use ProductsExport;
 use App\Models\Bundle;
 use App\Models\Category;
 use App\Models\Document;
@@ -16,16 +15,23 @@ use App\Models\Notification;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
 use App\Models\ExcelOldColor;
+use App\Models\FilterStaging;
+use App\Models\StagingApprove;
+use App\Models\StagingProduct;
+use App\Exports\ProductsExport;
+use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductStagingsExport;
+use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Exports\ProductCategoryAndColorNull;
+
 
 class NewProductController extends Controller
 {
@@ -373,119 +379,119 @@ class NewProductController extends Controller
     }
 
     //inject category display -> inventory
-    public function processExcelFilesCategory(Request $request)
-    {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
-        $user_id = auth()->id();
+    // public function processExcelFilesCategory(Request $request)
+    // {
+    //     set_time_limit(300);
+    //     ini_set('memory_limit', '512M');
+    //     $user_id = auth()->id();
 
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls',
-            'file.unique' => 'Nama file sudah ada di database.',
-        ]);
+    //     $request->validate([
+    //         'file' => 'required|file|mimes:xlsx,xls',
+    //         'file.unique' => 'Nama file sudah ada di database.',
+    //     ]);
 
-        $file = $request->file('file');
-        $filePath = $file->getPathname();
-        $fileName = $file->getClientOriginalName();
-        $file->storeAs('public/ekspedisis', $fileName);
+    //     $file = $request->file('file');
+    //     $filePath = $file->getPathname();
+    //     $fileName = $file->getClientOriginalName();
+    //     $file->storeAs('public/ekspedisis', $fileName);
 
-        DB::beginTransaction();
+    //     DB::beginTransaction();
 
-        try {
-            $spreadsheet = IOFactory::load($filePath);
-            $sheet = $spreadsheet->getActiveSheet();
-            $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
-            $dataToInsert = [];
-            $rowCount = 0;
+    //     try {
+    //         $spreadsheet = IOFactory::load($filePath);
+    //         $sheet = $spreadsheet->getActiveSheet();
+    //         $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
+    //         $dataToInsert = [];
+    //         $rowCount = 0;
 
-            foreach ($sheet->getRowIterator(2) as $row) {
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(FALSE);
+    //         foreach ($sheet->getRowIterator(2) as $row) {
+    //             $cellIterator = $row->getCellIterator();
+    //             $cellIterator->setIterateOnlyExistingCells(FALSE);
 
-                $rowData = [];
-                foreach ($cellIterator as $cell) {
-                    $rowData[] = $cell->getValue() ?? '';
-                }
+    //             $rowData = [];
+    //             foreach ($cellIterator as $cell) {
+    //                 $rowData[] = $cell->getValue() ?? '';
+    //             }
 
-                if (count($header) === count($rowData)) {
-                    $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
-                    $rowCount++;
-                }
-            }
+    //             if (count($header) === count($rowData)) {
+    //                 $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
+    //                 $rowCount++;
+    //             }
+    //         }
 
-            $chunks = array_chunk($dataToInsert, 500);
-            foreach ($chunks as $chunk) {
-                ExcelOld::insert($chunk);
-            }
+    //         $chunks = array_chunk($dataToInsert, 500);
+    //         foreach ($chunks as $chunk) {
+    //             ExcelOld::insert($chunk);
+    //         }
 
-            // Create a new document with the rowCount
-            $docs = Document::create([
-                'code_document' => $this->generateDocumentCode(),
-                'base_document' => $fileName,
-                'total_column_document' => count($header),
-                'total_column_in_document' => $rowCount,
-                'status_document' => 'done',
-                'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
-            ]);
+    //         // Create a new document with the rowCount
+    //         $docs = Document::create([
+    //             'code_document' => $this->generateDocumentCode(),
+    //             'base_document' => $fileName,
+    //             'total_column_document' => count($header),
+    //             'total_column_in_document' => $rowCount,
+    //             'status_document' => 'done',
+    //             'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
+    //         ]);
 
-            // Call mapAndMergeHeaders function here
-            $mergeResponse = $this->mapAndMergeHeadersCategory();
+    //         // Call mapAndMergeHeaders function here
+    //         $mergeResponse = $this->mapAndMergeHeadersCategory();
 
-            // Decode the response if it is in JSON format
-            $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
+    //         // Decode the response if it is in JSON format
+    //         $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
 
-            if ($mergeResponseArray['status'] === false) {
-                DB::rollback();
-                return response()->json($mergeResponseArray, 422);
-            }
+    //         if ($mergeResponseArray['status'] === false) {
+    //             DB::rollback();
+    //             return response()->json($mergeResponseArray, 422);
+    //         }
 
-            $history = RiwayatCheck::create([
-                'user_id' => $user_id,
-                'code_document' => $docs->code_document,
-                'base_document' => $fileName,
-                'total_data' => $docs->total_column_in_document,
-                'total_data_in' => $docs->total_column_in_document,
-                'total_data_lolos' => $docs->total_column_in_document,
-                'total_data_damaged' => 0,
-                'total_data_abnormal' => 0,
-                'total_discrepancy' => 0,
-                'status_approve' => 'display',
+    //         $history = RiwayatCheck::create([
+    //             'user_id' => $user_id,
+    //             'code_document' => $docs->code_document,
+    //             'base_document' => $fileName,
+    //             'total_data' => $docs->total_column_in_document,
+    //             'total_data_in' => $docs->total_column_in_document,
+    //             'total_data_lolos' => $docs->total_column_in_document,
+    //             'total_data_damaged' => 0,
+    //             'total_data_abnormal' => 0,
+    //             'total_discrepancy' => 0,
+    //             'status_approve' => 'display',
 
-                // persentase
-                'precentage_total_data' => 0,
-                'percentage_in' => 0,
-                'percentage_lolos' => 0,
-                'percentage_damaged' => 0,
-                'percentage_abnormal' => 0,
-                'percentage_discrepancy' => 0,
-                'total_price' => 0
-            ]);
+    //             // persentase
+    //             'precentage_total_data' => 0,
+    //             'percentage_in' => 0,
+    //             'percentage_lolos' => 0,
+    //             'percentage_damaged' => 0,
+    //             'percentage_abnormal' => 0,
+    //             'percentage_discrepancy' => 0,
+    //             'total_price' => 0
+    //         ]);
 
-            Notification::create([
-                'user_id' => $user_id,
-                'notification_name' => 'bulking category display',
-                'role' => 'Spv',
-                'read_at' => Carbon::now('Asia/Jakarta'),
-                'riwayat_check_id' =>  $history->id,
-                'repair_id' => null,
-                'status' => 'display'
-            ]);
+    //         Notification::create([
+    //             'user_id' => $user_id,
+    //             'notification_name' => 'bulking category display',
+    //             'role' => 'Spv',
+    //             'read_at' => Carbon::now('Asia/Jakarta'),
+    //             'riwayat_check_id' =>  $history->id,
+    //             'repair_id' => null,
+    //             'status' => 'display'
+    //         ]);
 
 
-            DB::commit();
+    //         DB::commit();
 
-            return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'code_document' => Document::latest()->first(),
-                'file_name' => $fileName,
-                'total_column_count' => count($header),
-                'total_row_count' => $rowCount,
-                'merged' => $mergeResponse
-            ]);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
-        }
-    }
+    //         return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
+    //             'code_document' => Document::latest()->first(),
+    //             'file_name' => $fileName,
+    //             'total_column_count' => count($header),
+    //             'total_row_count' => $rowCount,
+    //             'merged' => $mergeResponse
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         DB::rollback();
+    //         return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+    //     }
+    // }
 
     protected function generateDocumentCode()
     {
@@ -497,112 +503,113 @@ class NewProductController extends Controller
         return $id_document . '/' . $month . '/' . $year;
     }
 
-    protected function mapAndMergeHeadersCategory()
-    {
-        set_time_limit(300);
-        $headerMappings = [
-            'old_barcode_product' => ['Barcode'],
-            'new_barcode_product' => ['Barcode'],
-            'new_name_product' => ['Description'],
-            'new_category_product' => ['Category'],
-            'new_quantity_product' => ['Qty'],
-            'new_price_product' => ['Price After Discount'],
-            'old_price_product' => ['Unit Price'],
-            'new_date_in_product' => ['Date'],
-            'display_price' => ['Price After Discount'],
-        ];
+    // protected function mapAndMergeHeadersCategory()
+    // {
+    //     set_time_limit(300);
+    //     $headerMappings = [
+    //         'old_barcode_product' => ['Barcode'],
+    //         'new_barcode_product' => ['Barcode'],
+    //         'new_name_product' => ['Description'],
+    //         'new_category_product' => ['Category'],
+    //         'new_quantity_product' => ['Qty'],
+    //         'new_price_product' => ['Price After Discount'],
+    //         'old_price_product' => ['Unit Price'],
+    //         'new_date_in_product' => ['Date'],
+    //         'display_price' => ['Price After Discount'],
+    //     ];
 
-        $latestDocument = Document::latest()->first();
-        if (!$latestDocument) {
-            return response()->json(['error' => 'No documents found.'], 404);
-        }
-        $code_document = $latestDocument->code_document;
+    //     $latestDocument = Document::latest()->first();
+    //     if (!$latestDocument) {
+    //         return response()->json(['error' => 'No documents found.'], 404);
+    //     }
+    //     $code_document = $latestDocument->code_document;
 
-        $ekspedisiData = ExcelOld::all()->map(function ($item) {
-            return json_decode($item->data, true);
-        });
+    //     $ekspedisiData = ExcelOld::all()->map(function ($item) {
+    //         return json_decode($item->data, true);
+    //     });
 
-        $mergedData = [
-            'old_barcode_product' => [],
-            'new_barcode_product' => [],
-            'new_name_product' => [],
-            'new_category_product' => [],
-            'new_quantity_product' => [],
-            'new_price_product' => [],
-            'old_price_product' => [],
-            'new_date_in_product' => [],
-            'new_quality' => [],
-            'new_discount' => [],
-            'display_price' => [],
-        ];
+    //     $mergedData = [
+    //         'old_barcode_product' => [],
+    //         'new_barcode_product' => [],
+    //         'new_name_product' => [],
+    //         'new_category_product' => [],
+    //         'new_quantity_product' => [],
+    //         'new_price_product' => [],
+    //         'old_price_product' => [],
+    //         'new_date_in_product' => [],
+    //         'new_quality' => [],
+    //         'new_discount' => [],
+    //         'display_price' => [],
+    //     ];
 
-        foreach ($ekspedisiData as $dataItem) {
-            foreach ($headerMappings as $templateHeader => $selectedHeaders) {
-                foreach ($selectedHeaders as $userSelectedHeader) {
-                    if (isset($dataItem[$userSelectedHeader])) {
-                        $mergedData[$templateHeader][] = $dataItem[$userSelectedHeader];
-                    }
-                }
-            }
+    //     foreach ($ekspedisiData as $dataItem) {
+    //         foreach ($headerMappings as $templateHeader => $selectedHeaders) {
+    //             foreach ($selectedHeaders as $userSelectedHeader) {
+    //                 if (isset($dataItem[$userSelectedHeader])) {
+    //                     $mergedData[$templateHeader][] = $dataItem[$userSelectedHeader];
+    //                 }
+    //             }
+    //         }
 
-            $status = $dataItem['Status'] ?? 'unknown';
-            $description = $dataItem['Description'] ?? '';
+    //         $status = $dataItem['Status'] ?? 'unknown';
+    //         $description = $dataItem['Description'] ?? '';
 
-            $qualityData = [
-                'lolos' => $status === 'lolos' ? true : null,
-                'damaged' => $status === 'damaged' ? $description : null,
-                'abnormal' => $status === 'abnormal' ? $description : null,
-            ];
+    //         $qualityData = [
+    //             'lolos' => $status === 'lolos' ? true : null,
+    //             'damaged' => $status === 'damaged' ? $description : null,
+    //             'abnormal' => $status === 'abnormal' ? $description : null,
+    //         ];
 
-            $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
-        }
+    //         $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
+    //     }
 
-        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
-        // Variabel penampung barcode double ini adalah $responseBarcode
-        $responseBarcode = collect();
-        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $new_product = New_product::where('new_barcode_product', $barcode)->first();
-            if ($new_product) {
-                $responseBarcode->push($barcode);
-            }
-        }
+    //     // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
+    //     // Variabel penampung barcode double ini adalah $responseBarcode
+    //     $responseBarcode = collect();
+    //     foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+    //         $new_product = New_product::where('new_barcode_product', $barcode)->first();
+    //         if ($new_product) {
+    //             $responseBarcode->push($barcode);
+    //         }
+    //     }
 
-        if ($responseBarcode->isNotEmpty()) {
-            ExcelOld::query()->delete();
-            return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
-        }
+    //     if ($responseBarcode->isNotEmpty()) {
+    //         ExcelOld::query()->delete();
+    //         return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
+    //     }
 
-        // Menyimpan data yang digabungkan ke dalam model New_product
-        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
-            $newProductData = [
-                'code_document' => $code_document,
-                'old_barcode_product' => $barcode,
-                'new_barcode_product' => $mergedData['new_barcode_product'][$index] ?? null,
-                'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
-                'new_category_product' => $mergedData['new_category_product'][$index] ?? null,
-                'new_quantity_product' => $quantity,
-                'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
-                'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
-                'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => $mergedData['new_quality'][$index],
-                'new_discount' => 0,
-                'display_price' => $mergedData['display_price'][$index] ?? null,
-            ];
+    //     // Menyimpan data yang digabungkan ke dalam model New_product
+    //     foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
+    //         $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
+    //         $newProductData = [
+    //             'code_document' => $code_document,
+    //             'old_barcode_product' => $barcode,
+    //             'new_barcode_product' => $mergedData['new_barcode_product'][$index] ?? null,
+    //             'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
+    //             'new_category_product' => $mergedData['new_category_product'][$index] ?? null,
+    //             'new_quantity_product' => $quantity,
+    //             'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
+    //             'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
+    //             'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
+    //             'new_quality' => $mergedData['new_quality'][$index],
+    //             'new_discount' => 0,
+    //             'display_price' => $mergedData['display_price'][$index] ?? null,
+    //         ];
 
-            New_product::create($newProductData);
-        }
+    //         New_product::create($newProductData);
+    //     }
 
-        ExcelOld::query()->delete();
+    //     ExcelOld::query()->delete();
 
-        Log::info('Merged data prepared for response', ['mergedData' => $mergedData]);
+    //     Log::info('Merged data prepared for response', ['mergedData' => $mergedData]);
 
-        return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
-    }
+    //     return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
+    // }
 
     //end enject display
 
-    //inject tag warna
+
+    //baru inject product warna
     public function processExcelFilesTagColor(Request $request)
     {
         set_time_limit(300);
@@ -610,7 +617,10 @@ class NewProductController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
-            'file.unique' => 'Nama file sudah ada di database.',
+        ], [
+            'file.required' => 'File harus diunggah.',
+            'file.file' => 'File yang diunggah tidak valid.',
+            'file.mimes' => 'File harus berupa file Excel dengan ekstensi .xlsx atau .xls.',
         ]);
 
         $file = $request->file('file');
@@ -623,184 +633,300 @@ class NewProductController extends Controller
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
-            $header = $sheet->rangeToArray('A1:' . $sheet->getHighestColumn() . '1', NULL, TRUE, FALSE, TRUE)[1];
-            $dataToInsert = [];
-            $rowCount = 0;
+            $ekspedisiData = $sheet->toArray(null, true, true, true);
 
-            foreach ($sheet->getRowIterator(2) as $row) {
-                $cellIterator = $row->getCellIterator();
-                $cellIterator->setIterateOnlyExistingCells(FALSE);
+            $chunkSize = 100;
+            $count = 0; // Initialize the count variable
+            $headerMappings = [
+                'old_barcode_product' => 'Waybill',
+                'new_name_product' => 'Isi Barang',
+                'new_quantity_product' => 'Qty',
+                'old_price_product' => 'Nilai Barang Satuan',
+                'new_category_product' => null,
+                'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                'new_quality' => json_encode(['lolos' => 'lolos']),
+                'new_discount' => 0,
+                'display_price' => 'Nilai Barang Satuan',
+            ];
 
-                $rowData = [];
-                foreach ($cellIterator as $cell) {
-                    $rowData[] = $cell->getValue() ?? '';
+            // Ensure unique code_document before starting the process
+            $code_document = $this->generateDocumentCode();
+            while (Document::where('code_document', $code_document)->exists()) {
+                $code_document = $this->generateDocumentCode(); // Generate a new one if a duplicate is found
+            }
+
+            // Process in chunks
+            for ($i = 2; $i < count($ekspedisiData); $i += $chunkSize) {
+                $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
+                $newProductsToInsert = [];
+
+                foreach ($chunkData as $dataItem) {
+                    $newProductDataToInsert = [];
+                    foreach ($headerMappings as $key => $headerName) {
+                        $columnKey = array_search($headerName, $ekspedisiData[1]);
+                        if ($columnKey !== false) {
+                            $value = trim($dataItem[$columnKey]);
+                            if ($key === 'new_quantity_product') {
+                                $quantity = $value !== '' ? (int)$value : 0;
+                                $newProductDataToInsert[$key] = $quantity;
+                            } elseif ($key === 'old_price_product' || $key === 'display_price') {
+                                $newProductDataToInsert[$key] = (float)str_replace(',', '', $value);
+                            } else {
+                                $newProductDataToInsert[$key] = $value;
+                            }
+                        }
+                    }
+
+                    // Skip jika old_price_product lebih dari 99.999
+                    if (isset($newProductDataToInsert['old_price_product']) && $newProductDataToInsert['old_price_product'] > 99999) {
+                        continue; // Lanjutkan ke item berikutnya jika harga di atas 99.999
+                    }
+
+                    // Proses untuk old_price_product kurang dari 100.000
+                    if (isset($newProductDataToInsert['old_price_product']) && $newProductDataToInsert['old_price_product'] < 100000) {
+                        $colors = Color_tag::where('min_price_color', '<=', $newProductDataToInsert['old_price_product'])
+                            ->where('max_price_color', '>=', $newProductDataToInsert['old_price_product'])
+                            ->first();
+
+                        if ($colors) {
+                            $newProductDataToInsert['new_tag_product'] = $colors->name_color;
+                            $newProductDataToInsert['display_price'] = $colors->fixed_price_color;
+                            $newProductDataToInsert['new_price_product'] = $colors->fixed_price_color;
+                        }
+                    }
+
+                    $newProductDataToInsert = array_merge($newProductDataToInsert, [
+                        'code_document' => $code_document,
+                        'new_tag_product' => $newProductDataToInsert['new_tag_product'] ?? null,
+                        'new_barcode_product' => newBarcodeScan(),
+                    ]);
+
+                    if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
+                        $newProductsToInsert[] = $newProductDataToInsert;
+                        $count++;
+                    }
                 }
 
-                if (count($header) === count($rowData)) {
-                    $dataToInsert[] = ['data' => json_encode(array_combine($header, $rowData))];
-                    $rowCount++;
+                if (!empty($newProductsToInsert)) {
+                    New_product::insert($newProductsToInsert);
                 }
             }
 
-            $chunks = array_chunk($dataToInsert, 500);
-            foreach ($chunks as $chunk) {
-                ExcelOldColor::insert($chunk);
-            }
 
-            // Create a new document with the rowCount
+            // Insert into the documents table after processing each chunk
             Document::create([
-                'code_document' => $this->generateDocumentCode(),
+                'code_document' => $code_document,
                 'base_document' => $fileName,
-                'total_column_document' => count($header),
-                'total_column_in_document' => $rowCount,
+                'status_document' => 'done',
+                'total_column_document' => count($headerMappings),
+                'total_column_in_document' => count($ekspedisiData) - 1, // Exclude header
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
-
-            // Call mapAndMergeHeaders function here
-            $mergeResponse = $this->mapAndMergeHeadersTagColor();
-            // Decode the response if it is in JSON format
-            $mergeResponseArray = json_decode(json_encode($mergeResponse), true);
-
-            if ($mergeResponseArray['status'] === false) {
-                DB::rollback();
-                return response()->json($mergeResponseArray, 422);
-            }
             DB::commit();
+
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'code_document' => Document::latest()->first(),
+                'code_document' => $code_document,
                 'file_name' => $fileName,
-                'total_column_count' => count($header),
-                'total_row_count' => $rowCount,
-                'merged' => $mergeResponse
+                'total_column_count' => count($headerMappings),
+                'total_row_count' => count($ekspedisiData) - 2, // Exclude header
             ]);
         } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
+            DB::rollBack();
+            return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
         }
     }
 
-    protected function mapAndMergeHeadersTagColor()
+    public function processExcelFilesCategory(Request $request)
     {
-        set_time_limit(300);
-        $headerMappings = [
-            'old_barcode_product' => ['Waybill'],
-            'new_barcode_product' => ['Waybill'],
-            'new_name_product' => ['Isi Barang'],
-            'new_quantity_product' => ['Qty'],
-            'old_price_product' => ['Nilai Barang Satuan'],
-            'new_date_in_product' => ['Date'],
-        ];
-    
-        $latestDocument = Document::latest()->first();
-        if (!$latestDocument) {
-            return response()->json(['error' => 'No documents found.'], 404);
-        }
-        $code_document = $latestDocument->code_document;
-    
-        $ekspedisiData = ExcelOldColor::all()->map(function ($item) {
-            return json_decode($item->data, true);
-        });
-    
-        $mergedData = [
-            'old_barcode_product' => [],
-            'new_barcode_product' => [],
-            'new_name_product' => [],
-            'new_category_product' => [],
-            'new_tag_product' => [],
-            'new_quantity_product' => [],
-            'new_price_product' => [],
-            'old_price_product' => [],
-            'new_date_in_product' => [],
-            'new_quality' => [],
-            'new_discount' => [],
-            'display_price' => [],
-        ];
-    
-        foreach ($ekspedisiData as $dataItem) {
-            foreach ($headerMappings as $templateHeader => $selectedHeaders) {
-                foreach ($selectedHeaders as $userSelectedHeader) {
-                    if (isset($dataItem[$userSelectedHeader])) {
-                        $mergedData[$templateHeader][] = $dataItem[$userSelectedHeader];
+        $user_id = auth()->id();
+        set_time_limit(300); // Set execution time limit
+        ini_set('memory_limit', '512M'); // Set memory limit
+
+        // Validate input file
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+        ], [
+            'file.required' => 'File harus diunggah.',
+            'file.file' => 'File yang diunggah tidak valid.',
+            'file.mimes' => 'File harus berupa file Excel dengan ekstensi .xlsx atau .xls.',
+        ]);
+
+        $file = $request->file('file');
+        $filePath = $file->getPathname();
+        $fileName = $file->getClientOriginalName();
+        $file->storeAs('public/ekspedisis', $fileName);
+
+        DB::beginTransaction(); // Start database transaction
+
+        try {
+            $spreadsheet = IOFactory::load($filePath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $ekspedisiData = $sheet->toArray(null, true, true, true);
+
+            $chunkSize = 100;
+            $count = 0;
+            $headerMappings = [
+                'old_barcode_product' => 'Barcode',
+                'new_barcode_product' => 'Barcode',
+                'new_name_product' => 'Description',
+                'new_category_product' => 'Category',
+                'new_quantity_product' => 'Qty',
+                'new_price_product' => 'Price After Discount',
+                'old_price_product' => 'Unit Price',
+                'new_date_in_product' => 'Date',
+                'display_price' => 'Price After Discount',
+            ];
+
+            // Generate document code
+            $code_document = $this->generateDocumentCode();
+            while (Document::where('code_document', $code_document)->exists()) {
+                $code_document = $this->generateDocumentCode(); // Regenerate if duplicate exists
+            }
+
+            $duplicateBarcodes = collect(); // Collection for storing duplicate barcodes
+
+            // Process in chunks
+            for ($i = 2; $i < count($ekspedisiData); $i += $chunkSize) {
+                $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
+                $newProductsToInsert = [];
+
+                foreach ($chunkData as $dataItem) {
+                    $newProductDataToInsert = [];
+
+                    foreach ($headerMappings as $key => $headerName) {
+                        $columnKey = array_search($headerName, $ekspedisiData[1]);
+                        if ($columnKey !== false) {
+                            $value = trim($dataItem[$columnKey]);
+
+                            if ($key === 'new_quantity_product') {
+                                $quantity = $value !== '' ? (int)$value : 0;
+                                $newProductDataToInsert[$key] = $quantity;
+                            } elseif (in_array($key, ['old_price_product', 'display_price', 'new_price_product'])) {
+                                $cleanedValue = str_replace(',', '', $value); // Remove commas
+                                $newProductDataToInsert[$key] = (float)$cleanedValue;
+                            } else {
+                                $newProductDataToInsert[$key] = $value;
+                            }
+                        }
+                    }
+
+                    // Check for duplicate barcodes in various sources
+                    if (isset($newProductDataToInsert['new_barcode_product'])) {
+                        $barcodeToCheck = $newProductDataToInsert['new_barcode_product'];
+                        $sources = $this->checkDuplicateBarcode($barcodeToCheck); 
+
+                        if (!empty($sources)) {
+                            $duplicateBarcodes->push([
+                                'barcode' => $barcodeToCheck,
+                                'sources' => $sources
+                            ]); 
+                        }
+                    }
+
+                    // Add new products for insertion if no duplicates found
+                    if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
+                        $newProductsToInsert[] = array_merge($newProductDataToInsert, [
+                            'code_document' => $code_document,
+                            'new_discount' => 0,
+                            'new_tag_product' => null,
+                            'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                            'new_quality' => json_encode(['lolos' => 'lolos']),
+                            'created_at' => Carbon::now('Asia/Jakarta')->toDateString(),
+                            'updated_at' => Carbon::now('Asia/Jakarta')->toDateString(),
+                        ]);
+                        $count++;
                     }
                 }
-            }
-    
-            $status = $dataItem['Status'] ?? 'unknown';
-            $description = $dataItem['Description'] ?? '';
-    
-            $qualityData = [
-                'lolos' => $status === 'lolos' ? true : null,
-                'damaged' => $status === 'damaged' ? $description : null,
-                'abnormal' => $status === 'abnormal' ? $description : null,
-            ];
-    
-            $mergedData['new_quality'][] = json_encode(['lolos' => 'lolos']);
-        }
-    
-        // Mengecek data yang ada di tabel excel_olds apakah ada barcode double
-        // Variabel penampung barcode double ini adalah $responseBarcode
-        // $responseBarcode = collect();
-        // foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-        //     $new_product = New_product::where('new_barcode_product', $barcode)->first();
-        //     if ($new_product) {
-        //         $responseBarcode->push($barcode);
-        //     }
-        // }
-    
-        // if ($responseBarcode->isNotEmpty()) {
-        //     ExcelOldColor::query()->delete();
-        //     return new ResponseResource(false, "List data barcode yang duplikat", $responseBarcode);
-        // }
-    
-        // Menyimpan data yang digabungkan ke dalam model New_product
-        foreach ($mergedData['old_barcode_product'] as $index => $barcode) {
-            // Skip jika old_price_product >= 100000
-            if (isset($mergedData['old_price_product'][$index]) && $mergedData['old_price_product'][$index] >= 100000) {
-                continue;
-            }
-    
-            // Hanya memproses harga <= 99999
-            if ($mergedData['old_price_product'][$index] <= 99999) {
-                $colors = Color_tag::where('min_price_color', '<=', $mergedData['old_price_product'][$index])
-                    ->where('max_price_color', '>=', $mergedData['old_price_product'][$index])
-                    ->first();
-    
-                if ($colors) {
-                    $mergedData['new_tag_product'][$index] = $colors->name_color;
-                    $mergedData['display_price'][$index] = $colors->fixed_price_color;
-                    $mergedData['new_price_product'][$index] = $colors->fixed_price_color;
+
+                if ($duplicateBarcodes->isNotEmpty()) {
+                    return new ResponseResource(false, "Barcode duplikat ditemukan", $duplicateBarcodes);
+                }
+
+                // Insert new product data in chunks
+                if (!empty($newProductsToInsert)) {
+                    New_product::insert($newProductsToInsert);
                 }
             }
-    
-            $quantity = isset($mergedData['new_quantity_product'][$index]) && $mergedData['new_quantity_product'][$index] !== '' ? $mergedData['new_quantity_product'][$index] : 0; // Set default to 0 if empty
-            $newProductData = [
+
+            // Insert document record after processing is done
+            Document::create([
                 'code_document' => $code_document,
-                'old_barcode_product' => $barcode,
-                'new_barcode_product' => newBarcodeScan(),
-                'new_name_product' => $mergedData['new_name_product'][$index] ?? null,
-                'new_category_product' => null,
-                'new_tag_product' => $mergedData['new_tag_product'][$index] ?? null,
-                'new_quantity_product' => $quantity,
-                'new_price_product' => $mergedData['new_price_product'][$index] ?? null,
-                'old_price_product' => $mergedData['old_price_product'][$index] ?? null,
-                'new_date_in_product' => $mergedData['new_date_in_product'][$index] ?? Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => $mergedData['new_quality'][$index],
-                'new_discount' => 0,
-                'display_price' => $mergedData['display_price'][$index] ?? null,
-            ];
-    
-            New_product::create($newProductData);
+                'base_document' => $fileName,
+                'status_document' => 'done',
+                'total_column_document' => count($headerMappings),
+                'total_column_in_document' => count($ekspedisiData) - 1, // Subtract 1 for header
+                'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
+            ]);
+
+            // Save to history
+            $history = RiwayatCheck::create([
+                'user_id' => $user_id,
+                'code_document' => $code_document,
+                'base_document' => $fileName,
+                'total_data' => count($ekspedisiData) - 1,
+                'total_data_in' => count($ekspedisiData) - 1,
+                'total_data_lolos' => count($ekspedisiData) - 1,
+                'total_data_damaged' => 0,
+                'total_data_abnormal' => 0,
+                'total_discrepancy' => 0,
+                'status_approve' => 'display',
+                'precentage_total_data' => 0,
+                'percentage_in' => 0,
+                'percentage_lolos' => 0,
+                'percentage_damaged' => 0,
+                'percentage_abnormal' => 0,
+                'percentage_discrepancy' => 0,
+                'total_price' => 0
+            ]);
+
+            // Create notification
+            Notification::create([
+                'user_id' => $user_id,
+                'notification_name' => 'bulking category display',
+                'role' => 'Spv',
+                'read_at' => Carbon::now('Asia/Jakarta'),
+                'riwayat_check_id' => $history->id,
+                'repair_id' => null,
+                'status' => 'display'
+            ]);
+
+            DB::commit(); // Commit transaction
+
+            return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
+                'code_document' => $code_document,
+                'file_name' => $fileName,
+                'total_column_count' => count($headerMappings),
+                'total_row_count' => count($ekspedisiData) - 2, // Subtract header
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Rollback if an error occurs
+            return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
         }
-    
-        ExcelOldColor::query()->delete();
-    
-        return new ResponseResource(true, "Data berhasil digabungkan dan disimpan.", null);
     }
-    
-    //end inject tag warna
 
+    private function checkDuplicateBarcode($barcode)
+    {
+        $sources = [];
 
+        if (StagingProduct::where('new_barcode_product', $barcode)->exists()) {
+            $sources[] = 'Product-Staging';
+        }
+
+        if (New_product::where('new_barcode_product', $barcode)->exists()) {
+            $sources[] = 'Product-Inventory';
+        }
+
+        if (StagingApprove::where('new_barcode_product', $barcode)->exists()) {
+            $sources[] = 'Staging-Approve';
+        }
+
+        if (FilterStaging::where('new_barcode_product', $barcode)->exists()) {
+            $sources[] = 'Filter-Staging';
+        }
+
+        return $sources;
+    }
 
     public function showRepair(Request $request)
     {
@@ -1340,162 +1466,30 @@ class NewProductController extends Controller
         return new ResponseResource(true, "list data product by color", $countByColor);
     }
 
-    public function exportNewProducts()
+    public function exportProductByCategory()
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        try {
+            $fileName = 'product-inventory.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
 
-        $headers = [
-            'ID',
-            'Code Document',
-            'Old Barcode Product',
-            'New Barcode Product',
-            'New Name Product',
-            'New Quantity Product',
-            'New Price Product',
-            'Old Price Product',
-            'New Date In Product',
-            'New Status Product',
-            'New Quality',
-            'New Category Product',
-            'New Tag Product',
-            'Created At',
-            'Updated At'
-        ];
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
 
-        $columnIndex = 1;
-        foreach ($headers as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
-            $columnIndex++;
+            Excel::store(new ProductsExportCategory(New_product::class), $publicPath . '/' . $fileName, 'public');
+
+            // URL download menggunakan public_path
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
-
-        // Variabel untuk melacak baris
-        $rowIndex = 2;
-
-        // Mengambil data dalam batch
-        New_product::where('new_status_product', '!=', 'sale')
-            ->where('new_status_product', '!=', 'migrate')
-            ->whereNull('new_tag_product')
-            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
-                foreach ($products as $product) {
-                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
-                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
-                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
-                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
-                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
-                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
-                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
-                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
-                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
-                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
-                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
-                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
-                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
-                    $rowIndex++;
-                }
-            });
-
-        // Menyimpan file Excel
-        $writer = new Xlsx($spreadsheet);
-        $fileName = 'new_products_export.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-
-        $writer->save($filePath);
-
-        // Mengembalikan URL untuk mengunduh file
-        $downloadUrl = url($publicPath . '/' . $fileName);
-
-        return new ResponseResource(true, "file diunduh", $downloadUrl);
-    }
-
-    public function export_product_byCategory(Request $request)
-    {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
-
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
-        $headers = [
-            'ID',
-            'Code Document',
-            'Old Barcode Product',
-            'New Barcode Product',
-            'New Name Product',
-            'New Quantity Product',
-            'New Price Product',
-            'Old Price Product',
-            'New Date In Product',
-            'New Status Product',
-            'New Quality',
-            'New Category Product',
-            'New Tag Product',
-            'Created At',
-            'Updated At'
-        ];
-
-        // Menuliskan headers ke sheet
-        $columnIndex = 1;
-        foreach ($headers as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
-            $columnIndex++;
-        }
-
-        // Variabel untuk melacak baris
-        $rowIndex = 2;
-
-        // Mengambil data dalam batch
-        New_product::whereNotNull('new_category_product')
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
-            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
-                foreach ($products as $product) {
-                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
-                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
-                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
-                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
-                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
-                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
-                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
-                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
-                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
-                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
-                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
-                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
-                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
-                    $rowIndex++;
-                }
-            });
-
-        // Menyimpan file Excel
-        $writer = new Xlsx($spreadsheet);
-        $fileName = 'new_products_export.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-
-        $writer->save($filePath);
-
-        // Mengembalikan URL untuk mengunduh file
-        $downloadUrl = url($publicPath . '/' . $fileName);
-
-        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 
     public function export_product_expired(Request $request)
