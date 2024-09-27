@@ -21,7 +21,7 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
     public function query()
     {
         return $this->model::query()
-            ->whereNotNull('new_category_product')->whereNull('new_tag_product');
+            ->whereNotNull('new_category_product')->whereNull('new_tag_product')->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
     }
 
     public function headings(): array
