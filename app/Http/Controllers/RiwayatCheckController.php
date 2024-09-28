@@ -170,7 +170,9 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $totalPercentageDamaged = ($totalOldPriceDamaged / $history->total_price) * 100;
+        $totalPercentageDamaged = $history->total_price != 0
+            ? ($totalOldPriceDamaged / $history->total_price) * 100
+            : 0;
         $totalPercentageDamaged = round($totalPercentageDamaged, 2);
 
         // Proses produk lolos (lolos) menggunakan chunk
@@ -184,7 +186,9 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $totalPercentageLolos = ($totalOldPriceLolos / $history->total_price) * 100;
+        $totalPercentageLolos = $history->total_price != 0
+            ? ($totalOldPriceLolos / $history->total_price) * 100
+            : 0;
         $totalPercentageLolos = round($totalPercentageLolos, 2);
 
         // Proses produk abnormal (abnormal) menggunakan chunk
@@ -198,7 +202,9 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $totalPercentageAbnormal = ($totalOldPriceAbnormal / $history->total_price) * 100;
+        $totalPercentageAbnormal = $history->total_price != 0
+            ? ($totalOldPriceAbnormal / $history->total_price) * 100
+            : 0;
         $totalPercentageAbnormal = round($totalPercentageAbnormal, 2);
 
         // Proses staging products dengan cursor
@@ -208,7 +214,9 @@ class RiwayatCheckController extends Controller
             $totalOldPricestaging += $product->old_price_product;
         }
 
-        $totalPercentageStaging = ($totalOldPricestaging / $history->total_price) * 100;
+        $totalPercentageStaging = $history->total_price != 0
+            ? ($totalOldPricestaging / $history->total_price) * 100
+            : 0;
         $totalPercentageStaging = round($totalPercentageStaging, 2);
 
         // Proses product discrepancy dengan cursor
@@ -218,7 +226,9 @@ class RiwayatCheckController extends Controller
             $totalPriceDiscrepancy += $product->old_price_product;
         }
 
-        $totalPercentageDiscrepancy = ($totalPriceDiscrepancy / $history->total_price) * 100;
+        $totalPercentageDiscrepancy = $history->total_price != 0
+            ? ($totalPriceDiscrepancy / $history->total_price) * 100
+            : 0;
         $totalPercentageDiscrepancy = round($totalPercentageDiscrepancy, 2);
 
         // Response
@@ -319,8 +329,11 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $price_persentage_dp = ($totalOldPriceDiscrepancy / $getHistory->total_price) * 100;
+            $price_persentage_dp = $getHistory->total_price != 0 
+            ? ($totalOldPriceDiscrepancy / $getHistory->total_price) * 100 
+            : 0;
         $price_persentage_dp = round($price_persentage_dp, 2);
+        
 
         // Menggunakan chunk untuk pengambilan data "damaged"
         $getProductDamaged = [];
@@ -335,7 +348,9 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $price_persentage_damaged = ($totalOldPriceDamaged / $getHistory->total_price) * 100;
+            $price_persentage_damaged = $getHistory->total_price != 0 
+            ? ($totalOldPriceDamaged / $getHistory->total_price) * 100 
+            : 0;
         $price_persentage_damaged = round($price_persentage_damaged, 2);
 
         // Menggunakan chunk untuk pengambilan data "lolos"
@@ -350,8 +365,9 @@ class RiwayatCheckController extends Controller
                     $totalOldPriceLolos += $product->old_price_product;
                 }
             });
-
-        $price_persentage_lolos = ($totalOldPriceLolos / $getHistory->total_price) * 100;
+            $price_persentage_lolos = $getHistory->total_price != 0 
+            ? ($totalOldPriceLolos / $getHistory->total_price) * 100 
+            : 0;
         $price_persentage_lolos = round($price_persentage_lolos, 2);
 
         // Menggunakan chunk untuk pengambilan data "abnormal"
@@ -367,7 +383,9 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $price_persentage_abnormal = ($totalOldPriceAbnormal / $getHistory->total_price) * 100;
+            $price_persentage_abnormal = $getHistory->total_price != 0 
+            ? ($totalOldPriceAbnormal / $getHistory->total_price) * 100 
+            : 0;
         $price_persentage_abnormal = round($price_persentage_abnormal, 2);
 
         // Menggunakan chunk untuk pengambilan data "staging"
@@ -382,7 +400,9 @@ class RiwayatCheckController extends Controller
                 }
             });
 
-        $price_persentage_staging = ($totalOldPriceStaging / $getHistory->total_price) * 100;
+            $price_persentage_staging = $getHistory->total_price != 0 
+            ? ($totalOldPriceStaging / $getHistory->total_price) * 100 
+            : 0;
         $price_persentage_staging = round($price_persentage_staging, 2);
 
         // Validasi jika data kosong
@@ -482,10 +502,9 @@ class RiwayatCheckController extends Controller
         // Memproses data dan menyiapkan array untuk dimasukkan ke Excel
         $dataArray = [];
         foreach ($data as $item) {
-            $diskon = 0;
-            if ($item->old_price_product != 0) {
-                $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
-            }
+            $diskon = $item->old_price_product != 0 
+            ? (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100 
+            : 0;
 
             $keterangan = $item->lolos_value ?? $item->damaged_value ?? $item->abnormal_value ?? 'null';
 
@@ -536,10 +555,9 @@ class RiwayatCheckController extends Controller
         // Memproses data dan menyiapkan array untuk dimasukkan ke Excel
         $dataArray = [];
         foreach ($data as $item) {
-            $diskon = 0;
-            if ($item->old_price_product != 0) {
-                $diskon = (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100;
-            }
+            $diskon = $item->old_price_product != 0 
+            ? (($item->old_price_product - $item->new_price_product) / $item->old_price_product) * 100 
+            : 0;
 
             $keterangan = $item->lolos_value ?? $item->damaged_value ?? $item->abnormal_value ?? 'null';
 

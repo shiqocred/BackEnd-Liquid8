@@ -195,4 +195,6 @@ class ProductBundleController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke bundle', 'error' => $e->getMessage()], 500);
         }
     }
+
+
 }
