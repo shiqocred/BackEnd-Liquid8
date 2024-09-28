@@ -169,17 +169,32 @@ class BundleController extends Controller
 
         // Headers untuk bundle
         $bundleHeaders = [
-            'name_bundle', 'total_price_bundle', 'total_price_custom_bundle',
-            'total_product_bundle', 'product_status', 'barcode_bundle',
-            'category', 'name_color', 'id'
+            'name_bundle',
+            'total_price_bundle',
+            'total_price_custom_bundle',
+            'total_product_bundle',
+            'product_status',
+            'barcode_bundle',
+            'category',
+            'name_color',
+            'id'
         ];
 
         // Headers untuk product_bundles
         $productBundleHeaders = [
-            'bundle_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
-            'new_name_product', 'new_quantity_product', 'new_price_product',
-            'old_price_product', 'new_date_in_product', 'new_status_product',
-            'new_quality', 'new_category_product', 'new_tag_product'
+            'bundle_id',
+            'code_document',
+            'old_barcode_product',
+            'new_barcode_product',
+            'new_name_product',
+            'new_quantity_product',
+            'new_price_product',
+            'old_price_product',
+            'new_date_in_product',
+            'new_status_product',
+            'new_quality',
+            'new_category_product',
+            'new_tag_product'
         ];
 
         // Menuliskan headers ke sheet
@@ -257,17 +272,32 @@ class BundleController extends Controller
 
         // Headers untuk bundle
         $bundleHeaders = [
-            'id', 'name_bundle', 'total_price_bundle', 'total_price_custom_bundle',
-            'total_product_bundle', 'product_status', 'barcode_bundle',
-            'category', 'name_color',
+            'id',
+            'name_bundle',
+            'total_price_bundle',
+            'total_price_custom_bundle',
+            'total_product_bundle',
+            'product_status',
+            'barcode_bundle',
+            'category',
+            'name_color',
         ];
 
         // Headers untuk product_bundles
         $productBundleHeaders = [
-            'bundle_id', 'code_document', 'old_barcode_product', 'new_barcode_product',
-            'new_name_product', 'new_quantity_product', 'new_price_product',
-            'old_price_product', 'new_date_in_product', 'new_status_product',
-            'new_quality', 'new_category_product', 'new_tag_product'
+            'bundle_id',
+            'code_document',
+            'old_barcode_product',
+            'new_barcode_product',
+            'new_name_product',
+            'new_quantity_product',
+            'new_price_product',
+            'old_price_product',
+            'new_date_in_product',
+            'new_status_product',
+            'new_quality',
+            'new_category_product',
+            'new_tag_product'
         ];
 
         // Menuliskan headers untuk bundle ke sheet
@@ -336,5 +366,64 @@ class BundleController extends Controller
         $downloadUrl = url($publicPath . '/' . $fileName);
 
         return new ResponseResource(true, "unduh", $downloadUrl);
+    }
+
+    public function bundleColor(Request $request)
+    {
+        DB::beginTransaction();
+        $userId = auth()->id();
+        try {
+
+            $bundle = Bundle::create([
+                'name_bundle' => $request->name_bundle,
+                'total_price_bundle' => $request->total_price_custom_bundle,
+                'total_price_custom_bundle' => $request->total_price_custom_bundle,
+                'total_product_bundle' => $request->total_product_bundle,
+                'barcode_bundle' => $request->barcode_bundle,
+                'category' => $request->category,
+                'name_color' => $request->name_color,
+            ]);
+
+            $insertData = New_product::where('new_tag_product', $bundle->total_product_bundle)->get();
+
+            // Menggunakan chunk untuk memproses data dalam kelompok 100 item
+            $insertData->chunk(100)->each(function ($chunkedData) use ($bundle) {
+                // Mapping data untuk disiapkan sebelum insert
+                $dataToInsert = $chunkedData->map(function ($item) use ($bundle) {
+                    return [
+                        'bundle_id' => $bundle->id,
+                        'code_document' => $item->code_document,
+                        'old_barcode_product' => $item->old_barcode_product,
+                        'new_barcode_product' => $item->new_barcode_product,
+                        'new_name_product' => $item->new_name_product,
+                        'new_quantity_product' => $item->new_quantity_product,
+                        'new_price_product' => $item->new_price_product,
+                        'old_price_product' => $item->old_price_product,
+                        'new_date_in_product' => $item->new_date_in_product,
+                        'new_status_product' => 'bundle', 
+                        'new_quality' => $item->new_quality,
+                        'new_category_product' => $item->new_category_product,
+                        'new_tag_product' => $item->new_tag_product,
+                        'new_discount' => $item->new_discount,
+                        'display_price' => $item->display_price,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                })->toArray();
+
+                Product_Bundle::insert($dataToInsert);
+            });
+
+
+
+            logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle color");
+
+            DB::commit();
+            return new ResponseResource(true, "Bundle berhasil dibuat", $bundle);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Gagal membuat bundle: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke bundle', 'error' => $e->getMessage()], 500);
+        }
     }
 }
