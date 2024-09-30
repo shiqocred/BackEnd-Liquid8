@@ -6,7 +6,7 @@ use App\Http\Resources\ResponseResource;
 use App\Models\Migrate;
 use App\Models\MigrateDocument;
 use App\Models\New_product;
-use Illuminate\Http\Request; 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -44,14 +44,19 @@ class MigrateController extends Controller
             return $resource->response()->setStatusCode(422);
         }
 
-        $productByTagColor = New_product::where('new_tag_product', $request->product_color)->get();
+        $productByTagColor = New_product::oldest()
+            ->where('new_tag_product', $request->product_color)
+            ->where('new_status_product', 'display')
+            ->get();
+
+
         if ($productByTagColor->isEmpty()) {
-            $resource = new ResponseResource(false, "Data tidak di temukan!", ["product_color" => "product not found!"]);
-            return $resource->response()->setStatusCode(404);
+            $resource = new ResponseResource(false, "Data tidak di temukan!", []);
+            return $resource->response()->setStatusCode(422);
         }
 
-        if ($productByTagColor->count() < $request->product_total) {
-            $resource = new ResponseResource(false, "Input tidak valid!", ["product_total" => "the product is less than the quantity requested!"]);
+        if ($request->product_total > $productByTagColor->count()) {
+            $resource = new ResponseResource(false, "Input tidak valid!", $request->product_total);
             return $resource->response()->setStatusCode(422);
         }
 
@@ -101,7 +106,7 @@ class MigrateController extends Controller
         }
         return $resource->response();
     }
-    
+
 
     /**
      * Update the specified resource in storage.
@@ -165,7 +170,7 @@ class MigrateController extends Controller
                     'new_tag_product' => $newProduct['new_tag_product'],
                     'status_migrate' => 'proses',
                     'status_product_before' => $newProduct['new_status_product'],
-       
+
                 ]);
 
                 $newProduct->update(['new_status_product' => 'sale']);
@@ -191,9 +196,9 @@ class MigrateController extends Controller
             ['status_document_migrate', '=', 'proses']
         ])->first();
 
-        if(empty($migrateDocument)){
-           return new ResponseResource(true, "data berhasil disimpan!", ["destionation" => "aktif", "data" => []]);
-        }else {
+        if (empty($migrateDocument)) {
+            return new ResponseResource(true, "data berhasil disimpan!", ["destionation" => "aktif", "data" => []]);
+        } else {
             return new ResponseResource(true, "data berhasil disimpan!", ["destionation" => "disable", "data" => $migrateDocument]);
         }
     }

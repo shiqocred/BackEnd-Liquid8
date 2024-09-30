@@ -600,8 +600,8 @@ class NewProductController extends Controller
                             $duplicateBarcodes->push($barcodeToCheck . ' - ' . implode(', ', $sources));
                         }
                     }
+                    
 
-                    // Add new products for insertion if no duplicates found
                     if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
                         $newProductsToInsert[] = array_merge($newProductDataToInsert, [
                             'code_document' => $code_document,
@@ -1240,7 +1240,7 @@ class NewProductController extends Controller
         if (count($countByColor) < 1) {
             return new ResponseResource(false, "tidak ada data data color", null);
         }
-        return new ResponseResource(true, "list data product by color", $countByColor);
+        return new ResponseResource(true, "list data product by color2", $countByColor);
     }
 
     public function exportProductByCategory()

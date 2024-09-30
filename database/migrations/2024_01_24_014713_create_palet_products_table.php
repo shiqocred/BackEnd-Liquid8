@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('code_document')->nullable(); 
             $table->string('old_barcode_product')->nullable();
             $table->string('new_barcode_product')->unique()->nullable();
-            $table->string('new_name_product')->nullable();
+            $table->string('new_name_product', 1024)->nullable();
             $table->integer('new_quantity_product')->nullable();
             $table->decimal('new_price_product', 15, 2)->nullable(); 
             $table->decimal('old_price_product', 15, 2)->nullable(); 

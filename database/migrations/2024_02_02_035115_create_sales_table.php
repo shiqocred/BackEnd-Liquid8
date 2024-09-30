@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->string('code_document_sale');
-            $table->string('product_name_sale');
+            $table->string('product_name_sale', 1024);
             $table->string('product_category_sale');
             $table->string('product_barcode_sale');
             $table->decimal('product_price_sale', 15, 2)->nullable();
