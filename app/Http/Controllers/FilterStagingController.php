@@ -64,7 +64,7 @@ class FilterStagingController extends Controller
             $productFilter = FilterStaging::create($product->toArray());
             $product->delete();
             DB::commit();
-            return new ResponseResource(true, "berhasil menambah list product bundle", $productFilter);
+            return new ResponseResource(true, "berhasil menambah list product staging", $productFilter);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
@@ -106,7 +106,7 @@ class FilterStagingController extends Controller
             StagingProduct::create($product_filter->toArray());
             $product_filter->delete();
             DB::commit();
-            return new ResponseResource(true, "berhasil menghapus list product bundle", $product_filter);
+            return new ResponseResource(true, "berhasil menghapus list product filter", $product_filter);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
