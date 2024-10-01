@@ -345,7 +345,6 @@ class StagingProductController extends Controller
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $ekspedisiData = $sheet->toArray(null, true, true, true);
-
             $chunkSize = 100;
             $count = 0;
             $headerMappings = [
@@ -368,7 +367,7 @@ class StagingProductController extends Controller
 
             $duplicateBarcodes = collect(); // Collection for storing duplicate barcodes
             // Process in chunks
-            for ($i = 2; $i < count($ekspedisiData); $i += $chunkSize) {
+            for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
                 $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
                 $newProductsToInsert = [];
 
@@ -477,7 +476,7 @@ class StagingProductController extends Controller
                 'code_document' => $code_document,
                 'file_name' => $fileName,
                 'total_column_count' => count($headerMappings),
-                'total_row_count' => count($ekspedisiData) - 2, // Subtract header
+                'total_row_count' => count($ekspedisiData) - 1, 
             ]);
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback if an error occurs
