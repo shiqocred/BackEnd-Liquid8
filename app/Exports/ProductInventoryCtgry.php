@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Bundle;
 use App\Models\New_product;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Request;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -15,6 +16,12 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
 {
     use Exportable;
 
+    protected $query; // Menyimpan query untuk filter
+
+    public function __construct(Request $request)
+    {
+        $this->query = $request->input('q'); // Ambil input query
+    }
 
 
     public function query()

@@ -376,6 +376,7 @@ class DashboardController extends Controller
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
             ->groupBy('new_category_product')
             ->get();
 
@@ -386,6 +387,7 @@ class DashboardController extends Controller
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
             ->first();
 
         $tagProductCount = New_product::selectRaw('
@@ -396,6 +398,7 @@ class DashboardController extends Controller
             ->whereNotNull('new_tag_product')
             ->where('new_category_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
             ->groupBy('new_tag_product')
             ->get();
 
@@ -406,6 +409,7 @@ class DashboardController extends Controller
             ->whereNotNull('new_tag_product')
             ->where('new_category_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
             ->first();
 
         $resource = new ResponseResource(
