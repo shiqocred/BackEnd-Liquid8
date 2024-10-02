@@ -1006,8 +1006,6 @@ class NewProductController extends Controller
                         ->orWhere('product_status', 'LIKE', '%' . $query . '%');
                 });
 
-
-
             $mergedQuery = $productQuery->union($bundleQuery)
                 ->orderBy('created_at', 'desc')
                 ->paginate(50);
