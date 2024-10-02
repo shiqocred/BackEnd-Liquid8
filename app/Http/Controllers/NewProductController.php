@@ -1243,31 +1243,32 @@ class NewProductController extends Controller
         return new ResponseResource(true, "list data product by color2", $countByColor);
     }
 
-    public function exportProductByCategory()
+    public function exportProductByCategory(Request $request)
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-
+    
         try {
             $fileName = 'product-inventory.xlsx';
             $publicPath = 'exports';
             $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
-
+    
             // Buat direktori jika belum ada
             if (!file_exists(dirname($filePath))) {
                 mkdir(dirname($filePath), 0777, true);
             }
-
-            Excel::store(new ProductInventoryCtgry, $publicPath . '/' . $fileName, 'public');
-
-            // URL download menggunakan public_path
+    
+            Excel::store(new ProductInventoryCtgry($request), $publicPath . '/' . $fileName, 'public');
+    
+            // URL download menggunakan asset dari public path
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
-
+    
             return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
         } catch (\Exception $e) {
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
+    
 
     public function export_product_expired(Request $request)
     {
