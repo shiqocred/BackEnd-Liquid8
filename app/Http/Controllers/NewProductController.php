@@ -350,34 +350,45 @@ class NewProductController extends Controller
     public function listProductExpDisplay(Request $request)
     {
         try {
+            // Ambil parameter 'q' dari request
             $query = $request->input('q');
-            $productExpDisplay = New_product::where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('new_status_product', 'expired')
-                    ->orWhere('new_status_product', 'display');
-            })->where(function ($subBuilder) use ($query) {
-                $subBuilder->where('new_name_product', 'LIKE', '%' . $query  . '%')
-                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query  . '%')
-                    ->orWhere('old_barcode_product', 'LIKE', '%' . $query  . '%')
-                    ->orWhere('code_document', 'LIKE', '%' . $query  . '%');
-            })->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL")
-                ->paginate(50);
-
-            foreach ($productExpDisplay as &$product) {
-                if ($product['new_tag_product'] !== null) {
-                    $fixedPrice = Color_tag::where('name_color', $product['new_tag_product'])->first();
-
-                    if (!$fixedPrice) {
-                        return new ResponseResource(false, "Data kosong", null);
-                    }
-                    $product['fixed_price'] = $fixedPrice->fixed_price_color;
-                }
+    
+            // Query dasar untuk expired/display products
+            $productExpDisplayQuery = New_product::latest()
+                ->where(function ($queryBuilder) {
+                    $queryBuilder->where('new_status_product', 'expired')
+                        ->orWhere('new_status_product', 'display');
+                })
+                ->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL");
+    
+            // Jika ada query pencarian, tambahkan filter pencarian
+            if (!empty($query)) {
+                // Tambahkan kondisi pencarian berdasarkan input 'q'
+                $productExpDisplayQuery->where(function ($subBuilder) use ($query) {
+                    $subBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('code_document', 'LIKE', '%' . $query . '%');
+                });
+    
+                // Dapatkan hasil pencarian tanpa paginasi
+                $productExpDisplay = $productExpDisplayQuery->get();
+            } else {
+                // Jika tidak ada query, gunakan paginasi
+                $productExpDisplay = $productExpDisplayQuery->paginate(50);
             }
-
-            return new ResponseResource(true, "List product expired", $productExpDisplay);
+    
+            // Mengembalikan hasil dalam response yang diinginkan
+            return new ResponseResource(true, "List product expired/display", $productExpDisplay);
+    
         } catch (\Exception $e) {
-            return response()->json(["error" => $e]);
+            // Tampilkan pesan error jika terjadi kesalahan
+            return response()->json(["error" => $e->getMessage()], 500);
         }
     }
+    
+    
+
 
 
     protected function generateDocumentCode()
