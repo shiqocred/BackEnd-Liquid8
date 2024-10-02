@@ -21,28 +21,31 @@ class ProductFilterController extends Controller
         $userId = auth()->id();
         $product_filtersByUser = Product_Filter::where('user_id', $userId)->get();
 
-        $totalNewPriceWithCategory = $product_filtersByUser->whereNotNull('new_category_product')->sum('new_price_product');
+        $totalNewPriceWithCategory = $product_filtersByUser->whereNotNull('new_category_product')->sum('old_price_product');
         $totalOldPriceWithoutCategory = $product_filtersByUser->whereNull('new_category_product')->sum('old_price_product');
 
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
 
         $category = null;
+        $color = null;
 
         if ($totalNewPrice > 99999) {
             $category = Category::all(); 
         } else {
             foreach ($product_filtersByUser as $product_filter) {
-                $product_filter->new_tag_product = Color_tag::where('min_price_color', '<=', $totalNewPrice)
+                $color = $product_filter->new_tag_product = Color_tag::where('min_price_color', '<=', $totalNewPrice)
                     ->where('max_price_color', '>=', $totalNewPrice)
                     ->select('fixed_price_color', 'name_color')->get();
+                
 
             }
         }
 
-        $product_filters = Product_Filter::latest()->paginate(100);
+        $product_filters = Product_Filter::latest()->paginate(50);
 
-        return new ResponseResource(true, "list product filter", [
+        return new ResponseResource(true, "list product filter2", [
             'total_new_price' => $totalNewPrice,
+            'color'=> $color,
             'category' => $category,
             'data' => $product_filters
         ]);
