@@ -23,6 +23,7 @@ use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductInventoryCtgry;
 use App\Exports\ProductStagingsExport;
 use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -520,10 +521,9 @@ class NewProductController extends Controller
     public function processExcelFilesCategory(Request $request)
     {
         $user_id = auth()->id();
-        set_time_limit(300); // Set execution time limit
-        ini_set('memory_limit', '512M'); // Set memory limit
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
 
-        // Validate input file
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
         ], [
@@ -537,7 +537,7 @@ class NewProductController extends Controller
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $fileName);
 
-        DB::beginTransaction(); // Start database transaction
+        DB::beginTransaction();
 
         try {
             $spreadsheet = IOFactory::load($filePath);
@@ -558,16 +558,14 @@ class NewProductController extends Controller
                 'display_price' => 'Price After Discount',
             ];
 
-            // Generate document code
             $code_document = $this->generateDocumentCode();
             while (Document::where('code_document', $code_document)->exists()) {
-                $code_document = $this->generateDocumentCode(); // Regenerate if duplicate exists
+                $code_document = $this->generateDocumentCode();
             }
 
-            $duplicateBarcodes = collect(); // Collection for storing duplicate barcodes
+            $duplicateBarcodes = collect();
 
-            // Process in chunks
-            for ($i = 2; $i < count($ekspedisiData); $i += $chunkSize) {
+            for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
                 $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
                 $newProductsToInsert = [];
 
@@ -591,8 +589,8 @@ class NewProductController extends Controller
                         }
                     }
 
-                     // Check for duplicate barcodes in various sources
-                     if (isset($newProductDataToInsert['new_barcode_product'])) {
+                    // Check for duplicate barcodes in various sources
+                    if (isset($newProductDataToInsert['new_barcode_product'])) {
                         $barcodeToCheck = $newProductDataToInsert['new_barcode_product'];
                         $sources = $this->checkDuplicateBarcode($barcodeToCheck);
 
@@ -600,7 +598,7 @@ class NewProductController extends Controller
                             $duplicateBarcodes->push($barcodeToCheck . ' - ' . implode(', ', $sources));
                         }
                     }
-                    
+
 
                     if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
                         $newProductsToInsert[] = array_merge($newProductDataToInsert, [
@@ -674,7 +672,7 @@ class NewProductController extends Controller
                 'code_document' => $code_document,
                 'file_name' => $fileName,
                 'total_column_count' => count($headerMappings),
-                'total_row_count' => count($ekspedisiData) - 2, // Subtract header
+                'total_row_count' => count($ekspedisiData) - 1, // Subtract header
             ]);
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback if an error occurs
@@ -996,24 +994,28 @@ class NewProductController extends Controller
                 'category as new_category_product',
                 'total_price_custom_bundle as new_price_product',
                 'created_at',
-                'product_status as new_status_product',
+                DB::raw("CASE WHEN product_status = 'not sale' THEN 'display' ELSE product_status END as new_status_product"),
                 'total_price_custom_bundle as display_price',
                 'created_at as new_date_in_product'
-            )->when($query, function ($dataBundle) use ($query) {
-                $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
-                    ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
-                    ->orWhere('category', 'LIKE', '%' . $query . '%')
-                    ->orWhere('product_status', 'LIKE', '%' . $query . '%');
-            });
+            )
+                ->where('total_price_custom_bundle', '>=', 100000)
+                ->when($query, function ($dataBundle) use ($query) {
+                    $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
+                        ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
+                        ->orWhere('category', 'LIKE', '%' . $query . '%')
+                        ->orWhere('product_status', 'LIKE', '%' . $query . '%');
+                });
+
+
 
             $mergedQuery = $productQuery->union($bundleQuery)
                 ->orderBy('created_at', 'desc')
                 ->paginate(50);
         } catch (\Exception $e) {
-            return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
+            return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(404);
         }
 
-        return new ResponseResource(true, "list product by tag color", $mergedQuery);
+        return new ResponseResource(true, "list product by product category", $mergedQuery);
     }
 
 
@@ -1258,7 +1260,7 @@ class NewProductController extends Controller
                 mkdir(dirname($filePath), 0777, true);
             }
 
-            Excel::store(new ProductsExportCategory(New_product::class), $publicPath . '/' . $fileName, 'public');
+            Excel::store(new ProductInventoryCtgry, $publicPath . '/' . $fileName, 'public');
 
             // URL download menggunakan public_path
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);

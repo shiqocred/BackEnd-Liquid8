@@ -2,26 +2,52 @@
 
 namespace App\Exports;
 
+use App\Models\Bundle;
+use App\Models\New_product;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, WithChunkReading
+class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, WithChunkReading
 {
     use Exportable;
-    protected $model;
 
-    public function __construct($model)
-    {
-        $this->model = $model;
-    }
+
 
     public function query()
     {
-        return $this->model::query()
-            ->whereNull('new_tag_product')->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair']);
+        $productQuery = New_product::select(
+            'id',
+            'new_barcode_product',
+            'new_name_product',
+            'new_category_product',
+            'new_price_product',
+            'created_at',
+            'new_status_product',
+            'display_price',
+            'new_date_in_product'
+        )
+            ->whereNotNull('new_category_product')
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
+
+        $bundleQuery = Bundle::select(
+            'id',
+            'barcode_bundle as new_barcode_product',
+            'name_bundle as new_name_product',
+            'category as new_category_product',
+            'total_price_custom_bundle as new_price_product',
+            'created_at',
+            DB::raw("CASE WHEN product_status = 'not sale' THEN 'display' ELSE product_status END as new_status_product"),
+            'total_price_custom_bundle as display_price',
+            'created_at as new_date_in_product'
+        )->where('total_price_custom_bundle', '>=', 100000);
+
+
+       return $productQuery->union($bundleQuery)
+            ->orderBy('created_at', 'desc');
     }
 
     public function headings(): array
@@ -77,6 +103,6 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
      */
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;
     }
 }
