@@ -28,6 +28,7 @@ class ProductFilterController extends Controller
 
         $category = null;
         $color = null;
+        $fixed_price = null;
 
         if ($totalNewPrice > 99999) {
             $category = Category::all(); 
@@ -36,12 +37,12 @@ class ProductFilterController extends Controller
                 $colorTag = Color_tag::where('min_price_color', '<=', $totalNewPrice)
                 ->where('max_price_color', '>=', $totalNewPrice)
                 ->select('fixed_price_color', 'name_color')
-                ->first(); // Ambil satu hasil saja
+                ->first();
         
             if ($colorTag) {
-                // Jika ada hasil, tetapkan tag produk dengan hasil color_tag
                 $product_filter->new_tag_product = $colorTag->name_color;
                 $color = $colorTag->name_color;
+                $fixed_price = $colorTag->fixed_price_color;
             }
 
             }
@@ -52,6 +53,7 @@ class ProductFilterController extends Controller
         return new ResponseResource(true, "list product filter2", [
             'total_new_price' => $totalNewPrice,
             'color'=> $color,
+            'fixed_price'=> $fixed_price,
             'category' => $category,
             'data' => $product_filters
         ]);
