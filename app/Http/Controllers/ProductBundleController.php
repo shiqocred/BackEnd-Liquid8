@@ -129,6 +129,7 @@ class ProductBundleController extends Controller
                 'new_barcode_product' => $productBundle->new_barcode_product,
                 'new_name_product' => $productBundle->new_name_product,
                 'new_quantity_product' => $productBundle->new_quantity_product,
+                'old_price_product' => $productBundle->old_price_product,
                 'new_price_product' => $productBundle->new_price_product,
                 'new_date_in_product' => $productBundle->new_date_in_product,
                 'new_status_product' => 'display',
@@ -136,25 +137,34 @@ class ProductBundleController extends Controller
                 'new_category_product' => $productBundle->new_category_product,
                 'new_tag_product' => $productBundle->new_tag_product,
                 'new_discount' => $productBundle->new_discount,
-                'display_price' => $productBundle->display_price
+                'display_price' => $productBundle->display_price,
+                'created_at' => $productBundle->created_at,
+                'updated_at' => $productBundle->updated_at,
             ]);
-
+    
             $bundle = Bundle::findOrFail($productBundle->bundle_id);
             $bundle->update([
-                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->new_price_product,
+                'total_price_custom_bundle' => $bundle->total_price_custom_bundle - $productBundle->old_price_bundle,
                 'total_product_bundle' => $bundle->total_product_bundle - 1,
             ]);
-
+    
             $productBundle->delete();
-
+    
+            $remainingProductBundles = Product_Bundle::where('bundle_id', $productBundle->bundle_id)->count();
+            
+            if ($remainingProductBundles == 0) {
+                $bundle->delete();
+            }
+    
             DB::commit();
-            return new ResponseResource(true, "produk bundle  berhasil dihapus", $productBundle);
+            return new ResponseResource(true, "Produk bundle berhasil dihapus", null);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal menghapus bundle: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
         }
     }
+    
 
     public function addProductBundle(New_product $new_product, Bundle $bundle)
     {
