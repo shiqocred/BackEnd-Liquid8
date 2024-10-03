@@ -26,35 +26,54 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
 
     public function query()
     {
+        // Select semua kolom dari tabel New_product
         $productQuery = New_product::select(
             'id',
+            'code_document',
+            'old_barcode_product',
             'new_barcode_product',
             'new_name_product',
-            'new_category_product',
+            'new_quantity_product',
             'new_price_product',
-            'created_at',
+            'old_price_product',
+            'new_date_in_product',
             'new_status_product',
+            'new_quality',
+            'new_category_product',
+            'new_tag_product',
+            'created_at',
+            'updated_at',
+            'new_discount',
             'display_price',
-            'new_date_in_product'
-        )
-            ->whereNotNull('new_category_product')
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
-
+            DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
+        )->whereNotNull('new_category_product')
+          ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
+    
+        // Select dari tabel Bundle, dengan menyesuaikan nama kolom dan mengisi dengan null jika kolom tersebut tidak ada di tabel Bundle
         $bundleQuery = Bundle::select(
             'id',
+            DB::raw('NULL as code_document'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as old_barcode_product'),  // Tidak ada kolom ini di Bundle
             'barcode_bundle as new_barcode_product',
             'name_bundle as new_name_product',
-            'category as new_category_product',
+            DB::raw('NULL as new_quantity_product'),  // Tidak ada kolom ini di Bundle
             'total_price_custom_bundle as new_price_product',
-            'created_at',
+            DB::raw('NULL as old_price_product'),  // Tidak ada kolom ini di Bundle
+            'created_at as new_date_in_product',
             DB::raw("CASE WHEN product_status = 'not sale' THEN 'display' ELSE product_status END as new_status_product"),
+            DB::raw('NULL as new_quality'),  // Tidak ada kolom ini di Bundle
+            'category as new_category_product',
+            DB::raw('NULL as new_tag_product'),  // Tidak ada kolom ini di Bundle
+            'created_at',
+            DB::raw('NULL as updated_at'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as new_discount'),  // Tidak ada kolom ini di Bundle
             'total_price_custom_bundle as display_price',
-            'created_at as new_date_in_product'
+            DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
         )->where('total_price_custom_bundle', '>=', 100000);
-
-
-       return $productQuery->union($bundleQuery)
-            ->orderBy('created_at', 'desc');
+    
+        // Gabungkan hasil query dari New_product dan Bundle menggunakan UNION
+        return $productQuery->union($bundleQuery)
+                            ->orderBy('created_at', 'desc');
     }
 
     public function headings(): array
