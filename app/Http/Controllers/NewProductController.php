@@ -352,7 +352,7 @@ class NewProductController extends Controller
         try {
             // Ambil parameter 'q' dari request
             $query = $request->input('q');
-    
+
             // Query dasar untuk expired/display products
             $productExpDisplayQuery = New_product::latest()
                 ->where(function ($queryBuilder) {
@@ -360,7 +360,7 @@ class NewProductController extends Controller
                         ->orWhere('new_status_product', 'display');
                 })
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL");
-    
+
             // Jika ada query pencarian, tambahkan filter pencarian
             if (!empty($query)) {
                 // Tambahkan kondisi pencarian berdasarkan input 'q'
@@ -370,24 +370,23 @@ class NewProductController extends Controller
                         ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('code_document', 'LIKE', '%' . $query . '%');
                 });
-    
+
                 // Dapatkan hasil pencarian tanpa paginasi
-                $productExpDisplay = $productExpDisplayQuery->get();
+                $productExpDisplay = $productExpDisplayQuery->paginate(50);
             } else {
                 // Jika tidak ada query, gunakan paginasi
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
             }
-    
+
             // Mengembalikan hasil dalam response yang diinginkan
             return new ResponseResource(true, "List product expired/display", $productExpDisplay);
-    
         } catch (\Exception $e) {
             // Tampilkan pesan error jika terjadi kesalahan
             return response()->json(["error" => $e->getMessage()], 500);
         }
     }
-    
-    
+
+
 
 
 
@@ -1258,28 +1257,28 @@ class NewProductController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-    
+
         try {
             $fileName = 'product-inventory.xlsx';
             $publicPath = 'exports';
             $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
-    
+
             // Buat direktori jika belum ada
             if (!file_exists(dirname($filePath))) {
                 mkdir(dirname($filePath), 0777, true);
             }
-    
+
             Excel::store(new ProductInventoryCtgry($request), $publicPath . '/' . $fileName, 'public');
-    
+
             // URL download menggunakan asset dari public path
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
-    
+
             return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
         } catch (\Exception $e) {
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
-    
+
 
     public function export_product_expired(Request $request)
     {
