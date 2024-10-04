@@ -929,8 +929,8 @@ class NewProductController extends Controller
         try {
             $productByTagColor = New_product::latest()
                 ->whereNotNull('new_tag_product')
-                ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']) 
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+                ->where('new_status_product', 'display') 
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -965,7 +965,7 @@ class NewProductController extends Controller
                 ->whereNotNull('new_category_product')
                 ->where('new_tag_product', NULL)
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-                ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
+                ->where('new_status_product', 'display')
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where(function ($subQuery) use ($query) {
                         $subQuery->where('new_category_product', 'LIKE', '%' . $query . '%')
