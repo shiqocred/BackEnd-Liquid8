@@ -216,7 +216,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    //repair
    Route::get('repair-mv', [RepairController::class, 'index']);
    Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
-   Route::post('repair-mv', [RepairProductController::class, 'store']);
+   Route::post('repair-mv', [RepairProductController::class, 'store']); 
    Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
 
    Route::get('repair', [NewProductController::class, 'showRepair']);

@@ -393,6 +393,7 @@ class DashboardController extends Controller
         // merge / gabung kedua hasil query diatas
         $categoryCount = $categoryNewProduct->union($categoryBundle)->get();
 
+
         $tagProductCount = New_product::selectRaw('
                 new_tag_product as tag_product,
                 COUNT(new_tag_product) as total_tag_product,

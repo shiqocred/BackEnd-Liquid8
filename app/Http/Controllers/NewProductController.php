@@ -75,8 +75,6 @@ class NewProductController extends Controller
         return new ResponseResource(true, "List new products", $newProducts);
     }
 
-
-
     public function create() {}
 
     public function store(Request $request)
@@ -350,10 +348,8 @@ class NewProductController extends Controller
     public function listProductExpDisplay(Request $request)
     {
         try {
-            // Ambil parameter 'q' dari request
             $query = $request->input('q');
 
-            // Query dasar untuk expired/display products
             $productExpDisplayQuery = New_product::latest()
                 ->where(function ($queryBuilder) {
                     $queryBuilder->where('new_status_product', 'expired')
@@ -361,9 +357,7 @@ class NewProductController extends Controller
                 })
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.lolos') IS NOT NULL");
 
-            // Jika ada query pencarian, tambahkan filter pencarian
             if (!empty($query)) {
-                // Tambahkan kondisi pencarian berdasarkan input 'q'
                 $productExpDisplayQuery->where(function ($subBuilder) use ($query) {
                     $subBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -371,10 +365,8 @@ class NewProductController extends Controller
                         ->orWhere('code_document', 'LIKE', '%' . $query . '%');
                 });
 
-                // Dapatkan hasil pencarian tanpa paginasi
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
             } else {
-                // Jika tidak ada query, gunakan paginasi
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
             }
 
@@ -385,10 +377,6 @@ class NewProductController extends Controller
             return response()->json(["error" => $e->getMessage()], 500);
         }
     }
-
-
-
-
 
     protected function generateDocumentCode()
     {
@@ -930,22 +918,10 @@ class NewProductController extends Controller
             })
             ->paginate(100);
 
-        // $products2 = RepairProduct::where('new_status_product', 'dump')
-        //     ->where(function ($queryBuilder) use ($query) {
-        //         $queryBuilder->where('old_barcode_product', 'like', '%' . $query . '%')
-        //             ->orWhere('new_barcode_product', 'like', '%' . $query . '%')
-        //             ->orWhere('new_tag_product', 'like', '%' . $query . '%')
-        //             ->orWhere('new_category_product', 'like', '%' . $query . '%')
-        //             ->orWhere('new_name_product', 'like', '%' . $query . '%');
-        //     })
-        //     ->paginate(50);
-
-        // // Menggabungkan data dari kedua respons menjadi satu array
-        // $products = array_merge($products1->items(), $products2->items());
 
         return new ResponseResource(true, "List dump", $products);
     }
-
+ 
 
     public function getTagColor(Request $request)
     {
@@ -953,6 +929,9 @@ class NewProductController extends Controller
         try {
             $productByTagColor = New_product::latest()
                 ->whereNotNull('new_tag_product')
+                ->where('new_category_product', NULL)
+                ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+                ->where('new_status_product', 'display') 
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -985,11 +964,12 @@ class NewProductController extends Controller
                 'new_date_in_product'
             )
                 ->whereNotNull('new_category_product')
-                ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
+                ->where('new_tag_product', NULL)
+                ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+                ->where('new_status_product', 'display')
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where(function ($subQuery) use ($query) {
-                        $subQuery->whereNotNull('new_category_product')
-                            ->where('new_category_product', 'LIKE', '%' . $query . '%')
+                        $subQuery->where('new_category_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_name_product', 'LIKE', '%' . $query . '%')
@@ -1025,9 +1005,6 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "list product by product category", $mergedQuery);
     }
-
-
-
 
     public function updatePriceDump(Request $request, $id)
     {

@@ -49,29 +49,27 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
         )->whereNotNull('new_category_product')
           ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
     
-        // Select dari tabel Bundle, dengan menyesuaikan nama kolom dan mengisi dengan null jika kolom tersebut tidak ada di tabel Bundle
         $bundleQuery = Bundle::select(
             'id',
-            DB::raw('NULL as code_document'),  // Tidak ada kolom ini di Bundle
-            DB::raw('NULL as old_barcode_product'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as code_document'),
+            DB::raw('NULL as old_barcode_product'),
             'barcode_bundle as new_barcode_product',
             'name_bundle as new_name_product',
-            DB::raw('NULL as new_quantity_product'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as new_quantity_product'),
             'total_price_custom_bundle as new_price_product',
-            DB::raw('NULL as old_price_product'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as old_price_product'),
             'created_at as new_date_in_product',
             DB::raw("CASE WHEN product_status = 'not sale' THEN 'display' ELSE product_status END as new_status_product"),
-            DB::raw('NULL as new_quality'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as new_quality'),
             'category as new_category_product',
-            DB::raw('NULL as new_tag_product'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as new_tag_product'),
             'created_at',
-            DB::raw('NULL as updated_at'),  // Tidak ada kolom ini di Bundle
-            DB::raw('NULL as new_discount'),  // Tidak ada kolom ini di Bundle
+            DB::raw('NULL as updated_at'),
+            DB::raw('NULL as new_discount'),
             'total_price_custom_bundle as display_price',
             DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
         )->where('total_price_custom_bundle', '>=', 100000);
     
-        // Gabungkan hasil query dari New_product dan Bundle menggunakan UNION
         return $productQuery->union($bundleQuery)
                             ->orderBy('created_at', 'desc');
     }
