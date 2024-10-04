@@ -929,7 +929,7 @@ class NewProductController extends Controller
         try {
             $productByTagColor = New_product::latest()
                 ->whereNotNull('new_tag_product')
-                ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
+                ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']) 
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
@@ -963,6 +963,7 @@ class NewProductController extends Controller
                 'new_date_in_product'
             )
                 ->whereNotNull('new_category_product')
+                ->where('new_tag_product', NULL)
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
                 ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
                 ->when($query, function ($queryBuilder) use ($query) {

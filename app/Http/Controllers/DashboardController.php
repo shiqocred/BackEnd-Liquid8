@@ -380,6 +380,7 @@ class DashboardController extends Controller
             ->groupBy('new_category_product')
             ->get();
 
+
         $categoryCountAll = New_product::selectRaw('
                 COUNT(new_category_product) as total_all_category,
                 SUM(new_price_product) as total_all_price_category
@@ -389,6 +390,7 @@ class DashboardController extends Controller
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
             ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
             ->first();
+
 
         $tagProductCount = New_product::selectRaw('
                 new_tag_product as tag_product,
