@@ -376,7 +376,7 @@ class DashboardController extends Controller
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
+            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate','expired'])
             ->groupBy('new_category_product')
             ->get();
 
