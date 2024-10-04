@@ -50,7 +50,7 @@ class ProductFilterController extends Controller
 
         $product_filters = Product_Filter::latest()->paginate(50);
 
-        return new ResponseResource(true, "list product filter2", [
+        return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'color'=> $color,
             'fixed_price'=> $fixed_price,

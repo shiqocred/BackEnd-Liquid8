@@ -921,7 +921,7 @@ class NewProductController extends Controller
 
         return new ResponseResource(true, "List dump", $products);
     }
- 
+
 
     public function getTagColor(Request $request)
     {
@@ -931,7 +931,7 @@ class NewProductController extends Controller
                 ->whereNotNull('new_tag_product')
                 ->where('new_category_product', NULL)
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-                ->where('new_status_product', 'display') 
+                ->where('new_status_product', 'display')
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -989,6 +989,8 @@ class NewProductController extends Controller
                 'created_at as new_date_in_product'
             )
                 ->where('total_price_custom_bundle', '>=', 100000)
+                ->where('name_color',  NULL)
+                ->where('product_status', '!=', 'bundle')
                 ->when($query, function ($dataBundle) use ($query) {
                     $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
                         ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
