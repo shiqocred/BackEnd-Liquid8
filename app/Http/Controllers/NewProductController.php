@@ -929,6 +929,7 @@ class NewProductController extends Controller
         try {
             $productByTagColor = New_product::latest()
                 ->whereNotNull('new_tag_product')
+                ->where('new_category_product', NULL)
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
                 ->where('new_status_product', 'display') 
                 ->when($query, function ($queryBuilder) use ($query) {
