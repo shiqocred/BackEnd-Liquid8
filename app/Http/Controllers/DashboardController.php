@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\ProductExpiredExport;
 use App\Http\Resources\ResponseResource;
+use App\Models\Bundle;
 use App\Models\Buyer;
 use App\Models\Document;
 use App\Models\New_product;
@@ -368,7 +369,7 @@ class DashboardController extends Controller
         $currentMonth = $currentDate->format('F');
         $currentYear = $currentDate->format('Y');
 
-        $categoryCount = New_product::selectRaw('
+        $categoryNewProduct = New_product::selectRaw('
                 new_category_product as category_product,
                 COUNT(new_category_product) as total_category,
                 SUM(new_price_product) as total_price_category
@@ -376,20 +377,21 @@ class DashboardController extends Controller
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate','expired'])
-            ->groupBy('new_category_product')
-            ->get();
+            ->where('new_status_product', 'display')
+            ->groupBy('category_product');
 
-
-        $categoryCountAll = New_product::selectRaw('
-                COUNT(new_category_product) as total_all_category,
-                SUM(new_price_product) as total_all_price_category
+        $categoryBundle = Bundle::selectRaw('
+                category as category_product,
+                COUNT(category) as total_category,
+                SUM(total_price_custom_bundle) as total_price_category
             ')
-            ->whereNotNull('new_category_product')
-            ->where('new_tag_product', NULL)
-            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
-            ->first();
+            ->whereNotNull('category')
+            ->where('name_color', NULL)
+            ->whereNotIn('product_status', ['bundle'])
+            ->groupBy('category_product');
+
+        // merge / gabung kedua hasil query diatas
+        $categoryCount = $categoryNewProduct->union($categoryBundle)->get();
 
 
         $tagProductCount = New_product::selectRaw('
@@ -400,19 +402,9 @@ class DashboardController extends Controller
             ->whereNotNull('new_tag_product')
             ->where('new_category_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
+            ->where('new_status_product', 'display')
             ->groupBy('new_tag_product')
             ->get();
-
-        $tagProductCountAll = New_product::selectRaw('
-                COUNT(new_tag_product) as total_all_tag_product,
-                SUM(new_price_product) as total_all_price_tag_product
-            ')
-            ->whereNotNull('new_tag_product')
-            ->where('new_category_product', NULL)
-            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate'])
-            ->first();
 
         $resource = new ResponseResource(
             true,
@@ -428,10 +420,10 @@ class DashboardController extends Controller
                     'category' => $categoryCount,
                     'tag_product' => $tagProductCount,
                 ],
-                'total_all_category' => $categoryCountAll['total_all_category'],
-                'total_all_price_category' => $categoryCountAll['total_all_price_category'],
-                'total_all_tag_product' => $tagProductCountAll['total_all_tag_product'],
-                'total_all_price_tag_product' => $tagProductCountAll['total_all_price_tag_product'],
+                'total_all_category' => $categoryCount->sum('total_category'),
+                'total_all_price_category' => $categoryCount->sum('total_price_category'),
+                'total_all_tag_product' => $tagProductCount->sum('total_tag_product'),
+                'total_all_price_tag_product' => $tagProductCount->sum('total_price_tag_product'),
             ]
         );
 
