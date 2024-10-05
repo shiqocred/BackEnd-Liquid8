@@ -47,8 +47,10 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'display_price',
             DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
         )->whereNotNull('new_category_product')
-          ->whereNotIn('new_status_product', ['repair', 'sale', 'migrate']);
-    
+            ->where('new_tag_product', NULL)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->where('new_status_product', 'display');
+
         $bundleQuery = Bundle::select(
             'id',
             DB::raw('NULL as code_document'),
@@ -69,9 +71,9 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'total_price_custom_bundle as display_price',
             DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
         )->where('total_price_custom_bundle', '>=', 100000);
-    
+
         return $productQuery->union($bundleQuery)
-                            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc');
     }
 
     public function headings(): array
