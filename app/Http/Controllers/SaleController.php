@@ -131,9 +131,12 @@ class SaleController extends Controller
                     'total_product_document_sale' => 0,
                     'total_old_price_document_sale' => 0,
                     'total_price_document_sale' => 0,
+                    'total_display_document_sale' => 0,
                     'status_document_sale' => 'proses',
+                    'cardbox_qty' => 0,
+                    'cardbox_unit_price' => 0,
+                    'cardbox_total_price' => 0,
                     'voucher' => 0,
-                    'total_display_document_sale' => 0
                 ];
 
                 $createSaleDocument = (new SaleDocumentController)->store(new Request($saleDocumentRequest));

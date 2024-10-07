@@ -110,7 +110,10 @@ class SaleDocumentController extends Controller
             }
             $validator = Validator::make($request->all(), [
                 'voucher' => 'nullable|numeric',
+                'cardbox_qty' => 'nullable|numeric|required_with:cardbox_unit_price',
+                'cardbox_unit_price' => 'nullable|numeric|required_with:cardbox_qty',
             ]);
+
             if ($validator->fails()) {
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }
@@ -146,6 +149,9 @@ class SaleDocumentController extends Controller
                 'total_price_document_sale' => $totalProductPriceSale,
                 'total_display_document_sale' => $totalDisplayPrice,
                 'status_document_sale' => 'selesai',
+                'cardbox_qty' => $request->cardbox_qty ?? 0,
+                'cardbox_unit_price' => $request->cardbox_unit_price ?? 0,
+                'cardbox_total_price' => $request->cardbox_qty * $request->cardbox_unit_price ?? 0,
                 'voucher' => $request->input('voucher')
             ]);
 
