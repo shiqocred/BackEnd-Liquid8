@@ -11,6 +11,13 @@ class SaleDocument extends Model
 
     protected $guarded = ['id'];
 
+    protected $appends = ['grand_total'];
+
+    public function getGrandTotalAttribute()
+    {
+        return $this->cardbox_total_price + $this->total_price_document_sale;
+    }
+
     public function sales()
     {
         return $this->hasMany(Sale::class, 'code_document_sale', 'code_document_sale');
