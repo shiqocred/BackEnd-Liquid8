@@ -107,7 +107,6 @@ class StagingProductController extends Controller
             return new ResponseResource(true, "staging approve berhasil dibuat", null);
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error("Gagal membuat bundle: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke approve', 'error' => $e->getMessage()], 500);
         }
     }

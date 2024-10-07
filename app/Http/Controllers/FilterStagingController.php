@@ -93,7 +93,7 @@ class FilterStagingController extends Controller
     public function update(Request $request, FilterStaging $filterStaging)
     {
         //
-    }
+    } 
 
     /**
      * Remove the specified resource from storage.

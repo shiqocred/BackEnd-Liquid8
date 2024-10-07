@@ -80,8 +80,8 @@ class PaletController extends Controller
         try {
             // Validasi request
             $validator = Validator::make($request->all(), [
-                'images' => 'array|nullable', // Validasi sebagai array
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validasi setiap file gambar
+                'images' => 'array|nullable',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'name_palet' => 'required|string',
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
@@ -112,44 +112,31 @@ class PaletController extends Controller
                 $validatedData['file_pdf'] = $filename;
             }
 
-            $category = Category::where('id', $request['category_id'])->first();
-            $destination = Destination::where('id', $request['destination_id'])->first();
-            $productStatus = ProductStatus::where('id', $request['product_status_id'])->first();
-            $productCondition = ProductCondition::where('id', $request['product_condition_id'])->first();
-
-            if (!$category) {
-                return new ResponseResource(false, "Category ID tidak ditemukan", $request['category_id']);
-            }
-            if (!$destination) {
-                return new ResponseResource(false, "destination ID tidak ditemukan", $request['destination_id']);
-            }
-            if (!$productStatus) {
-                return new ResponseResource(false, "productStatus ID tidak ditemukan", $request['product_status_id']);
-            }
-            if (!$productCondition) {
-                return new ResponseResource(false, "productCondition ID tidak ditemukan", $request['product_condition_id']);
-            }
-
+            $category = Category::find($request['category_id']) ?: null;
+            $destination = Destination::find($request['destination_id']) ?: null;
+            $productStatus = ProductStatus::find($request['product_status_id']) ?: null;
+            $productCondition = ProductCondition::find($request['product_condition_id']) ?: null;
 
             // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],
-                'category_palet' => $category->name_category,
+                'category_palet' => $category->name_category ?? '',
                 'total_price_palet' => $request['total_price_palet'],
                 'total_product_palet' => $request['total_product_palet'],
                 'palet_barcode' => $request['palet_barcode'],
                 'file_pdf' => $validatedData['file_pdf'] ?? null,
                 'description' => $request['description'] ?? null,
-                'is_active' => $request['is_active'],
-                'warehouse' => $destination->shop_name,
-                'condition' => $productCondition->condition_slug,
-                'status' => $productStatus->status_slug,
-                'is_sale' => $request['is_sale'],
+                'is_active' => $request['is_active'] ?? false,
+                'warehouse' => $destination->shop_name ?? null,
+                'condition' => $productCondition->condition_slug ?? null,
+                'status' => $productStatus->status_slug ?? null,
+                'is_sale' => $request['is_sale'] ?? false,
                 'category_id' => $request['category_id'],
                 'product_status_id' => $request['product_status_id'],
                 'destination_id' => $request['destination_id'],
                 'product_condition_id' => $request['product_condition_id'],
             ]);
+
 
             // Handle multiple image uploads
             if ($request->hasFile('images')) {
@@ -242,18 +229,18 @@ class PaletController extends Controller
             $productStatus = ProductStatus::where('id', $request['product_status_id'])->first();
             $productCondition = ProductCondition::where('id', $request['product_condition_id'])->first();
 
-            if (!$category) {
-                return new ResponseResource(false, "Category ID tidak ditemukan", $request['category_id']);
-            }
-            if (!$destination) {
-                return new ResponseResource(false, "destination ID tidak ditemukan", $request['destination_id']);
-            }
-            if (!$productStatus) {
-                return new ResponseResource(false, "productStatus ID tidak ditemukan", $request['product_status_id']);
-            }
-            if (!$productCondition) {
-                return new ResponseResource(false, "productCondition ID tidak ditemukan", $request['product_condition_id']);
-            }
+            // if (!$category) {
+            //     return new ResponseResource(false, "Category ID tidak ditemukan", $request['category_id']);
+            // }
+            // if (!$destination) {
+            //     return new ResponseResource(false, "destination ID tidak ditemukan", $request['destination_id']);
+            // }
+            // if (!$productStatus) {
+            //     return new ResponseResource(false, "productStatus ID tidak ditemukan", $request['product_status_id']);
+            // }
+            // if (!$productCondition) {
+            //     return new ResponseResource(false, "productCondition ID tidak ditemukan", $request['product_condition_id']);
+            // }
 
 
             if ($request->hasFile('file_pdf')) {
