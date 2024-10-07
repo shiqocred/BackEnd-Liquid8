@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
- 
+
 use Carbon\Carbon;
 use App\Models\Bkl;
 use App\Models\FilterBkl;
@@ -25,11 +25,10 @@ class BklController extends Controller
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_category_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
-            })
-            ->whereNotIn('new_status_product', ['expired'])
-            ->paginate(50);
-
-        return new ResponseResource(true, "list product bkl", $newProducts);
+            });
+        $totalPrice = $newProducts->sum('new_price_product');
+        $newProducts = $newProducts->paginate(50);
+        return new ResponseResource(true, "list product bkl", ['tota_price' => $totalPrice, 'products' => $newProducts]);
     }
 
     /**
@@ -195,10 +194,10 @@ class BklController extends Controller
                 'created_at' => $bkl->created_at,
                 'updated_at' => $bkl->updated_at,
             ]);
-    
+
             $bkl->delete();
             DB::commit();
-            
+
             return new ResponseResource(true, "Produk bundle berhasil dihapus", null);
         } catch (\Exception $e) {
             DB::rollback();
