@@ -575,22 +575,20 @@ class StagingProductController extends Controller
 
     public function export()
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M'); 
 
         try {
             $fileName = 'product-staging.xlsx';
             $publicPath = 'exports';
             $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
 
-            // Buat direktori jika belum ada
             if (!file_exists(dirname($filePath))) {
                 mkdir(dirname($filePath), 0777, true);
             }
 
             Excel::store(new ProductsExportCategory(StagingProduct::class), $publicPath . '/' . $fileName, 'public');
 
-            // URL download menggunakan public_path
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
 
             return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
