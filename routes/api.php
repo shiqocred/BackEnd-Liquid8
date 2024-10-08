@@ -325,7 +325,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
     Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
     Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
     Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
-    Route::get('export-staging', [StagingProductController::class, 'export']);
+    Route::get('export-bkl', [BklController::class, 'exportProduct']);
 
 });
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
@@ -441,4 +441,4 @@ Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 
 //excel
-Route::get('export-category-color-null', [NewProductController::class, 'export']);
+Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
