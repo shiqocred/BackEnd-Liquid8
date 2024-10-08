@@ -83,7 +83,7 @@ class ProductOldController extends Controller
         }
 
         if ($document->exists()) {
-            return new ResponseResource(true, "list product", [
+            return new ResponseResource(true, "Data Document products", [
                 'document_name' => $document->base_document ?? 'N/A',  
                 'status' => $document->status_document ?? 'N/A',  
                 'total_columns' => $document->total_column_in_document ?? 0,  
