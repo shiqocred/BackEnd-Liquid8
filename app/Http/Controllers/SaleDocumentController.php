@@ -133,12 +133,12 @@ class SaleDocumentController extends Controller
                 if (!$newProduct && !$bundle) {
                     return response()->json(['error' => 'Both new product and bundle not found'], 404);
                 } elseif (!$newProduct) {
-                    $bundle->delete();
+                    $bundle->update(['product_status' => 'sale']);
                 } elseif (!$bundle) {
-                    $newProduct->delete();
+                    $newProduct->update(['new_status_product' => 'sale']);
                 } else {
-                    $newProduct->delete();
-                    $bundle->delete();
+                    $newProduct->update(['new_status_product' => 'sale']);
+                    $bundle->update(['product_status' => 'sale']);
                 }
                 $sale->update(['status_sale' => 'selesai']);
             }
