@@ -409,12 +409,9 @@ class SaleDocumentController extends Controller
         }
         if ($saleDocument->sales->count() > 0) {
             $groupedSales = $saleDocument->sales->groupBy(function ($sale) {
-                $product = New_product::where('new_name_product', $sale->product_name_sale)
-                    ->where('new_status_product', 'sale')
-                    ->where('new_barcode_product', $sale->product_barcode_sale)
-                    ->first();
-                return $product ? strtoupper($product->new_category_product) : 'Unknown';
+                return $sale->product_category_sale ? strtoupper($sale->product_category_sale) : 'Unknown';
             });
+            
             foreach ($groupedSales as $categoryName => $group) {
                 $totalPricePerCategory = $group->sum(function ($sale) {
                     return $sale->product_qty_sale * $sale->product_price_sale;
