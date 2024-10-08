@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Models\Bkl;
 use App\Models\FilterBkl;
+use App\Exports\ProductBkl;
 use App\Models\New_product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 
@@ -202,6 +204,32 @@ class BklController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function exportProduct(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        try {
+            $fileName = 'product-bkl.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+
+            Excel::store(new ProductBkl($request), $publicPath . '/' . $fileName, 'public');
+
+            // URL download menggunakan asset dari public path
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
 }

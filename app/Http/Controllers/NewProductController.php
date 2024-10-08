@@ -18,14 +18,10 @@ use App\Models\ExcelOldColor;
 use App\Models\FilterStaging;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
-use App\Exports\ProductsExport;
-use App\Imports\ProductsImport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductInventoryCtgry;
-use App\Exports\ProductStagingsExport;
-use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -1356,7 +1352,7 @@ class NewProductController extends Controller
         }
     }
 
-    public function export()
+    public function exportCategoryColorNull()
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
