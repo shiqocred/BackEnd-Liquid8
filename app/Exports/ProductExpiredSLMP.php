@@ -2,26 +2,48 @@
 
 namespace App\Exports;
 
+use App\Models\New_product;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, WithChunkReading
+class ProductExpiredSLMP implements FromQuery, WithHeadings, WithMapping, WithChunkReading
 {
     use Exportable;
-    protected $model;
 
-    public function __construct($model)
+    protected $query; // Menyimpan query untuk filter
+
+    public function __construct(Request $request)
     {
-        $this->model = $model;
+        $this->query = $request->input('q'); // Ambil input query
     }
+
 
     public function query()
     {
-        return $this->model::query()
-            ->whereNull('new_tag_product')->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair']);
+        // Select semua kolom dari tabel New_product
+        $productQuery = New_product::select(
+            'code_document',
+            'old_barcode_product',
+            'new_barcode_product',
+            'new_name_product',
+            'new_quantity_product',
+            'new_price_product',
+            'old_price_product',
+            'new_date_in_product',
+            'new_status_product',
+            'new_quality',
+            'new_category_product',
+            'new_tag_product',
+            'new_discount',
+            'display_price',
+            DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
+        )->where('new_status_product', 'expired');
+        return $productQuery;
     }
 
     public function headings(): array
@@ -71,6 +93,6 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
      */
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;
     }
 }

@@ -31,8 +31,8 @@ class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -109,7 +109,7 @@ class GenerateController extends Controller
             if (count($dataToInsert) >= $chunkSize) {
                 $this->insertChunk($dataToInsert);
                 $rowCount += count($dataToInsert);
-                $dataToInsert = []; 
+                $dataToInsert = [];
             }
         }
 
@@ -148,10 +148,12 @@ class GenerateController extends Controller
 
         return $code_document;
     }
+
     public function mapAndMergeHeaders(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
+        
         try {
             $validator = Validator::make($request->all(), [
                 'headerMappings' => 'required|array',
