@@ -19,6 +19,7 @@ use App\Models\FilterStaging;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
+use App\Exports\ProductExpiredSLMP;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductInventoryCtgry;
@@ -387,8 +388,8 @@ class NewProductController extends Controller
     //baru inject product warna
     public function processExcelFilesTagColor(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -515,8 +516,8 @@ class NewProductController extends Controller
     public function processExcelFilesCategory(Request $request)
     {
         $user_id = auth()->id();
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -1034,7 +1035,8 @@ class NewProductController extends Controller
 
     public function exportDumpToExcel(Request $request, $id)
     {
-        set_time_limit(300);
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
 
         $bundleQcds = BundleQcd::find($id)->load(['product_qcds']);
 
@@ -1230,8 +1232,8 @@ class NewProductController extends Controller
 
     public function exportProductByCategory(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
 
         try {
             $fileName = 'product-inventory.xlsx';
@@ -1253,87 +1255,31 @@ class NewProductController extends Controller
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
-
-
+    
     public function export_product_expired(Request $request)
     {
-        // Meningkatkan batas waktu eksekusi dan memori
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M'); 
 
-        // Membuat spreadsheet baru
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        try {
+            $fileName = 'product-inventory.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
 
-        // Menentukan headers berdasarkan nama kolom di tabel new_products
-        $headers = [
-            'ID',
-            'Code Document',
-            'Old Barcode Product',
-            'New Barcode Product',
-            'New Name Product',
-            'New Quantity Product',
-            'New Price Product',
-            'Old Price Product',
-            'New Date In Product',
-            'New Status Product',
-            'New Quality',
-            'New Category Product',
-            'New Tag Product',
-            'Created At',
-            'Updated At'
-        ];
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
 
-        // Menuliskan headers ke sheet
-        $columnIndex = 1;
-        foreach ($headers as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
-            $columnIndex++;
+            Excel::store(new ProductExpiredSLMP($request), $publicPath . '/' . $fileName, 'public');
+
+            // URL download menggunakan asset dari public path
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
-
-        // Variabel untuk melacak baris
-        $rowIndex = 2;
-
-        // Mengambil data dalam batch
-        New_product::where('new_status_product', 'expired')
-            ->chunk(1000, function ($products) use ($sheet, &$rowIndex) {
-                foreach ($products as $product) {
-                    $sheet->setCellValueByColumnAndRow(1, $rowIndex, $product->id);
-                    $sheet->setCellValueByColumnAndRow(2, $rowIndex, $product->code_document);
-                    $sheet->setCellValueByColumnAndRow(3, $rowIndex, $product->old_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(4, $rowIndex, $product->new_barcode_product);
-                    $sheet->setCellValueByColumnAndRow(5, $rowIndex, $product->new_name_product);
-                    $sheet->setCellValueByColumnAndRow(6, $rowIndex, $product->new_quantity_product);
-                    $sheet->setCellValueByColumnAndRow(7, $rowIndex, $product->new_price_product);
-                    $sheet->setCellValueByColumnAndRow(8, $rowIndex, $product->old_price_product);
-                    $sheet->setCellValueByColumnAndRow(9, $rowIndex, $product->new_date_in_product);
-                    $sheet->setCellValueByColumnAndRow(10, $rowIndex, $product->new_status_product);
-                    $sheet->setCellValueByColumnAndRow(11, $rowIndex, $product->new_quality);
-                    $sheet->setCellValueByColumnAndRow(12, $rowIndex, $product->new_category_product);
-                    $sheet->setCellValueByColumnAndRow(13, $rowIndex, $product->new_tag_product);
-                    $sheet->setCellValueByColumnAndRow(14, $rowIndex, $product->created_at);
-                    $sheet->setCellValueByColumnAndRow(15, $rowIndex, $product->updated_at);
-                    $rowIndex++;
-                }
-            });
-
-        // Menyimpan file Excel
-        $writer = new Xlsx($spreadsheet);
-        $fileName = 'products_exp_export.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-
-        $writer->save($filePath);
-
-        // Mengembalikan URL untuk mengunduh file
-        $downloadUrl = url($publicPath . '/' . $fileName);
-
-        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 
 

@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Palet;
 use App\Models\Category;
 use App\Models\PaletImage;
+use App\Models\Destination;
 use App\Models\New_product;
+use App\Models\PaletFilter;
+use App\Models\PaletProduct;
 use Illuminate\Http\Request;
+use App\Models\ProductStatus;
+use App\Models\ProductCondition;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\ResponseResource;
-use App\Models\Destination;
-use App\Models\ProductCondition;
-use App\Models\ProductStatus;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -150,6 +152,35 @@ class PaletController extends Controller
                     ]);
                 }
             }
+
+            $userId = auth()->id();
+            $product_filters = PaletFilter::where('user_id', $userId)->get();  
+
+            $insertData = $product_filters->map(function ($product) use ($palet) {
+                return [
+                    'palet_id' => $palet->id,
+                    'code_document' => $product->code_document,
+                    'old_barcode_product' => $product->old_barcode_product,
+                    'new_barcode_product' => $product->new_barcode_product,
+                    'new_name_product' => $product->new_name_product,
+                    'new_quantity_product' => $product->new_quantity_product,
+                    'new_price_product' => $product->new_price_product,
+                    'old_price_product' => $product->old_price_product,
+                    'new_date_in_product' => $product->new_date_in_product,
+                    'new_status_product' => $product->new_status_product,
+                    'new_quality' => $product->new_quality,
+                    'new_category_product' => $product->new_category_product,
+                    'new_tag_product' => $product->new_tag_product,
+                    'new_discount' => $product->new_discount,
+                    'display_price'=> $product->display_price,
+                    'created_at' => now(),  
+                    'updated_at' => now(),
+                ];
+            })->toArray();
+
+            PaletProduct::insert($insertData);
+
+            PaletFilter::where('user_id', $userId)->delete();
 
             DB::commit();
 
