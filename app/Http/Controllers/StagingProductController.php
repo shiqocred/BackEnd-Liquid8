@@ -322,8 +322,8 @@ class StagingProductController extends Controller
     public function processExcelFilesCategoryStaging(Request $request)
     {
         $user_id = auth()->id();
-        set_time_limit(300); // Set execution time limit
-        ini_set('memory_limit', '512M'); // Set memory limit
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
 
         // Validate input file
         $request->validate([
