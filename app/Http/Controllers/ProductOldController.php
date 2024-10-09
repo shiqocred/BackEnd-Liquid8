@@ -83,19 +83,19 @@ class ProductOldController extends Controller
         }
 
         if ($document->exists()) {
-            // return new ResponseResource(true, "Data Document products", [
-            //     'document_name' => $document->base_document ?? 'N/A',  
-            //     'status' => $document->status_document ?? 'N/A',  
-            //     'total_columns' => $document->total_column_in_document ?? 0,  
-            //     'custom_barcode' => $document->custom_barcode ?? null,  
-            //     'code_document' => $document->code_document ?? 'N/A',  
-            //     'data' => $code_documents  ?? [], 
-            // ]);
-            return new ResponseResource(
-                true,
-                "list product",
-                $code_documents
-            );
+            return new ResponseResource(true, "Data Document products", [
+                'document_name' => $document->base_document ?? 'N/A',  
+                'status' => $document->status_document ?? 'N/A',  
+                'total_columns' => $document->total_column_in_document ?? 0,  
+                'custom_barcode' => $document->custom_barcode ?? null,  
+                'code_document' => $document->code_document ?? 'N/A',  
+                'data' => $code_documents  ?? [], 
+            ]);
+            // return new ResponseResource(
+            //     true,
+            //     "list product",
+            //     $code_documents
+            // );
         } else {
             return new ResponseResource(false, "code document tidak ada", []);
         }
