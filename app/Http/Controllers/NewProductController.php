@@ -1241,7 +1241,7 @@ class NewProductController extends Controller
         } else {
             $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
                 ->where('max_price_color', '>=', $request->input('old_price_product'))
-                ->select('fixed_price_color', 'name_color')->first();
+                ->select('fixed_price_color', 'name_color', 'hexa_code_color')->first();
         }
 
         return new ResponseResource(true, 'list category', ["category" => $category, "warna" => $tagwarna]);
