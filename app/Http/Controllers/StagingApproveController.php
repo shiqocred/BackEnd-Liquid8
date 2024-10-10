@@ -14,6 +14,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Http\Resources\ResponseResource;
 use App\Models\Product_old;
 use App\Models\ProductApprove;
+use App\Models\Sale;
 use Maatwebsite\Excel\Facades\Excel;
 use ProductStagingsExport;
 
@@ -160,9 +161,9 @@ class StagingApproveController extends Controller
 
     public function countBast(Request $request)
     {
-        set_time_limit(600); 
-        ini_set('memory_limit', '1024M');  
-        // Ambil barcode dari masing-masing tabel berdasarkan 'code_document'
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
+
         $lolos = New_product::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
 
@@ -172,16 +173,15 @@ class StagingApproveController extends Controller
         $product_olds = Product_old::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
 
-        // Ambil data dari product_olds untuk '0001/10/2024'
-        $product_olds2 = Product_old::where('code_document', '0001/10/2024')
-            ->pluck('old_barcode_product');
-        // Gabungkan semua barcode dari $lolos, $stagings, dan $product_olds
+        // $sales = Sale::where('code_document_sale', 'LQDSLE00349')->pluck('product_barcode_sale');
+
+        // $product_olds2 = Product_old::where('code_document', '0001/10/2024')
+        //     ->pluck('old_barcode_product');
+
         $combined = $lolos->merge($stagings)->merge($product_olds);
+        dd(count($combined));
+        $unique = $combined->diff($product_olds2);
 
-        // Cari barcode yang ada di $product_olds2 tapi tidak ada di $combined
-        $unique = $product_olds2->diff($combined);
-
-        // Kembalikan hasil barcode unik, atau pesan jika tidak ada barcode unik
         return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
     }
 
@@ -190,8 +190,7 @@ class StagingApproveController extends Controller
         // Tentukan awalan yang ingin diperiksa
         $prefix = '179';
 
-        // Mengambil semua data dari StagingProduct yang 'old_barcode_product'-nya diawali dengan $prefix
-        $similarStagingProducts = StagingProduct::where('old_barcode_product', 'like', $prefix . '%')->get();
+        $similarStagingProducts = New_product::where('code_document', '0068/09/2024')->get();
         $count = count($similarStagingProducts);
 
         // Mengembalikan respon dengan data yang ditemukan
@@ -200,12 +199,18 @@ class StagingApproveController extends Controller
 
     public function findSimilarTabel(Request $request)
     {
-        $stagings = StagingProduct::where('code_document', '0057/09/2024')
+        $lolos = New_product::where('code_document', '0068/09/2024')
             ->pluck('new_barcode_product');
 
-        $approves = ProductApprove::whereIn('new_barcode_product', $stagings)
+        $stagings = StagingProduct::where('code_document', '0068/09/2024')
             ->pluck('new_barcode_product');
 
-        return $approves;
+        // $product_olds = Product_old::where('code_document', '0068/09/2024')
+        //     ->pluck('old_barcode_product');
+        $sales = Sale::where('code_document_sale', 'LQDSLE00349')->pluck('product_barcode_sale');
+
+        $similarBarcodes = $lolos->intersect($stagings)->intersect($sales);
+
+        return response()->json($similarBarcodes); // Kembalikan barcode yang ditemukan
     }
 }
