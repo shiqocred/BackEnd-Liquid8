@@ -80,7 +80,31 @@ class SaleDocumentController extends Controller
      */
     public function update(Request $request, SaleDocument $saleDocument)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'cardbox_qty' => 'required|numeric',
+            'cardbox_unit_price' => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
+        }
+
+        if (
+            $request->cardbox_qty == $saleDocument->cardbox_qty &&
+            $request->cardbox_unit_price == $saleDocument->cardbox_unit_price
+        ) {
+            $resource = new ResponseResource(false, "Data tidak ada yang berubah!", $saleDocument->load('sales', 'user'));
+        } else {
+            $saleDocument->update([
+                'cardbox_qty' => $request->cardbox_qty,
+                'cardbox_unit_price' => $request->cardbox_unit_price,
+                'cardbox_total_price' => $request->cardbox_qty * $request->cardbox_unit_price,
+            ]);
+
+            $resource = new ResponseResource(true, "Data berhasil disimpan!", $saleDocument->load('sales', 'user'));
+        }
+
+        return $resource->response();
     }
 
     /**
