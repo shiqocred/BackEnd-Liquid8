@@ -151,9 +151,10 @@ class GenerateController extends Controller
 
     public function mapAndMergeHeaders(Request $request)
     {
-        set_time_limit(600); 
+        $userId = auth()->id();
+        set_time_limit(600);  
         ini_set('memory_limit', '1024M');
-        
+        DB::beginTransaction();
         try {
             $validator = Validator::make($request->all(), [
                 'headerMappings' => 'required|array',
@@ -192,15 +193,9 @@ class GenerateController extends Controller
                 $nama = $mergedData['old_name_product'][$index] ?? null;
                 $qty = is_numeric($mergedData['old_quantity_product'][$index]) ? (int)$mergedData['old_quantity_product'][$index] : 0;
 
-                // Memastikan bahwa harga adalah desimal yang valid atau diatur ke nol
                 $harga = isset($mergedData['old_price_product'][$index]) && is_numeric($mergedData['old_price_product'][$index])
                     ? (float)$mergedData['old_price_product'][$index]
                     : 0.0;
-
-                // // Validasi panjang old_name_product
-                // if ($nama !== null && strlen($nama) > 512) {
-                //     return response()->json(['error' => "Nama produk terlalu panjang: {$nama}"], 422);
-                // }
 
                 $dataToInsert[] = [
                     'code_document' => $request['code_document'],
@@ -228,9 +223,39 @@ class GenerateController extends Controller
             }
             Generate::query()->delete();
 
+            $product = Product_old::select("old_price_product")->where('code_document', $request['code_document'])->get();
+            $totalPrice = $product->sum('old_price_product');
+            $totalPrice = ceil($totalPrice);
+            $document = Document::where('code_document', $request['code_document'])->first();
+
+            $riwayat_check = RiwayatCheck::create([
+                'user_id' => $userId,
+                'code_document' => $request['code_document'],
+                'base_document' => $document->base_document,
+                'total_data' => $document->total_column_in_document,
+                'total_data_in' => 0,
+                'total_data_lolos' => 0,
+                'total_data_damaged' => 0,
+                'total_data_abnormal' => 0,
+                'total_discrepancy' => 0,
+                'status_approve' => 'done',
+
+                // persentase
+                'precentage_total_data' => 0,
+                'percentage_in' => 0,
+                'percentage_lolos' => 0,
+                'percentage_damaged' => 0,
+                'percentage_abnormal' => 0,
+                'percentage_discrepancy' => 0,
+                'total_price' => $totalPrice
+            ]);
+
+            
             logUserAction($request, $request->user(), "inbound/data_process/data_input", "Upload inbound batch");
 
-            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => $totalInsertedRows]);
+            DB::commit();
+
+            return new ResponseResource(true, "Berhasil menggabungkan data", ['inserted_rows' => $totalInsertedRows, 'riwayat check' => $riwayat_check]);
         } catch (\Illuminate\Database\QueryException $qe) {
             DB::rollBack();
             return response()->json(['error' => 'Database query error: ' . $qe->getMessage()], 500);

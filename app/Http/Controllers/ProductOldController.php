@@ -71,35 +71,32 @@ class ProductOldController extends Controller
     {
         $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
         $document = Document::where('code_document', $request->input('search'))->first();
-
-        if ($document && $document->custom_barcode) {
-            foreach ($code_documents as $code_document) {
-                $code_document->custom_barcode = $document->custom_barcode;
+    
+        if ($document) { 
+            if ($document->custom_barcode) {
+                foreach ($code_documents as $code_document) {
+                    $code_document->custom_barcode = $document->custom_barcode;
+                }
+            } else {
+                foreach ($code_documents as $code_document) {
+                    $code_document->custom_barcode = null;
+                }
             }
-        } else {
-            foreach ($code_documents as $code_document) {
-                $code_document->custom_barcode = null;
-            }
-        }
-
-        if ($document->exists()) {
+    
             return new ResponseResource(true, "Data Document products", [
                 'document_name' => $document->base_document ?? 'N/A',  
                 'status' => $document->status_document ?? 'N/A',  
                 'total_columns' => $document->total_column_in_document ?? 0,  
                 'custom_barcode' => $document->custom_barcode ?? null,  
                 'code_document' => $document->code_document ?? 'N/A',  
-                'data' => $code_documents  ?? [], 
+                'data' => $code_documents ?? null, 
             ]);
-            // return new ResponseResource(
-            //     true,
-            //     "list product",
-            //     $code_documents
-            // );
         } else {
-            return new ResponseResource(false, "code document tidak ada", []);
+            // $document tidak ditemukan
+            return (new ResponseResource(false, "code document tidak ada", null))->response()->setStatusCode(404);
         }
     }
+    
 
 
 

@@ -16,6 +16,7 @@ use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\ProductapproveResource;
 use App\Models\FilterStaging;
+use App\Models\RiwayatCheck;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 
@@ -158,9 +159,39 @@ class ProductApproveController extends Controller
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
             $newProduct = ProductApprove::create($inputData);
-
+            $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
+            $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
+            $totalDataIn = 1 + $riwayatCheck->total_data_in;
+    
+            if ($qualityData['lolos'] != null) {
+                $totalLolos = $riwayatCheck->total_data_lolos + 1;
+            } else if ($qualityData['damaged'] != null) {
+                $totalDamaged = $riwayatCheck->total_data_damaged + 1;
+            } else if ($qualityData['abnormal'] != null) {
+                $totalAbnormal = $riwayatCheck->total_data_abnormal + 1;
+            }
+    
+            $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
+    
+            $riwayatCheck->update([
+                'total_data_in' => $totalDataIn,
+                'total_data_lolos' => $totalLolos,
+                'total_data_damaged' => $totalDamaged,
+                'total_data_abnormal' => $totalAbnormal,
+                'total_discrepancy' => count($totalDiscrepancy),
+                'status_approve' => 'pending',
+    
+                // persentase
+                'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
+                'percentage_in' => ($totalDataIn / $document->total_column_in_document) * 100,
+                'percentage_lolos' => ($totalLolos / $document->total_column_in_document) * 100,
+                'percentage_damaged' => ($totalDamaged / $document->total_column_in_document) * 100,
+                'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
+                'percentage_discrepancy' => (count($totalDiscrepancy) / $document->total_column_in_document) * 100,
+            ]);
+    
             $this->updateDocumentStatus($request->input('code_document'));
-
+    
             DB::commit();
 
             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
