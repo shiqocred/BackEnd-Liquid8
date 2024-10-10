@@ -43,6 +43,7 @@ use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\StagingApproveController;
 use App\Http\Controllers\StagingProductController;
 use App\Http\Controllers\CheckConnectionController;
+use App\Http\Controllers\FilterBklController;
 use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductScanController;
@@ -143,6 +144,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //bulking
    Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
+   Route::post('/bulkingInventory2', [NewProductController::class, 'processExcelFilesCategory2']);
    // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
 });
@@ -185,9 +187,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::put('promo/{promo}', [PromoController::class, 'update']);
    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
 
-   //bkl
-   Route::get('bkls', [BklController::class, 'index']);
-   Route::post('bkls-add/{id}', [BklController::class, 'store']);
+
 
    Route::resource('new_products', NewProductController::class)->except(['destroy']);
 });
@@ -320,6 +320,14 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
    Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
+
+   //filter-bkl
+    Route::resource('bkls', BklController::class);
+    Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
+    Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
+    Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
+    Route::get('export-bkl', [BklController::class, 'exportProduct']);
+
 });
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
@@ -328,7 +336,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('sale-document/add-product', [SaleDocumentController::class, 'addProductSaleInDocument']);
    Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
    Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
-
 
    // Tombol delete 
    Route::delete('migrates/{migrate}', [MigrateController::class, 'destroy']);
@@ -435,4 +442,4 @@ Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 
 //excel
-Route::get('export-category-color-null', [NewProductController::class, 'export']);
+Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);

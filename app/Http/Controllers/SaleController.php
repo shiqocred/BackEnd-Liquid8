@@ -106,6 +106,8 @@ class SaleController extends Controller
                     $newProduct->new_price_product,
                     $newProduct->new_discount,
                     $newProduct->old_price_product,
+                    $newProduct->code_document,
+
                 ];
             } elseif ($bundle) {
                 $data = [
@@ -160,6 +162,7 @@ class SaleController extends Controller
                     'total_discount_sale' => $data[4] - $data[3],
                     'new_discount' => $data[5] ?? NULL,
                     'display_price' => $data[3],
+                    'code_document' => $data[7]?? NULL
                 ]
             );
 

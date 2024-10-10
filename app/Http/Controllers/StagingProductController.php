@@ -107,7 +107,6 @@ class StagingProductController extends Controller
             return new ResponseResource(true, "staging approve berhasil dibuat", null);
         } catch (\Exception $e) {
             DB::rollback();
-            Log::error("Gagal membuat bundle: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke approve', 'error' => $e->getMessage()], 500);
         }
     }
@@ -323,8 +322,8 @@ class StagingProductController extends Controller
     public function processExcelFilesCategoryStaging(Request $request)
     {
         $user_id = auth()->id();
-        set_time_limit(300); // Set execution time limit
-        ini_set('memory_limit', '512M'); // Set memory limit
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');
 
         // Validate input file
         $request->validate([
@@ -576,22 +575,20 @@ class StagingProductController extends Controller
 
     public function export()
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');  
 
         try {
             $fileName = 'product-staging.xlsx';
             $publicPath = 'exports';
             $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
 
-            // Buat direktori jika belum ada
             if (!file_exists(dirname($filePath))) {
                 mkdir(dirname($filePath), 0777, true);
             }
 
             Excel::store(new ProductsExportCategory(StagingProduct::class), $publicPath . '/' . $fileName, 'public');
 
-            // URL download menggunakan public_path
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
 
             return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);

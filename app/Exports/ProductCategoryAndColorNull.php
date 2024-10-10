@@ -21,7 +21,6 @@ class ProductCategoryAndColorNull implements FromQuery, WithHeadings
     public function headings(): array
     {
         return [
-            'ID',
             'Code Document',
             'Old Barcode Product',
             'New Barcode Product',
@@ -34,8 +33,6 @@ class ProductCategoryAndColorNull implements FromQuery, WithHeadings
             'New Quality',
             'New Category Product',
             'New Tag Product',
-            'created_at',
-            'updated_at',
             'New Discount',
             'Display Price',
             'Days Since Created'

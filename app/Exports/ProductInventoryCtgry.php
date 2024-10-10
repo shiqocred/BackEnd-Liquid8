@@ -28,7 +28,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
     {
         // Select semua kolom dari tabel New_product
         $productQuery = New_product::select(
-            'id',
             'code_document',
             'old_barcode_product',
             'new_barcode_product',
@@ -42,7 +41,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'new_category_product',
             'new_tag_product',
             'created_at',
-            'updated_at',
             'new_discount',
             'display_price',
             DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
@@ -52,7 +50,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             ->where('new_status_product', 'display');
 
         $bundleQuery = Bundle::select(
-            'id',
             DB::raw('NULL as code_document'),
             DB::raw('NULL as old_barcode_product'),
             'barcode_bundle as new_barcode_product',
@@ -66,7 +63,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'category as new_category_product',
             DB::raw('NULL as new_tag_product'),
             'created_at',
-            DB::raw('NULL as updated_at'),
             DB::raw('NULL as new_discount'),
             'total_price_custom_bundle as display_price',
             DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
@@ -79,7 +75,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
     public function headings(): array
     {
         return [
-            'ID',
             'Code Document',
             'Old Barcode Product',
             'New Barcode Product',
@@ -93,7 +88,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'New Category Product',
             'New Tag Product',
             'created_at',
-            'updated_at',
             'New Discount',
             'Display Price',
             'Days Since Created',
@@ -103,7 +97,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
     public function map($product): array
     {
         return [
-            $product->id,
             $product->code_document,
             $product->old_barcode_product,
             $product->new_barcode_product,
@@ -117,7 +110,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             $product->new_category_product,
             $product->new_tag_product,
             $product->created_at,
-            $product->updated_at,
             $product->new_discount,
             $product->display_price,
             $product->days_since_created,

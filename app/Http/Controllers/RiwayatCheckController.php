@@ -308,11 +308,11 @@ class RiwayatCheckController extends Controller
             return new ResponseResource(false, 'data gagal di hapus', $e->getMessage());
         }
     }
-
+ 
     public function exportToExcel(Request $request)
     {
-        set_time_limit(300);
-        ini_set('memory_limit', '512M');
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M'); 
         $code_document = $request->input('code_document');
 
         // Mengambil history secara efisien
@@ -417,8 +417,6 @@ class RiwayatCheckController extends Controller
 
         // Set data ke lembar Excel
         $headers = [
-            'ID',
-            'User ID',
             'Code Document',
             'Base Document',
             'Total Data',

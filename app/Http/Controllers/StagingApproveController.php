@@ -158,21 +158,30 @@ class StagingApproveController extends Controller
         }
     }
 
-    public function countBast()
+    public function countBast(Request $request)
     {
-        $lolos = New_product::where('code_document', '0003/08/2024')
+        set_time_limit(600); 
+        ini_set('memory_limit', '1024M');  
+        // Ambil barcode dari masing-masing tabel berdasarkan 'code_document'
+        $lolos = New_product::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
 
-        $stagings = StagingProduct::where('code_document', '0003/08/2024')
+        $stagings = StagingProduct::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
 
-        $product_olds = Product_old::where('code_document', '0004/08/2024')
+        $product_olds = Product_old::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
 
-        $combined = $lolos->merge($stagings);
+        // Ambil data dari product_olds untuk '0001/10/2024'
+        $product_olds2 = Product_old::where('code_document', '0001/10/2024')
+            ->pluck('old_barcode_product');
+        // Gabungkan semua barcode dari $lolos, $stagings, dan $product_olds
+        $combined = $lolos->merge($stagings)->merge($product_olds);
 
-        $unique = $product_olds->diff($combined);
+        // Cari barcode yang ada di $product_olds2 tapi tidak ada di $combined
+        $unique = $product_olds2->diff($combined);
 
+        // Kembalikan hasil barcode unik, atau pesan jika tidak ada barcode unik
         return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
     }
 

@@ -2,26 +2,29 @@
 
 namespace App\Exports;
 
+use App\Models\Bkl;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, WithChunkReading
+class ProductBkl implements FromQuery, WithHeadings, WithMapping, WithChunkReading
 {
     use Exportable;
-    protected $model;
 
-    public function __construct($model)
+    protected $query;
+
+    public function __construct(Request $request)
     {
-        $this->model = $model;
+        $this->query = $request->input('q'); 
     }
 
     public function query()
     {
-        return $this->model::query()
-            ->whereNull('new_tag_product')->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair']);
+        $productBkl = Bkl::latest();
+        return $productBkl;
     }
 
     public function headings(): array
@@ -42,6 +45,7 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
             'New Discount',
             'Display Price',
             'Days Since Created',
+            'Days Since Updated',
         ];
     }
 
@@ -63,6 +67,7 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
             $product->new_discount,
             $product->display_price,
             $product->days_since_created,
+            $product->days_since_updated,
         ];
     }
 
@@ -71,6 +76,6 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
      */
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;
     }
 }

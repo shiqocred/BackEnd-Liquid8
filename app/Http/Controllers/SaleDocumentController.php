@@ -157,12 +157,12 @@ class SaleDocumentController extends Controller
                 if (!$newProduct && !$bundle) {
                     return response()->json(['error' => 'Both new product and bundle not found'], 404);
                 } elseif (!$newProduct) {
-                    $bundle->update(['product_status' => 'sale']);
+                    $bundle->product_status = 'sale';
                 } elseif (!$bundle) {
-                    $newProduct->update(['new_status_product' => 'sale']);
+                    $newProduct->delete();
                 } else {
-                    $newProduct->update(['new_status_product' => 'sale']);
-                    $bundle->update(['product_status' => 'sale']);
+                    $newProduct->delete();
+                    $bundle->product_status = 'sale';
                 }
                 $sale->update(['status_sale' => 'selesai']);
             }
@@ -272,12 +272,12 @@ class SaleDocumentController extends Controller
             }
 
             if (!$newProduct) {
-                $bundle->update(['product_status' => 'sale']);
+                $bundle->product_status = 'sale';
             } elseif (!$bundle) {
-                $newProduct->update(['new_status_product' => 'sale']);
+                $newProduct->delete();
             } else {
-                $newProduct->update(['new_status_product' => 'sale']);
-                $bundle->update(['product_status' => 'sale']);
+                $newProduct->delete();
+                $bundle->product_status = 'sale';
             }
 
             $sale = Sale::create(
@@ -327,20 +327,8 @@ class SaleDocumentController extends Controller
 
     public function deleteProductSaleInDocument(SaleDocument $saleDocument, Sale $sale)
     {
+        DB::beginTransaction();
         try {
-            //note: jika record pada new product yang status nya sudah menjadi sale tidak di temukan atau telah di hapus. maka, fungsi ini tidak akan berjalan dengan semestinya.
-            $newProduct = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
-            $bundle = Bundle::where('barcode_bundle', $sale->product_barcode_sale)->first();
-            if (!$newProduct && !$bundle) {
-                return response()->json(['error' => 'Both new product and bundle not found'], 404);
-            } elseif (!$newProduct) {
-                $bundle->update(['product_status' => 'not sale']);
-            } elseif (!$bundle) {
-                $newProduct->update(['new_status_product' => 'display']);
-            } else {
-                $newProduct->update(['new_status_product' => 'display']);
-                $bundle->update(['product_status' => 'not sale']);
-            }
 
             $allSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)
                 ->where('status_sale', 'selesai')
@@ -371,10 +359,36 @@ class SaleDocumentController extends Controller
                 ]);
                 $saleDocument->delete();
             }
-
             $sale->delete();
+            $bundle = Bundle::where('barcode_bundle', $sale->product_barcode_sale)->first();
+            if (!empty($bundle)) {
+                $bundle->product_status = 'not sale';
+            } else {
+                $lolos = json_encode(['lolos' => 'lolos']);
+                New_product::insert([
+                    'code_document' => $sale->code_document,
+                    'old_barcode_product' => $sale->product_barcode_sale,
+                    'new_barcode_product' => $sale->product_barcode_sale,
+                    'new_name_product' => $sale->product_name_sale,
+                    'new_quantity_product' => $sale->product_qty_sale,
+                    'new_price_product' => $sale->product_old_price_sale,
+                    'old_price_product' => $sale->product_old_price_sale,
+                    'new_date_in_product' => $sale->created_at,
+                    'new_status_product' => 'display',
+                    'new_quality' => $lolos,
+                    'new_category_product' => $sale->product_category_sale,
+                    'new_tag_product' => null,
+                    'created_at' => $sale->created_at,
+                    'updated_at' => $sale->updated_at,
+                    'new_discount' => 0,
+                    'display_price' => $sale->product_price_sale
+                ]);
+            }
+
             $resource = new ResponseResource(true, "data berhasil di hapus", $saleDocument->load('sales', 'user'));
+            DB::commit();
         } catch (\Exception $e) {
+            DB::rollback();
             $resource = new ResponseResource(false, "data gagal di hapus", $e->getMessage());
         }
         return $resource->response();
@@ -433,12 +447,9 @@ class SaleDocumentController extends Controller
         }
         if ($saleDocument->sales->count() > 0) {
             $groupedSales = $saleDocument->sales->groupBy(function ($sale) {
-                $product = New_product::where('new_name_product', $sale->product_name_sale)
-                    ->where('new_status_product', 'sale')
-                    ->where('new_barcode_product', $sale->product_barcode_sale)
-                    ->first();
-                return $product ? strtoupper($product->new_category_product) : 'Unknown';
+                return $sale->product_category_sale ? strtoupper($sale->product_category_sale) : 'Unknown';
             });
+
             foreach ($groupedSales as $categoryName => $group) {
                 $totalPricePerCategory = $group->sum(function ($sale) {
                     return $sale->product_qty_sale * $sale->product_price_sale;
