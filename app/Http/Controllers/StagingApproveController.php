@@ -173,14 +173,14 @@ class StagingApproveController extends Controller
         $product_olds = Product_old::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
 
-        // $sales = Sale::where('code_document_sale', 'LQDSLE00349')->pluck('product_barcode_sale');
 
-        // $product_olds2 = Product_old::where('code_document', '0001/10/2024')
+        // $product_olds2 = Product_old::where('code_document', '0003/10/2024')
         //     ->pluck('old_barcode_product');
+
 
         $combined = $lolos->merge($stagings)->merge($product_olds);
         dd(count($combined));
-        $unique = $combined->diff($product_olds2);
+        $unique = $product_olds2->diff($combined);
 
         return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
     }
@@ -200,17 +200,27 @@ class StagingApproveController extends Controller
     public function findSimilarTabel(Request $request)
     {
         $lolos = New_product::where('code_document', '0068/09/2024')
-            ->pluck('new_barcode_product');
+            ->pluck('old_barcode_product');
 
         $stagings = StagingProduct::where('code_document', '0068/09/2024')
-            ->pluck('new_barcode_product');
+            ->pluck('old_barcode_product');
 
-        // $product_olds = Product_old::where('code_document', '0068/09/2024')
-        //     ->pluck('old_barcode_product');
-        $sales = Sale::where('code_document_sale', 'LQDSLE00349')->pluck('product_barcode_sale');
+        $approve = StagingApprove::where('code_document', '0068/09/2024')
+            ->pluck('old_barcode_product');
 
-        $similarBarcodes = $lolos->intersect($stagings)->intersect($sales);
+        $product_olds2 = Product_old::where('code_document', '0068/09/2024')
+            ->pluck('old_barcode_product');
+        // $sales = Sale::where('code_document', '0068/09/2024')
+        //     ->pluck('product_barcode_sale');
 
-        return response()->json($similarBarcodes); // Kembalikan barcode yang ditemukan
+        $combined = $lolos->merge($stagings)->merge($approve);
+
+        $duplicateBarcodes = $combined->duplicates();
+
+        if ($duplicateBarcodes->isNotEmpty()) {
+            return $duplicateBarcodes;
+        } else {
+            return "Tidak ada data duplikat.";
+        }
     }
 }
