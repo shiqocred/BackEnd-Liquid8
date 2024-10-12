@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Http\Resources\ResponseResource;
+use App\Models\Product_Bundle;
 use App\Models\Product_old;
 use App\Models\ProductApprove;
 use App\Models\Sale;
@@ -210,17 +211,26 @@ class StagingApproveController extends Controller
 
         $product_olds2 = Product_old::where('code_document', '0068/09/2024')
             ->pluck('old_barcode_product');
-        // $sales = Sale::where('code_document', '0068/09/2024')
-        //     ->pluck('product_barcode_sale');
 
-        $combined = $lolos->merge($stagings)->merge($approve);
+        $sales = Sale::where('code_document', '0068/09/2024')
+            ->pluck('product_barcode_sale');
 
+        // $approve = Product_Bundle::where('code_document', '0068/09/2024')
+        //     ->pluck('new_barcode_product');
+
+        // $combined = $lolos->merge($stagings)->merge($approve);
+
+        // Menggabungkan dua koleksi ($lolos dan $sales)
+        $combined = $lolos->merge($sales)->merge($stagings)->merge($approve)->merge($product_olds2);
+
+        // Memeriksa barcode yang duplikat
         $duplicateBarcodes = $combined->duplicates();
 
+        // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
         if ($duplicateBarcodes->isNotEmpty()) {
-            return $duplicateBarcodes;
+            return response()->json($duplicateBarcodes);
         } else {
-            return "Tidak ada data duplikat.";
+            return response()->json("Tidak ada data duplikat.");
         }
     }
 }

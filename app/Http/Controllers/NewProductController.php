@@ -361,7 +361,6 @@ class NewProductController extends Controller
                         ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('code_document', 'LIKE', '%' . $query . '%');
                 });
-
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
             } else {
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
