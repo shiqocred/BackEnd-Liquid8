@@ -415,8 +415,6 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
 // Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 
 
-
-
 //login
 Route::post('login', [AuthController::class, 'login']);
 

@@ -17,6 +17,7 @@ use App\Mail\AdminNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\ResponseResource;
+use App\Models\Product_Bundle;
 use App\Models\Sale;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -267,6 +268,20 @@ class RiwayatCheckController extends Controller
 
         $totalStagings = count($getProductDamagedStg) + count($getProductLolosStg) + count($getProductAbnormalStg);
 
+        //product Bundle
+        $totalPriceProductBundle = 0;
+        $getProductProductBundle = Product_Bundle::where('code_document', $history->code_document)
+            ->select('old_price_product', 'new_quality')
+            ->cursor();
+        foreach ($getProductProductBundle as $product) {
+            $totalPriceProductBundle += $product->old_price_product;
+        }
+
+        $totalPercentageProductBundle = $history->total_price != 0
+            ? ($totalPriceProductBundle / $history->total_price) * 100
+            : 0;
+
+        $totalPercentageProductBundle = round($totalPercentageProductBundle, 2);
 
         //sale
         $totalPriceSales = 0;
@@ -309,6 +324,7 @@ class RiwayatCheckController extends Controller
             'total_product_color' => $productColorCount,
             'total_product_sales' => count($getProductSales),
             'total_product_stagings' => $totalStagings,
+            'total_product_bundle' => count($getProductProductBundle),
             'total_data' => $history->total_data,
             'total_data_in' => $history->total_data_in,
             'total_data_lolos' => $history->total_data_lolos,
@@ -347,11 +363,15 @@ class RiwayatCheckController extends Controller
             ],
             'abnormalStaging' => [
                 'total_old_price' => $totalPriceAbnormalStg,
-                'price_percentage' => $getProductAbnormalStg,
+                'price_percentage' => $totalPercentageAbnormal,
             ],
             'lolosSale' => [
                 'total_old_price' => $totalPriceSales,
                 'price_percentage' => $totalPercentageSales,
+            ],
+            'lolosBundle' => [
+                'total_old_price' => $totalPriceProductBundle,
+                'price_percentage' => $totalPercentageProductBundle,
             ],
             'priceDiscrepancy' =>  $totalPriceDiscrepancy,
             'price_percentage' => $totalPercentageDiscrepancy,
@@ -483,6 +503,23 @@ class RiwayatCheckController extends Controller
             : 0;
         $price_persentage_staging = round($price_persentage_staging, 2);
 
+        //product bundle
+        $getProductBundle = [];
+        $totalOldPriceBundle = 0;
+        Product_Bundle::where('code_document', $code_document)
+            ->chunk(2000, function ($products) use (&$getProductBundle, &$totalOldPriceBundle) {
+                foreach ($products as $product) {
+                    $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
+                    $getProductBundle[] = $product;
+                    $totalOldPriceBundle += $product->old_price_product;
+                }
+            });
+
+        $price_persentage_bundle = $getHistory->total_price != 0
+            ? ($totalOldPriceBundle / $getHistory->total_price) * 100
+            : 0;
+        $price_persentage_bundle = round($price_persentage_bundle, 2);
+
         //sales
         $totalPriceSales = 0;
 
@@ -548,6 +585,7 @@ class RiwayatCheckController extends Controller
         $this->createExcelSheet($spreadsheet, 'Lolos-Inventory', $getProductLolos, $totalOldPriceLolos, $price_persentage_lolos);
         $this->createExcelSheet($spreadsheet, 'Abnormal-Inventory', $getProductAbnormal, $totalOldPriceAbnormal, $price_persentage_abnormal);
         $this->createExcelSheet($spreadsheet, 'Staging', $getProductStagings, $totalOldPriceStaging, $price_persentage_staging);
+        $this->createExcelSheet($spreadsheet, 'Product-bundle', $getProductBundle, $totalOldPriceBundle, $price_persentage_bundle);
         $this->createExcelSale($spreadsheet, 'Sales', $getProductSales, $totalPriceSales, $totalPercentageSales);
         $this->createExcelSheetDiscrepancy($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);
 
