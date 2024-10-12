@@ -361,7 +361,6 @@ class NewProductController extends Controller
                         ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('code_document', 'LIKE', '%' . $query . '%');
                 });
-
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
             } else {
                 $productExpDisplay = $productExpDisplayQuery->paginate(50);
@@ -1241,7 +1240,7 @@ class NewProductController extends Controller
         } else {
             $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
                 ->where('max_price_color', '>=', $request->input('old_price_product'))
-                ->select('fixed_price_color', 'name_color')->first();
+                ->select('fixed_price_color', 'name_color', 'hexa_code_color')->first();
         }
 
         return new ResponseResource(true, 'list category', ["category" => $category, "warna" => $tagwarna]);
