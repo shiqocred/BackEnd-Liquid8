@@ -2,10 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
 use App\Models\Document;
+use App\Models\New_product;
 use App\Models\Product_old;
+use App\Models\RepairFilter;
+use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
+use App\Models\RepairProduct;
+use App\Models\Product_Bundle;
 use App\Models\ProductApprove;
+use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -168,5 +175,152 @@ class DocumentController extends Controller
         } catch (\Exception $e) {
             return new ResponseResource(false, "gagal di hapus", $e->getMessage());
         }
+    }
+
+    public function checkDocumentOnGoing(Request $request)
+    {
+        $documents = Document::where('status_document', 'pending')->orWhere('status_document', 'in progress')->latest()->paginate(50);
+        return new ResponseResource(true, "list docs", $documents);
+    }
+
+    public function findDataDocs(Request $request, $code_document)
+    {
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
+
+        $document = Document::where('code_document', $code_document)->first();
+        $discrepancy = Product_old::where('code_document', $code_document)->select('id')->get();
+        $inventory = New_product::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+        $stagings = StagingProduct::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+        $productBundle = Product_Bundle::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+        $sales = Sale::where('code_document', $code_document)->select('code_document', 'product_old_price_sale')->get();
+        $productApprove = ProductApprove::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+        $repairFilter = RepairFilter::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+        $repairProduct = RepairProduct::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+
+        $allData = count($inventory) + count($stagings) + count($productBundle)
+            + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales);
+
+        $totalInventoryPrice = $inventory->sum('old_price_product');
+        $totalStagingsPrice = $stagings->sum('old_price_product');
+        $totalProductBundlePrice = $productBundle->sum('old_price_product');
+        $totalSalesPrice = $sales->sum('product_old_price_sale');
+        $totalProductApprovePrice = $productApprove->sum('old_price_product');
+        $totalRepairFilterPrice = $repairFilter->sum('old_price_product');
+        $totalRepairProductPrice = $repairProduct->sum('old_price_product');
+
+        // Jumlahkan semua total harga
+        $totalPrice = $totalInventoryPrice + $totalStagingsPrice + $totalProductBundlePrice +
+            $totalSalesPrice + $totalProductApprovePrice +
+            $totalRepairFilterPrice + $totalRepairProductPrice;
+
+        //count lolos
+        $countDataLolos = New_product::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            Product_Bundle::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            ProductApprove::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            RepairFilter::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            RepairProduct::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count();
+
+        // Menghitung 'damaged' secara langsung menggunakan query
+        $countDataDamaged = New_product::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
+            StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
+            Product_Bundle::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
+            ProductApprove::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
+            RepairFilter::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
+            RepairProduct::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count();
+
+        // Menghitung 'abnormal' secara langsung menggunakan query
+        $countDataAbnormal = New_product::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            Product_Bundle::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            ProductApprove::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            RepairFilter::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            RepairProduct::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count();
+
+        $riwayatCheck = RiwayatCheck::where('code_document', $code_document)->first();
+
+
+        $riwayatCheck->update([
+            'total_data_in' => $allData,
+            'total_data_lolos' => $countDataLolos,
+            'total_data_damaged' => $countDataDamaged,
+            'total_data_abnormal' => $countDataAbnormal,
+            'total_discrepancy' => count($discrepancy),
+            'total_price' => $totalPrice,
+            // persentase
+            'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
+            'percentage_in' => ($allData / $document->total_column_in_document) * 100,
+            'percentage_lolos' => ($countDataLolos / $document->total_column_in_document) * 100,
+            'percentage_damaged' => ($countDataDamaged / $document->total_column_in_document) * 100,
+            'percentage_abnormal' => ($countDataAbnormal / $document->total_column_in_document) * 100,
+            'percentage_discrepancy' => (count($discrepancy) / $document->total_column_in_document) * 100,
+        ]);
+
+        return new ResponseResource(true, "list", [
+            "code_document" => $code_document,
+            "all data" => $allData,
+            "lolos" => $countDataLolos,
+            "abnormal" => $countDataAbnormal,
+            "damaged" => $countDataDamaged,
+            'total_price' => $totalPrice
+        ]);
     }
 }

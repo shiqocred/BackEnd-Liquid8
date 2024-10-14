@@ -151,7 +151,6 @@ class RiwayatCheckController extends Controller
 
     public function show(RiwayatCheck $history)
     {
-        // Gunakan cursor untuk mengambil produk satu per satu
         $getProduct = New_product::where('code_document', $history->code_document)
             ->select("new_category_product", "new_tag_product", "old_price_product")->cursor();
         $productCategoryCount = $getProduct->filter(function ($product) {

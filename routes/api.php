@@ -441,3 +441,9 @@ Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 
 //excel
 Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
+
+
+//api urgent-> persamaan data check history
+
+Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
+Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
