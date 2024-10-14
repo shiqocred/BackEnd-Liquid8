@@ -48,6 +48,7 @@ use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductScanController;
 use App\Http\Controllers\SpecialTransactionController;
+use App\Http\Controllers\VehicleTypeController;
 use App\Http\Middleware\CheckApiKey;
 use App\Models\New_product;
 use App\Models\StagingApprove;
@@ -216,7 +217,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    //repair
    Route::get('repair-mv', [RepairController::class, 'index']);
    Route::get('repair-mv/{repair}', [RepairController::class, 'show']);
-   Route::post('repair-mv', [RepairProductController::class, 'store']); 
+   Route::post('repair-mv', [RepairProductController::class, 'store']);
    Route::delete('repair-mv/{repair}', [RepairController::class, 'destroy']);
 
    Route::get('repair', [NewProductController::class, 'showRepair']);
@@ -309,6 +310,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
 
    Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
    Route::get('new_products', [NewProductController::class, 'index']);
+
+   Route::resource('vehicle-types', VehicleTypeController::class);
 });
 //end outbound
 
@@ -331,6 +334,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
     //update history
     Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
 
+   Route::resource('bkls', BklController::class);
+   Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
+   Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
+   Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
+   Route::get('export-bkl', [BklController::class, 'exportProduct']);
 });
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
