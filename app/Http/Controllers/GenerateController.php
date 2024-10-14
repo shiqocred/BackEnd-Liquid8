@@ -154,6 +154,7 @@ class GenerateController extends Controller
         $userId = auth()->id();
         set_time_limit(600);  
         ini_set('memory_limit', '1024M');
+
         DB::beginTransaction();
         try {
             $validator = Validator::make($request->all(), [
@@ -191,7 +192,17 @@ class GenerateController extends Controller
             $dataToInsert = [];
             foreach ($mergedData['old_barcode_product'] as $index => $noResi) {
                 $nama = $mergedData['old_name_product'][$index] ?? null;
+
                 $qty = is_numeric($mergedData['old_quantity_product'][$index]) ? (int)$mergedData['old_quantity_product'][$index] : 0;
+
+                if ($nama && strlen($nama) > 2000) {
+                    // Bisa log error, throw exception, atau tangani sesuai kebutuhan
+                    Log::error("Nama produk terlalu panjang, lebih dari 2000 karakter: " . substr($nama, 0, 50) . "...");
+                    
+                    // Bisa lempar error atau skip proses data ini
+                    return response()->json(['error' => 'old_name_product terlalu panjang, lebih dari 2000 karakter'], 422);
+                }
+            
 
                 $harga = isset($mergedData['old_price_product'][$index]) && is_numeric($mergedData['old_price_product'][$index])
                     ? (float)$mergedData['old_price_product'][$index]
