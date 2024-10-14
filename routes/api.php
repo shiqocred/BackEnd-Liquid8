@@ -328,6 +328,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
     Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
     Route::get('export-bkl', [BklController::class, 'exportProduct']);
 
+    //update history
+    Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
+
 });
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
@@ -446,4 +449,3 @@ Route::get('export-category-color-null', [NewProductController::class, 'exportCa
 //api urgent-> persamaan data check history
 
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
-Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;

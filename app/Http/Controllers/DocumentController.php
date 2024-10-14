@@ -185,6 +185,7 @@ class DocumentController extends Controller
 
     public function findDataDocs(Request $request, $code_document)
     {
+        $userId = auth()->id();
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
@@ -296,6 +297,32 @@ class DocumentController extends Controller
             ->count();
 
         $riwayatCheck = RiwayatCheck::where('code_document', $code_document)->first();
+
+        if ($riwayatCheck === null) {
+            $riwayat_check = RiwayatCheck::create([
+                'user_id' => $userId,
+                'code_document' => $code_document, // Menggunakan $code_document langsung
+                'base_document' => $document->base_document,
+                'total_data' => $document->total_column_in_document,
+                'total_data_in' => 0,
+                'total_data_lolos' => 0,
+                'total_data_damaged' => 0,
+                'total_data_abnormal' => 0,
+                'total_discrepancy' => 0,
+                'status_approve' => 'done',
+
+                // Persentase
+                'precentage_total_data' => 0,
+                'percentage_in' => 0,
+                'percentage_lolos' => 0,
+                'percentage_damaged' => 0,
+                'percentage_abnormal' => 0,
+                'percentage_discrepancy' => 0,
+
+                'total_price' => $totalPrice // Pastikan $totalPrice terinisialisasi
+            ]);
+        }
+
 
 
         $riwayatCheck->update([
