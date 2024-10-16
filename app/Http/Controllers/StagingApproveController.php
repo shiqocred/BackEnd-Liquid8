@@ -203,28 +203,32 @@ class StagingApproveController extends Controller
         $lolos = New_product::where('code_document', '0068/09/2024')
             ->pluck('new_barcode_product');
 
-        $stagings = StagingProduct::where('code_document', '0068/09/2024')
-            ->pluck('new_barcode_product');
+        $sales = Sale::latest()->pluck('product_barcode_sale');
+
+        // Menggabungkan data $lolos dan $sales
+        $combined = $lolos->merge($sales);
+
+        // Memeriksa barcode yang duplikat
+        $duplicateBarcodes = $combined->duplicates();;
+
+        // $stagings = StagingProduct::where('code_document', '0068/09/2024')
+        //     ->pluck('new_name_product');
 
         // $approve = StagingApprove::where('code_document', '0068/09/2024')
         //     ->pluck('old_barcode_product');
 
         // $product_olds2 = Product_old::where('code_document', '0068/09/2024')
-        //     ->pluck('old_barcode_product');
+        //     ->pluck('old_name_product');
 
-        $sales = Sale::where('code_document', '0068/09/2024')
-            ->pluck('product_barcode_sale');
 
-        $approve = Product_Bundle::where('code_document', '0068/09/2024')
-            ->pluck('new_barcode_product');
 
-        $combined = $lolos->merge($stagings)->merge($approve)->merge($sales);
+        // $approve = Product_Bundle::where('code_document', '0068/09/2024')
+        //     ->pluck('new_name_product');
+
+        // $combined = $lolos->merge($stagings)->merge($product_olds2)->merge($sales)->merge($approve);
 
         // Menggabungkan dua koleksi ($lolos dan $sales)
-        // $combined = $lolos->merge($sales)->merge($stagings)->merge($approve)->merge($product_olds2);
 
-        // Memeriksa barcode yang duplikat
-        $duplicateBarcodes = $combined->duplicates();
 
         // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
         if ($duplicateBarcodes->isNotEmpty()) {

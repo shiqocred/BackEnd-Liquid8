@@ -361,10 +361,10 @@ class StagingProductController extends Controller
             // Generate document code
             $code_document = $this->generateDocumentCode();
             while (Document::where('code_document', $code_document)->exists()) {
-                $code_document = $this->generateDocumentCode(); // Regenerate if duplicate exists
+                $code_document = $this->generateDocumentCode(); 
             }
 
-            $duplicateBarcodes = collect(); // Collection for storing duplicate barcodes
+            $duplicateBarcodes = collect(); 
             // Process in chunks
             for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
                 $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
@@ -427,7 +427,6 @@ class StagingProductController extends Controller
                 }
             }
 
-            // Insert document record after processing is done
             Document::create([
                 'code_document' => $code_document,
                 'base_document' => $fileName,
@@ -437,7 +436,6 @@ class StagingProductController extends Controller
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
-            // Save to history
             $history = RiwayatCheck::create([
                 'user_id' => $user_id,
                 'code_document' => $code_document,
@@ -458,7 +456,6 @@ class StagingProductController extends Controller
                 'total_price' => 0
             ]);
 
-            // Create notification
             Notification::create([
                 'user_id' => $user_id,
                 'notification_name' => 'bulking category staging',
@@ -469,7 +466,7 @@ class StagingProductController extends Controller
                 'status' => 'display'
             ]);
 
-            DB::commit(); // Commit transaction
+            DB::commit(); 
 
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => $code_document,
@@ -478,7 +475,7 @@ class StagingProductController extends Controller
                 'total_row_count' => count($ekspedisiData) - 1, 
             ]);
         } catch (\Exception $e) {
-            DB::rollBack(); // Rollback if an error occurs
+            DB::rollBack(); 
             return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
         }
     }

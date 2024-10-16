@@ -26,7 +26,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RiwayatCheckController extends Controller
 {
-
     public function index(Request $request)
     {
         $query = $request->input('q');
@@ -148,11 +147,11 @@ class RiwayatCheckController extends Controller
         }
     }
 
-
     public function show(RiwayatCheck $history)
     {
         $getProduct = New_product::where('code_document', $history->code_document)
             ->select("new_category_product", "new_tag_product", "old_price_product")->cursor();
+
         $productCategoryCount = $getProduct->filter(function ($product) {
             return $product->new_category_product !== null;
         })->count();
@@ -379,19 +378,16 @@ class RiwayatCheckController extends Controller
         return $response->response();
     }
 
-
     public function getByDocument(Request $request)
     {
         $codeDocument = RiwayatCheck::where('code_document', $request['code_document']);
         return new ResponseResource(true, "Riwayat Check", $codeDocument);
     }
 
-
     public function edit(RiwayatCheck $riwayatCheck)
     {
         //
     }
-
 
     public function update(Request $request, RiwayatCheck $riwayatCheck) {}
 
