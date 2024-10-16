@@ -29,6 +29,7 @@ class DocumentController extends Controller
         $query = $request->input('q');
         $documents = Document::latest()->where(function ($queryBuilder) use ($query) {
             $queryBuilder->where('code_document', 'LIKE', '%' . $query . '%')
+                ->orWhere('status_document', $query)
                 ->orWhere('base_document', 'LIKE', '%' . $query . '%');
         })->paginate(50);
         return new ResponseResource(true, "List Documents", $documents);
@@ -96,6 +97,7 @@ class DocumentController extends Controller
                 $search->where('status_document', '!=', 'pending')
                     ->where(function ($baseCode) use ($query) {
                         $baseCode->where('base_document', 'LIKE', '%' . $query . '%')
+                            ->orWhere('status_document', $query)
                             ->orWhere('code_document', 'LIKE', '%' . $query . '%');
                     });
             });
@@ -212,7 +214,7 @@ class DocumentController extends Controller
         $repairProduct = RepairProduct::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
 
-        $allData = count($inventory) + count($stagings) + count($productBundle) 
+        $allData = count($inventory) + count($stagings) + count($productBundle)
             + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales);
 
         $totalInventoryPrice = $inventory->sum('old_price_product');
