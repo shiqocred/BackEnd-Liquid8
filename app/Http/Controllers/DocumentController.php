@@ -23,18 +23,26 @@ use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class DocumentController extends Controller
 {
-
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $documents = Document::latest()->where(function ($queryBuilder) use ($query) {
-            $queryBuilder->where('code_document', 'LIKE', '%' . $query . '%')
-                ->orWhere('status_document', $query)
-                ->orWhere('base_document', 'LIKE', '%' . $query . '%');
-        })->paginate(50);
-        return new ResponseResource(true, "List Documents", $documents);
-    }
+        $status = $request->input('f');
 
+        $documents = Document::latest();
+
+        if ($query) {
+            $documents->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('code_document', 'LIKE', '%' . $query . '%')
+                    ->orWhere('base_document', 'LIKE', '%' . $query . '%');
+            });
+        }
+        if ($status) {
+            $documents->where('status_document', 'LIKE', '%' . $status . '%');
+        }
+        $paginated = $documents->paginate(50);
+
+        return new ResponseResource(true, "List Documents", $paginated);
+    }
 
     public function create()
     {
@@ -90,6 +98,8 @@ class DocumentController extends Controller
     public function documentInProgress(Request $request)
     {
         $query = $request->input('q');
+        $status = $request->input('f');
+
         $documents = Document::latest();
 
         if (!empty($query)) {
@@ -101,12 +111,19 @@ class DocumentController extends Controller
                             ->orWhere('code_document', 'LIKE', '%' . $query . '%');
                     });
             });
-        } else {
+        }
+
+        if (!empty($status)) {
+            $documents->where('status_document', 'LIKE', '%' . $status . '%');
+        }
+
+        if (empty($query) && empty($status)) {
             $documents = $documents->where('status_document', '!=', 'pending');
         }
 
-        return new ResponseResource(true, "list document progress", $documents->paginate(30));
+        return new ResponseResource(true, "List document progress", $documents->paginate(30));
     }
+
 
     public function documentDone(Request $request) // halaman list product staging by doc
     {
