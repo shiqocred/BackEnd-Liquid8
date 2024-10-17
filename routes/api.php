@@ -134,10 +134,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    //riwayat
    Route::get('historys', [RiwayatCheckController::class, 'index']);
    Route::post('historys', [RiwayatCheckController::class, 'store']);
-   Route::get('getProductLolos/{code_document}', [RiwayatCheckController::class, 'getProductLolos'])->where('code_document', '.*');
-   Route::get('getProductDamaged/{code_document}', [RiwayatCheckController::class, 'getProductDamaged'])->where('code_document', '.*');
-   Route::get('getProductAbnormal/{code_document}', [RiwayatCheckController::class, 'getProductAbnormal'])->where('code_document', '.*');
-   Route::get('discrepancy/{code_document}', [RiwayatCheckController::class, 'discrepancy'])->where('code_document', '.*');
+   Route::get('getProductLolos/{code_document}', [ProductOldController::class, 'getProductLolos'])->where('code_document', '.*');
+   Route::get('getProductDamaged/{code_document}', [ProductOldController::class, 'getProductDamaged'])->where('code_document', '.*');
+   Route::get('getProductAbnormal/{code_document}', [ProductOldController::class, 'getProductAbnormal'])->where('code_document', '.*');
+   Route::get('discrepancy/{code_document}', [ProductOldController::class, 'discrepancy'])->where('code_document', '.*');
 });
 
 //inbound bulking

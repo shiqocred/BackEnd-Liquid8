@@ -755,34 +755,5 @@ class RiwayatCheckController extends Controller
         $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
     }
 
-    public function getProductLolos($code_document)
-    {
-        $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->lolos', '!=', null)
-            ->paginate(50);
-
-        return new ResponseResource(true, "list lolos", $products);
-    }
-    public function getProductDamaged($code_document)
-    {
-        $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->damaged', '!=', null)
-            ->paginate(50);
-
-        return new ResponseResource(true, "list damaged", $products);
-    }
-    public function getProductAbnormal($code_document)
-    {
-        $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->abnormal', '!=', null)
-            ->paginate(50);
-
-        return new ResponseResource(true, "list abnormal", $products);
-    }
-    public function discrepancy($code_document)
-    {
-        $products = Product_old::where('code_document', $code_document)->paginate(50);
-
-        return new ResponseResource(true, "list discrepancy", $products);
-    }
+   
 }
