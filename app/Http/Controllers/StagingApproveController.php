@@ -102,7 +102,7 @@ class StagingApproveController extends Controller
         DB::beginTransaction();
         try {
             if ($user) {
-                if ($user->role && ($user->role->role_name == 'Admin Kasir' || $user->role->role_name == 'Admin' || $user->role->role_name == 'Spv')) {
+                if ($user->role && ($user->role->role_name == 'Kasir leader' || $user->role->role_name == 'Admin' || $user->role->role_name == 'Spv')) {
 
                     $productApproves = StagingApprove::get();
 
