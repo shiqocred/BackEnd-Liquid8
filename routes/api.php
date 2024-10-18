@@ -327,14 +327,14 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
 
    //filter-bkl
-    Route::resource('bkls', BklController::class);
-    Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
-    Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
-    Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
-    Route::get('export-bkl', [BklController::class, 'exportProduct']);
+   Route::resource('bkls', BklController::class);
+   Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
+   Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
+   Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
+   Route::get('export-bkl', [BklController::class, 'exportProduct']);
 
-    //update history
-    Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
+   //update history
+   Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
 
    Route::resource('bkls', BklController::class);
    Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
@@ -342,6 +342,13 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
    Route::get('export-bkl', [BklController::class, 'exportProduct']);
 });
+
+//kasir leader
+Route::middleware(['auth:sanctum', 'check.role:Kasir leader'])->group(function () {
+   Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
+   Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
+});
+
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
