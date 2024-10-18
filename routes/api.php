@@ -318,7 +318,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leade
 //end outbound
 
 //admin
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,Kasir leader'])->group(function () {
    //colortags dan category
    Route::get('categories', [CategoryController::class, 'index']);
    Route::get('color_tags', [ColorTagController::class, 'index']);
@@ -343,11 +343,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('export-bkl', [BklController::class, 'exportProduct']);
 });
 
-//kasir leader
-Route::middleware(['auth:sanctum', 'check.role:Kasir leader'])->group(function () {
-   Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
-   Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
-});
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
