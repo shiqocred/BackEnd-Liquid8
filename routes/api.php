@@ -285,7 +285,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 
 //=========================================== Outbound ==========================================================
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader'])->group(function () {
    //migrate
 
    Route::resource('destinations', DestinationController::class)->except(['destroy']);
@@ -297,7 +297,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leader'])->group(function () {
    //sale
    Route::resource('sales', SaleController::class);
    Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
