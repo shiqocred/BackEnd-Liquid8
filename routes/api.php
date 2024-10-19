@@ -434,7 +434,6 @@ Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
 Route::get('updateCategoryPalet', [PaletController::class, 'updateCategoryPalet']);
 
-
 // route untuk cek koneksi
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
 

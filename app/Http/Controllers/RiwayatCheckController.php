@@ -759,11 +759,16 @@ class RiwayatCheckController extends Controller
         $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
     }
 
-    public function getProductLolos($code_document)
+    public function getProductLolos(Request $request, $code_document)
     {
+        $search = $request->input('q');
         $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->lolos', '!=', null)
-            ->paginate(50);
+            ->where('new_quality->lolos', '!=', null);
+        if(!isEmpty($product)){
+            $product-s>where('new_name_product', 'LIKE', '%' .$search . '%')
+            ->orWhere('new_barcode_product', 'LIKE', '%' .$search . '%');
+        }
+        $products->paginate(50);
 
         return new ResponseResource(true, "list lolos", $products);
     }
