@@ -155,7 +155,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 //=========================================== Staging ==========================================================
 
 // Admin,Spv,Admin Kasir
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasir'])->group(function () {
    //store nya untuk mindah ke approve staging
    Route::resource('staging_products', StagingProductController::class);
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
@@ -163,14 +163,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
+});
+
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
+   //untuk spv me approve staging ke inventory 
    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 });
-//product staging approve
-// Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
-//    //untuk spv me approve staging ke inventory 
-//    Route::resource('staging_approves', StagingApproveController::class);
-//    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
-// });
 
 //end staging =========================================== Staging ==========================================================
 
@@ -373,8 +371,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
 });
 
-//all
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
    Route::post('/partial-staging/{code_document}', [StagingProductController::class, 'partial'])->where('code_document', '.*');
