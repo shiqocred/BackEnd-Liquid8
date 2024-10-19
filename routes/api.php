@@ -82,7 +82,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 //=========================================== inbound ==========================================================
 
 //inbound process, check history, check product, Manual inbound : Admin,Spv,Team leader
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader'])->group(function () {
    //generates file excel -> input data ekspedisi 
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
@@ -134,10 +134,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    //riwayat
    Route::get('historys', [RiwayatCheckController::class, 'index']);
    Route::post('historys', [RiwayatCheckController::class, 'store']);
-   Route::get('getProductLolos/{code_document}', [RiwayatCheckController::class, 'getProductLolos'])->where('code_document', '.*');
-   Route::get('getProductDamaged/{code_document}', [RiwayatCheckController::class, 'getProductDamaged'])->where('code_document', '.*');
-   Route::get('getProductAbnormal/{code_document}', [RiwayatCheckController::class, 'getProductAbnormal'])->where('code_document', '.*');
-   Route::get('discrepancy/{code_document}', [RiwayatCheckController::class, 'discrepancy'])->where('code_document', '.*');
+   Route::get('getProductLolos/{code_document}', [ProductOldController::class, 'getProductLolos'])->where('code_document', '.*');
+   Route::get('getProductDamaged/{code_document}', [ProductOldController::class, 'getProductDamaged'])->where('code_document', '.*');
+   Route::get('getProductAbnormal/{code_document}', [ProductOldController::class, 'getProductAbnormal'])->where('code_document', '.*');
+   Route::get('discrepancy/{code_document}', [ProductOldController::class, 'discrepancy'])->where('code_document', '.*');
 });
 
 //inbound bulking
@@ -155,20 +155,22 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 //=========================================== Staging ==========================================================
 
 // Admin,Spv,Admin Kasir
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
    //store nya untuk mindah ke approve staging
    Route::resource('staging_products', StagingProductController::class);
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
    Route::get('export-staging', [StagingProductController::class, 'export']);
-});
-//product staging approve
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
-   //untuk spv me approve staging ke inventory 
    Route::resource('staging_approves', StagingApproveController::class);
    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 });
+//product staging approve
+// Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
+//    //untuk spv me approve staging ke inventory 
+//    Route::resource('staging_approves', StagingApproveController::class);
+//    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
+// });
 
 //end staging =========================================== Staging ==========================================================
 
@@ -283,7 +285,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 
 //=========================================== Outbound ==========================================================
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader'])->group(function () {
    //migrate
 
    Route::resource('destinations', DestinationController::class)->except(['destroy']);
@@ -295,7 +297,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leader'])->group(function () {
    //sale
    Route::resource('sales', SaleController::class);
    Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
@@ -316,7 +318,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir'])->group(f
 //end outbound
 
 //admin
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,Kasir leader'])->group(function () {
    //colortags dan category
    Route::get('categories', [CategoryController::class, 'index']);
    Route::get('color_tags', [ColorTagController::class, 'index']);
@@ -325,14 +327,14 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
 
    //filter-bkl
-    Route::resource('bkls', BklController::class);
-    Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
-    Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
-    Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
-    Route::get('export-bkl', [BklController::class, 'exportProduct']);
+   Route::resource('bkls', BklController::class);
+   Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
+   Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
+   Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
+   Route::get('export-bkl', [BklController::class, 'exportProduct']);
 
-    //update history
-    Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
+   //update history
+   Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
 
    Route::resource('bkls', BklController::class);
    Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
@@ -340,6 +342,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
    Route::get('export-bkl', [BklController::class, 'exportProduct']);
 });
+
+
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
@@ -370,7 +374,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
 });
 
 //all
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader'])->group(function () {
    Route::post('/check-price', [NewProductController::class, 'checkPrice']);
    Route::get('/spv/approve/{notificationId}', [NotificationController::class, 'approveTransaction'])->name('admin.approve');
    Route::post('/partial-staging/{code_document}', [StagingProductController::class, 'partial'])->where('code_document', '.*');

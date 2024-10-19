@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
 use App\Models\Document;
 use App\Models\Color_tag;
 use App\Models\New_product;
 use App\Models\Product_old;
 use Illuminate\Http\Request;
+use App\Models\Product_Bundle;
+use App\Models\StagingProduct;
 use App\Http\Resources\ResponseResource;
 
 class ProductOldController extends Controller
@@ -69,34 +72,39 @@ class ProductOldController extends Controller
 
     public function searchByDocument(Request $request)
     {
-        $code_documents = Product_old::where('code_document', $request->input('search'))->paginate(50);
-        $document = Document::where('code_document', $request->input('search'))->first();
-    
-        if ($document) { 
-            if ($document->custom_barcode) {
-                foreach ($code_documents as $code_document) {
-                    $code_document->custom_barcode = $document->custom_barcode;
-                }
-            } else {
-                foreach ($code_documents as $code_document) {
-                    $code_document->custom_barcode = null;
-                }
+        $query = $request->input('q');
+        $search = $request->input('search');
+
+        $code_documents = Product_old::where('code_document', $search)
+            ->where(function ($subQuery) use ($query) {
+                $subQuery->where('old_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('old_name_product', 'LIKE', '%' . $query . '%');
+            })
+            ->paginate(50);
+
+        $document = Document::where('code_document', $search)->first();
+
+        if ($document) {
+            foreach ($code_documents as $code_document) {
+                $code_document->custom_barcode = $document->custom_barcode ?? null;
             }
-    
+
             return new ResponseResource(true, "Data Document products", [
-                'document_name' => $document->base_document ?? 'N/A',  
-                'status' => $document->status_document ?? 'N/A',  
-                'total_columns' => $document->total_column_in_document ?? 0,  
-                'custom_barcode' => $document->custom_barcode ?? null,  
-                'code_document' => $document->code_document ?? 'N/A',  
-                'data' => $code_documents ?? null, 
+                'document_name' => $document->base_document ?? 'N/A',
+                'status' => $document->status_document ?? 'N/A',
+                'total_columns' => $document->total_column_in_document ?? 0,
+                'custom_barcode' => $document->custom_barcode ?? null,
+                'code_document' => $document->code_document ?? 'N/A',
+                'data' => $code_documents ?? null,
             ]);
         } else {
-            // $document tidak ditemukan
-            return (new ResponseResource(false, "code document tidak ada", null))->response()->setStatusCode(404);
+            // Dokumen tidak ditemukan
+            return (new ResponseResource(false, "code document tidak ada", null))
+                ->response()
+                ->setStatusCode(404);
         }
     }
-    
+
 
 
 
@@ -151,5 +159,185 @@ class ProductOldController extends Controller
         } catch (\Exception $e) {
             return new ResponseResource(false, "Terjadi kesalahan saat menghapus data", null);
         }
+    }
+
+    public function getProductLolos(Request $request, $code_document)
+    {
+        $search = $request->input('q');
+
+        $inventory = New_product::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $stagings = StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $bundles = Product_Bundle::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $sales = Sale::where('code_document_sale', $code_document)
+            ->select(
+                'code_document_sale AS code_document',
+                'product_name_sale AS new_name_product',
+                'product_barcode_sale AS new_barcode_product',
+                'product_qty_sale AS new_quantity_product',
+                'product_old_price_sale AS old_price_product',
+                'product_barcode_sale AS old_barcode_product'
+            );
+
+        if ($search) {
+            $inventory->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $stagings->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $bundles->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $sales->where(function ($query) use ($search) {
+                $query->where('product_barcode_sale', 'LIKE', '%' . $search . '%')
+                    ->orWhere('product_name_sale', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        // Combine all queries using Union
+        $combined = $inventory->union($stagings)->union($bundles)->union($sales)->paginate(50);
+
+        // Return the response with the paginated result
+        return new ResponseResource(true, "list lolos", $combined);
+    }
+
+    public function getProductDamaged(Request $request, $code_document)
+    {
+        $search = $request->input('q');
+
+        $inventory = New_product::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $stagings = StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $bundles = Product_Bundle::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $sales = Sale::where('code_document_sale', $code_document)
+            ->select(
+                'code_document_sale AS code_document',
+                'product_name_sale AS new_name_product',
+                'product_barcode_sale AS new_barcode_product',
+                'product_qty_sale AS new_quantity_product',
+                'product_old_price_sale AS old_price_product',
+                'product_barcode_sale AS old_barcode_product'
+            );
+
+        if ($search) {
+            $inventory->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $stagings->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $bundles->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $sales->where(function ($query) use ($search) {
+                $query->where('product_barcode_sale', 'LIKE', '%' . $search . '%')
+                    ->orWhere('product_name_sale', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        // Combine all queries using Union
+        $combined = $inventory->union($stagings)->union($bundles)->union($sales)->paginate(50);
+
+        return new ResponseResource(true, "list damaged", $combined);
+    }
+    public function getProductAbnormal(Request $request, $code_document)
+    {
+        $search = $request->input('q');
+
+        $inventory = New_product::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $stagings = StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $bundles = Product_Bundle::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->select('code_document', 'new_name_product', 'old_barcode_product', 'new_barcode_product', 'new_quantity_product', 'old_price_product');
+
+        $sales = Sale::where('code_document_sale', $code_document)
+            ->select(
+                'code_document_sale AS code_document',
+                'product_name_sale AS new_name_product',
+                'product_barcode_sale AS new_barcode_product',
+                'product_qty_sale AS new_quantity_product',
+                'product_old_price_sale AS old_price_product',
+                'product_barcode_sale AS old_barcode_product'
+            );
+
+        if ($search) {
+            $inventory->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $stagings->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $bundles->where(function ($query) use ($search) {
+                $query->where('new_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('new_name_product', 'LIKE', '%' . $search . '%');
+            });
+
+            $sales->where(function ($query) use ($search) {
+                $query->where('product_barcode_sale', 'LIKE', '%' . $search . '%')
+                    ->orWhere('product_name_sale', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        // Combine all queries using Union
+        $combined = $inventory->union($stagings)->union($bundles)->union($sales)->paginate(50);
+
+        return new ResponseResource(true, "list abnormal", $combined);
+    }
+
+    public function discrepancy(Request $request, $code_document)
+    {
+        $search = $request->input('q');
+
+        $products = Product_old::where('code_document', $code_document);
+
+        if ($search) {
+            $products->where(function ($query) use ($search) {
+                $query->where('old_barcode_product', 'LIKE', '%' . $search . '%')
+                    ->orWhere('old_name_product', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        $productsPaginated = $products->paginate(50);
+
+        return new ResponseResource(true, "list discrepancy", $productsPaginated);
     }
 }

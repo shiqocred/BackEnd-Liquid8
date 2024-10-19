@@ -322,7 +322,7 @@ class StagingProductController extends Controller
     public function processExcelFilesCategoryStaging(Request $request)
     {
         $user_id = auth()->id();
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
         // Validate input file
@@ -358,13 +358,24 @@ class StagingProductController extends Controller
                 'display_price' => 'Price After Discount',
             ];
 
+            $initBarcode = collect($ekspedisiData)->pluck('A');
+
+            $duplicateInitBarcode = $initBarcode->duplicates();
+            $barcodesOnly = $duplicateInitBarcode->values();
+            
+            if ($duplicateInitBarcode->isNotEmpty()) {
+                $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
+                return $response->response()->setStatusCode(422);
+            }
+            
+
             // Generate document code
             $code_document = $this->generateDocumentCode();
             while (Document::where('code_document', $code_document)->exists()) {
-                $code_document = $this->generateDocumentCode(); // Regenerate if duplicate exists
+                $code_document = $this->generateDocumentCode();
             }
 
-            $duplicateBarcodes = collect(); // Collection for storing duplicate barcodes
+            $duplicateBarcodes = collect();
             // Process in chunks
             for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
                 $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
@@ -390,7 +401,6 @@ class StagingProductController extends Controller
                         }
                     }
 
-                    // Check for duplicate barcodes in various sources
                     if (isset($newProductDataToInsert['new_barcode_product'])) {
                         $barcodeToCheck = $newProductDataToInsert['new_barcode_product'];
                         $sources = $this->checkDuplicateBarcode($barcodeToCheck);
@@ -399,7 +409,7 @@ class StagingProductController extends Controller
                             $duplicateBarcodes->push($barcodeToCheck . ' - ' . implode(', ', $sources));
                         }
                     }
-                 
+
 
                     if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
                         $newProductsToInsert[] = array_merge($newProductDataToInsert, [
@@ -415,7 +425,7 @@ class StagingProductController extends Controller
                     }
                 }
 
-         
+
                 if ($duplicateBarcodes->isNotEmpty()) {
                     $response = new ResponseResource(false, "List data barcode yang duplikat", $duplicateBarcodes);
                     return $response->response()->setStatusCode(422);
@@ -427,7 +437,6 @@ class StagingProductController extends Controller
                 }
             }
 
-            // Insert document record after processing is done
             Document::create([
                 'code_document' => $code_document,
                 'base_document' => $fileName,
@@ -437,7 +446,6 @@ class StagingProductController extends Controller
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
-            // Save to history
             $history = RiwayatCheck::create([
                 'user_id' => $user_id,
                 'code_document' => $code_document,
@@ -458,7 +466,6 @@ class StagingProductController extends Controller
                 'total_price' => 0
             ]);
 
-            // Create notification
             Notification::create([
                 'user_id' => $user_id,
                 'notification_name' => 'bulking category staging',
@@ -469,16 +476,16 @@ class StagingProductController extends Controller
                 'status' => 'display'
             ]);
 
-            DB::commit(); // Commit transaction
+            DB::commit();
 
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => $code_document,
                 'file_name' => $fileName,
                 'total_column_count' => count($headerMappings),
-                'total_row_count' => count($ekspedisiData) - 1, 
+                'total_row_count' => count($ekspedisiData) - 1,
             ]);
         } catch (\Exception $e) {
-            DB::rollBack(); // Rollback if an error occurs
+            DB::rollBack();
             return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
         }
     }
@@ -575,8 +582,8 @@ class StagingProductController extends Controller
 
     public function export()
     {
-        set_time_limit(600); 
-        ini_set('memory_limit', '1024M');  
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
 
         try {
             $fileName = 'product-staging.xlsx';

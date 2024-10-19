@@ -26,7 +26,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RiwayatCheckController extends Controller
 {
-
     public function index(Request $request)
     {
         $query = $request->input('q');
@@ -148,11 +147,11 @@ class RiwayatCheckController extends Controller
         }
     }
 
-
     public function show(RiwayatCheck $history)
     {
         $getProduct = New_product::where('code_document', $history->code_document)
             ->select("new_category_product", "new_tag_product", "old_price_product")->cursor();
+
         $productCategoryCount = $getProduct->filter(function ($product) {
             return $product->new_category_product !== null;
         })->count();
@@ -379,19 +378,16 @@ class RiwayatCheckController extends Controller
         return $response->response();
     }
 
-
     public function getByDocument(Request $request)
     {
         $codeDocument = RiwayatCheck::where('code_document', $request['code_document']);
         return new ResponseResource(true, "Riwayat Check", $codeDocument);
     }
 
-
     public function edit(RiwayatCheck $riwayatCheck)
     {
         //
     }
-
 
     public function update(Request $request, RiwayatCheck $riwayatCheck) {}
 
@@ -759,39 +755,5 @@ class RiwayatCheckController extends Controller
         $sheet->setCellValue("B{$totalRow}", $totalOldPrice);
     }
 
-    public function getProductLolos(Request $request, $code_document)
-    {
-        $search = $request->input('q');
-        $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->lolos', '!=', null);
-        if(!isEmpty($product)){
-            $product-s>where('new_name_product', 'LIKE', '%' .$search . '%')
-            ->orWhere('new_barcode_product', 'LIKE', '%' .$search . '%');
-        }
-        $products->paginate(50);
-
-        return new ResponseResource(true, "list lolos", $products);
-    }
-    public function getProductDamaged($code_document)
-    {
-        $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->damaged', '!=', null)
-            ->paginate(50);
-
-        return new ResponseResource(true, "list damaged", $products);
-    }
-    public function getProductAbnormal($code_document)
-    {
-        $products = New_product::where('code_document', $code_document)
-            ->where('new_quality->abnormal', '!=', null)
-            ->paginate(50);
-
-        return new ResponseResource(true, "list abnormal", $products);
-    }
-    public function discrepancy($code_document)
-    {
-        $products = Product_old::where('code_document', $code_document)->paginate(50);
-
-        return new ResponseResource(true, "list discrepancy", $products);
-    }
+   
 }

@@ -330,17 +330,20 @@ class NewProductController extends Controller
     public function listProductExp(Request $request)
     {
         try {
-            $query = $request->input('q');
-            $productExpired = New_product::where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('new_status_product', 'expired')
-                    ->where('new_name_product', 'LIKE', '%' . $query  . '%');
-            })->paginate(50);
-
+            $search = $request->input('q');
+            $productExpired = New_product::where('new_status_product', 'expired')
+                ->where(function ($queryBuilder) use ($search) {
+                    $queryBuilder->where('new_name_product', 'LIKE', '%' . $search  . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $search . '%');
+                })
+                ->paginate(50);
+    
             return new ResponseResource(true, "list product expired", $productExpired);
         } catch (\Exception $e) {
-            return response()->json(["error" => $e]);
+            return response()->json(["error" => $e->getMessage()], 500);
         }
     }
+    
 
     public function listProductExpDisplay(Request $request)
     {
@@ -1075,7 +1078,7 @@ class NewProductController extends Controller
                 'new_name_product',
                 'new_category_product',
                 'new_price_product',
-                'created_at',
+                'created_at', 
                 'new_status_product',
                 'display_price',
                 'new_date_in_product'
