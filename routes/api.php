@@ -423,9 +423,13 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 });
-//non auth 
-// Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 
+//all- check user login > request fe
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Crew,Reparasi,Kasir leader,Developer'])->group(function () {
+   Route::get('checkLogin', [UserController::class, 'checkLogin']);
+});
+
+//non auth 
 
 //login
 Route::post('login', [AuthController::class, 'login']);
