@@ -465,7 +465,7 @@ class DashboardController extends Controller
             ')
             ->where('status_document_sale', 'selesai')
             ->whereBetween('created_at', [$fromDate, $toDate])
-            ->groupBy('tgl', 'code_document_sale')
+            ->groupBy('tgl', 'code_document_sale', 'buyer_name_document_sale')
             ->get()
             ->groupBy('tgl')
             ->map(function ($salesOnDate) {
