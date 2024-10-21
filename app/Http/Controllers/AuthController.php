@@ -21,6 +21,8 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
+            $user['role_name'] = $user->role->role_name;
+            $user->makeHidden('role'); // Menyembunyikan relasi role
             $token = $user->createToken('user')->plainTextToken;
             return new ResponseResource(true, "berhasil login", [$token, $user]);
             // return response()->json(['token' => $token]);
