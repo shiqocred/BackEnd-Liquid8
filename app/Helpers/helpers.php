@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use App\Models\SaleDocument;
 use App\Models\ProductApprove;
 use App\Models\MigrateDocument;
+use App\Models\Repair;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use App\Models\UserLog;
@@ -84,7 +85,7 @@ function generateNewBarcode($category)
     $categoryInitial = strtoupper(substr($category, 0, 1));
     $currentMonth = $bulanIndo[date('n')];
     $currentMonth = strtoupper(substr($currentMonth, 0, 1));
-    
+
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     $maxRetry = 5;
 
@@ -121,26 +122,25 @@ function generateNewBarcode($category)
 
 
 
-//old
-// function newBarcodeCustom($code_document, $init_barcode)
-// {
-//     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-//     $newBarcode = '';
+function barcodeRepair()
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
 
-//     do {
-//         $randomString = '';
-//         for ($i = 0; $i < 5; $i++) {
-//             $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
-//         }
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
 
-//         $newBarcode = $init_barcode . $randomString;
+        $newBarcode = "LR" . $randomString;
 
-//         $exists = ProductApprove::where('new_barcode_product', $newBarcode)->exists();
-//     } while ($exists);
+        $exists = Repair::where('barcode', $newBarcode)->exists();
+        
+    } while ($exists);
 
-//     return $newBarcode;
-// }
-
+    return $newBarcode;
+}
 
 function newBarcodeCustom($init_barcode, $userId)
 {
@@ -154,23 +154,23 @@ function newBarcodeCustom($init_barcode, $userId)
                 $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
             }
             $newBarcode = $init_barcode . $userId . $randomString;
-             // Check uniqueness across multiple tables with shared lock
-             $exists = DB::table('staging_approves')
-             ->where('new_barcode_product', $newBarcode)
-             ->sharedLock()
-             ->exists() ||
-             DB::table('staging_products')
-             ->where('new_barcode_product', $newBarcode)
-             ->sharedLock()
-             ->exists() ||
-             DB::table('new_products')
-             ->where('new_barcode_product', $newBarcode)
-             ->sharedLock()
-             ->exists();
+            // Check uniqueness across multiple tables with shared lock
+            $exists = DB::table('staging_approves')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists() ||
+                DB::table('staging_products')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists() ||
+                DB::table('new_products')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists();
 
-         if (!$exists) {
-             return $newBarcode;
-         }
+            if (!$exists) {
+                return $newBarcode;
+            }
         }
 
         throw new \Exception("terlalu banyak generate, tolong refresh");
