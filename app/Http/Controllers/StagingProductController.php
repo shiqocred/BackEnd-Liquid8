@@ -344,7 +344,7 @@ class StagingProductController extends Controller
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $ekspedisiData = $sheet->toArray(null, true, true, true);
-            $chunkSize = 100;
+            $chunkSize = 500;
             $count = 0;
             $headerMappings = [
                 'old_barcode_product' => 'Barcode',
@@ -367,7 +367,7 @@ class StagingProductController extends Controller
                 $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
                 return $response->response()->setStatusCode(422);
             }
-            
+
 
             // Generate document code
             $code_document = $this->generateDocumentCode();
