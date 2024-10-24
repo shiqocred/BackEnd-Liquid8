@@ -360,6 +360,14 @@ class StagingProductController extends Controller
             ];
 
             $initBarcode = collect($ekspedisiData)->pluck('A');
+            $duplicateInitBarcode = $initBarcode->duplicates();
+            $barcodesOnly = $duplicateInitBarcode->values();
+            
+            if ($duplicateInitBarcode->isNotEmpty()) {
+                $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
+                return $response->response()->setStatusCode(422);
+            }
+
             $categoryAtExcel = collect($ekspedisiData)->pluck('C')->slice(1);
             $category = Category::latest()->pluck('name_category');
             $uniqueCategory = $categoryAtExcel->diff($category);
@@ -369,15 +377,6 @@ class StagingProductController extends Controller
                 $response = new ResponseResource(false, "category ada yang beda", $categoryOnly);
                 return $response->response()->setStatusCode(422);
             } 
-
-            $duplicateInitBarcode = $initBarcode->duplicates();
-            $barcodesOnly = $duplicateInitBarcode->values();
-            
-            if ($duplicateInitBarcode->isNotEmpty()) {
-                $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
-                return $response->response()->setStatusCode(422);
-            }
-
 
             // Generate document code
             $code_document = $this->generateDocumentCode();
@@ -419,7 +418,6 @@ class StagingProductController extends Controller
                             $duplicateBarcodes->push($barcodeToCheck . ' - ' . implode(', ', $sources));
                         }
                     }
-
 
                     if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
                         $newProductsToInsert[] = array_merge($newProductDataToInsert, [
