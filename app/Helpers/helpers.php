@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\BundleQcd;
 use App\Models\Sale;
 use App\Models\Migrate;
 use App\Models\Document;
@@ -136,6 +137,25 @@ function barcodeRepair()
         $newBarcode = "LR" . $randomString;
 
         $exists = Repair::where('barcode', $newBarcode)->exists();
+        
+    } while ($exists);
+
+    return $newBarcode;
+}
+function barcodeQcd()
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
+
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
+        $newBarcode = "QCD" . $randomString;
+
+        $exists = BundleQcd::where('barcode_bundle', $newBarcode)->exists();
         
     } while ($exists);
 
