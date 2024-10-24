@@ -159,6 +159,7 @@ class ProductApproveController extends Controller
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
             $newProduct = ProductApprove::create($inputData);
+            
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
             $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
