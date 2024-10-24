@@ -175,12 +175,11 @@ class StagingApproveController extends Controller
             ->pluck('old_barcode_product');
 
 
-        // $product_olds2 = Product_old::where('code_document', '0003/10/2024')
-        //     ->pluck('old_barcode_product');
+        $product_olds2 = Product_old::where('code_document', '0003/10/2024')
+            ->pluck('old_barcode_product');
 
 
         $combined = $lolos->merge($stagings)->merge($product_olds);
-        dd(count($combined));
         $unique = $product_olds2->diff($combined);
 
         return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
