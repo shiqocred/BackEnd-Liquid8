@@ -16,7 +16,7 @@ class AuthController extends Controller
 
         $credentials = [
             $loginField => $request->input('email_or_username'),
-            'password' => $request->input('password')
+            'password' => $request->input('password') 
         ];
 
         if (Auth::attempt($credentials)) {
