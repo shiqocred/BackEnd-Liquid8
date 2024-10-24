@@ -259,12 +259,66 @@ class RiwayatCheckController extends Controller
             }
         }
 
-        $totalPercentageAbnormal = $history->total_price != 0
+        $totalPercentageAbnormalStg = $history->total_price != 0
             ? ($totalPriceAbnormalStg / $history->total_price) * 100
+            : 0;
+        $totalPercentageAbnormalStg = round($totalPercentageAbnormalStg, 2);
+
+        $totalStagings = count($getProductDamagedStg) + count($getProductLolosStg) + count($getProductAbnormalStg);
+
+        //product approve
+        $totalPriceDamagedAp = 0;
+        $getProductDamagedAp = ProductApprove::where('code_document', $history->code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->select('old_price_product', 'new_quality')
+            ->cursor();
+        foreach ($getProductDamagedAp as $product) {
+            $totalPriceDamagedAp += $product->old_price_product;
+        }
+
+        $totalPercentageDamagedAp = $history->total_price != 0
+            ? ($totalPriceDamagedAp / $history->total_price) * 100
+            : 0;
+
+        $totalPercentageDamagedAp = round($totalPercentageDamagedAp, 2);
+
+        $totalPriceLolosAp = 0;
+        $getProductLolosAp = ProductApprove::where('code_document', $history->code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->select('old_price_product', 'new_quality')
+            ->cursor();
+
+        foreach ($getProductLolosAp as $product) {
+            $lolosValue = json_decode($product->new_quality)->lolos ?? null;
+            if ($lolosValue !== null) {
+                $totalPriceLolosAp += $product->old_price_product;
+            }
+        }
+
+        $totalPercentageLolosAp = $history->total_price != 0
+            ? ($totalPriceLolosAp / $history->total_price) * 100
+            : 0;
+        $totalPercentageLolosAp = round($totalPercentageLolosAp, 2);
+
+        $totalPriceAbnormalAp = 0;
+        $getProductAbnormalAp = ProductApprove::where('code_document', $history->code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->select('old_price_product', 'new_quality')
+            ->cursor();
+
+        foreach ($getProductAbnormalAp as $product) {
+            $abnormalValue = json_decode($product->new_quality)->abnormal ?? null;
+            if ($abnormalValue !== null) {
+                $totalPriceAbnormalAp += $product->old_price_product;
+            }
+        }
+
+        $totalPercentageAbnormal = $history->total_price != 0
+            ? ($totalPriceAbnormalAp / $history->total_price) * 100
             : 0;
         $totalPercentageAbnormal = round($totalPercentageAbnormal, 2);
 
-        $totalStagings = count($getProductDamagedStg) + count($getProductLolosStg) + count($getProductAbnormalStg);
+        $totalPA = count($getProductDamagedAp) + count($getProductLolosAp) + count($getProductAbnormalAp);
 
         //product Bundle
         $totalPriceProductBundle = 0;
@@ -322,6 +376,7 @@ class RiwayatCheckController extends Controller
             'total_product_color' => $productColorCount,
             'total_product_sales' => count($getProductSales),
             'total_product_stagings' => $totalStagings,
+            'total_product_approve' => $totalPA,
             'total_product_bundle' => count($getProductProductBundle),
             'total_data' => $history->total_data,
             'total_data_in' => $history->total_data_in,
@@ -361,6 +416,18 @@ class RiwayatCheckController extends Controller
             ],
             'abnormalStaging' => [
                 'total_old_price' => $totalPriceAbnormalStg,
+                'price_percentage' => $totalPercentageAbnormalStg,
+            ],
+            'damagedAp' => [
+                'total_old_price' => $totalPriceDamagedAp,
+                'price_percentage' => $totalPercentageDamagedAp,
+            ],
+            'lolosAp' => [
+                'total_old_price' => $totalPriceLolosAp,
+                'price_percentage' => $totalPercentageLolosAp,
+            ],
+            'abnormalAp' => [
+                'total_old_price' => $totalPriceAbnormalAp,
                 'price_percentage' => $totalPercentageAbnormal,
             ],
             'lolosSale' => [
@@ -498,6 +565,23 @@ class RiwayatCheckController extends Controller
             : 0;
         $price_persentage_staging = round($price_persentage_staging, 2);
 
+        //product approve
+        $getProductPA = [];
+        $totalOldPricePA = 0;
+        ProductApprove::where('code_document', $code_document)
+            ->chunk(2000, function ($products) use (&$getProductPA, &$totalOldPricePA) {
+                foreach ($products as $product) {
+                    $product->lolos_value = json_decode($product->new_quality)->lolos ?? null;
+                    $getProductPA[] = $product;
+                    $totalOldPricePA += $product->old_price_product;
+                }
+            });
+
+        $price_persentage_product_approve = $getHistory->total_price != 0
+            ? ($totalOldPricePA / $getHistory->total_price) * 100
+            : 0;
+        $price_persentage_product_approve = round($price_persentage_product_approve, 2);
+
         //product bundle
         $getProductBundle = [];
         $totalOldPriceBundle = 0;
@@ -580,6 +664,7 @@ class RiwayatCheckController extends Controller
         $this->createExcelSheet($spreadsheet, 'Lolos-Inventory', $getProductLolos, $totalOldPriceLolos, $price_persentage_lolos);
         $this->createExcelSheet($spreadsheet, 'Abnormal-Inventory', $getProductAbnormal, $totalOldPriceAbnormal, $price_persentage_abnormal);
         $this->createExcelSheet($spreadsheet, 'Staging', $getProductStagings, $totalOldPriceStaging, $price_persentage_staging);
+        $this->createExcelSheet($spreadsheet, 'Product Approve', $getProductPA, $totalOldPricePA, $price_persentage_product_approve);
         $this->createExcelSheet($spreadsheet, 'Product-bundle', $getProductBundle, $totalOldPriceBundle, $price_persentage_bundle);
         $this->createExcelSale($spreadsheet, 'Sales', $getProductSales, $totalPriceSales, $totalPercentageSales);
         $this->createExcelSheetDiscrepancy($spreadsheet, 'Discrepancy', $getProductDiscrepancy, $totalOldPriceDiscrepancy, $price_persentage_dp);

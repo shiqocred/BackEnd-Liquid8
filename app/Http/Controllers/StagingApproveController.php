@@ -162,9 +162,11 @@ class StagingApproveController extends Controller
 
     public function countBast(Request $request)
     {
+        // Memperpanjang waktu eksekusi dan batas memori
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
+        // Mengambil barcode dari berbagai sumber berdasarkan code_document '0172/10/2024'
         $lolos = New_product::where('code_document', '0172/10/2024')
             ->pluck('old_barcode_product');
 
@@ -176,14 +178,26 @@ class StagingApproveController extends Controller
 
         $product_approve = ProductApprove::where('code_document', '0172/10/2024')
             ->pluck('old_barcode_product');
-        $product_all = ProductApprove::where('code_document', '0183/10/2024')
+
+        // Mengambil semua barcode dari dokumen '0183/10/2024'
+        $product_all = Product_old::where('code_document', '0183/10/2024')
             ->pluck('old_barcode_product');
 
+        // Menggabungkan data barcode dari sumber-sumber yang ada
+        $combined = $lolos->merge($stagings)->merge($product_approve)->merge($product_olds);
 
-        $combined = $lolos->merge($stagings)->merge($product_olds)->merge($product_approve);
-        $unique = $product_all->diff($combined);
+        // Cek duplikasi di dalam $combined dan $product_all
+        $duplicates_combined = $combined->duplicates();
+        $duplicates_product_all = $product_all->duplicates();
 
-        return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
+        // Menampilkan hasil debugging
+        return [
+            'total_product_all' => count($product_all),
+            'total_combined' => count($combined),
+            'duplicates_combined' => $duplicates_combined,
+            'duplicates_product_all' => $duplicates_product_all,
+            'unique_barcodes' => $product_all->diff($combined),
+        ];
     }
 
     public function findSimilarStagingProducts()
