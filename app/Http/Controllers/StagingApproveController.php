@@ -165,22 +165,23 @@ class StagingApproveController extends Controller
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
-        $lolos = New_product::where('code_document', '0068/09/2024')
+        $lolos = New_product::where('code_document', '0172/10/2024')
             ->pluck('old_barcode_product');
 
-        $stagings = StagingProduct::where('code_document', '0068/09/2024')
+        $stagings = StagingProduct::where('code_document', '0172/10/2024')
             ->pluck('old_barcode_product');
 
-        $product_olds = Product_old::where('code_document', '0068/09/2024')
+        $product_olds = Product_old::where('code_document', '0172/10/2024')
+            ->pluck('old_barcode_product');
+
+        $product_approve = ProductApprove::where('code_document', '0172/10/2024')
+            ->pluck('old_barcode_product');
+        $product_all = ProductApprove::where('code_document', '0183/10/2024')
             ->pluck('old_barcode_product');
 
 
-        $product_olds2 = Product_old::where('code_document', '0003/10/2024')
-            ->pluck('old_barcode_product');
-
-
-        $combined = $lolos->merge($stagings)->merge($product_olds);
-        $unique = $product_olds2->diff($combined);
+        $combined = $lolos->merge($stagings)->merge($product_olds)->merge($product_approve);
+        $unique = $product_all->diff($combined);
 
         return $unique->isNotEmpty() ? $unique : "Tidak ada barcode yang unik.";
     }
