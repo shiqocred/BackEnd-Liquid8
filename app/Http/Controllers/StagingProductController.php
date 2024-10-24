@@ -20,6 +20,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -359,6 +360,15 @@ class StagingProductController extends Controller
             ];
 
             $initBarcode = collect($ekspedisiData)->pluck('A');
+            $categoryAtExcel = collect($ekspedisiData)->pluck('C')->slice(1);
+            $category = Category::latest()->pluck('name_category');
+            $uniqueCategory = $categoryAtExcel->diff($category);
+            $categoryOnly = $uniqueCategory->values();
+
+            if ($uniqueCategory->isNotEmpty()) {
+                $response = new ResponseResource(false, "category ada yang beda", $categoryOnly);
+                return $response->response()->setStatusCode(422);
+            } 
 
             $duplicateInitBarcode = $initBarcode->duplicates();
             $barcodesOnly = $duplicateInitBarcode->values();
