@@ -16,8 +16,12 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\Category;
+use Illuminate\Support\Facades\Validator;
 
 class StagingProductController extends Controller
 {
@@ -338,7 +342,7 @@ class StagingProductController extends Controller
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $ekspedisiData = $sheet->toArray(null, true, true, true);
-            $chunkSize = 100;
+            $chunkSize = 500;
             $count = 0;
             $headerMappings = [
                 'old_barcode_product' => 'Barcode',
@@ -353,7 +357,6 @@ class StagingProductController extends Controller
             ];
 
             $initBarcode = collect($ekspedisiData)->pluck('A');
-
             $duplicateInitBarcode = $initBarcode->duplicates();
             $barcodesOnly = $duplicateInitBarcode->values();
 
@@ -361,6 +364,16 @@ class StagingProductController extends Controller
                 $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
                 return $response->response()->setStatusCode(422);
             }
+
+            $categoryAtExcel = collect($ekspedisiData)->pluck('C')->slice(1);
+            $category = Category::latest()->pluck('name_category');
+            $uniqueCategory = $categoryAtExcel->diff($category);
+            $categoryOnly = $uniqueCategory->values();
+
+            if ($uniqueCategory->isNotEmpty()) {
+                $response = new ResponseResource(false, "category ada yang beda", $categoryOnly);
+                return $response->response()->setStatusCode(422);
+            } 
 
             // Generate document code
             $code_document = $this->generateDocumentCode();

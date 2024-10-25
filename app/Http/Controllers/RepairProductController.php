@@ -38,7 +38,7 @@ class RepairProductController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
+    { 
         set_time_limit(300);
         ini_set('memory_limit', '512M');
         $userId = auth()->id();
@@ -51,7 +51,7 @@ class RepairProductController extends Controller
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $productFilters);
             }
 
-            $validator = Validator::make($request->all(), [
+            $validator = Validator::make($request->all(), [ 
                 'repair_name' => 'required|unique:repairs,repair_name',
                 'barcode' => 'required|unique:repairs,barcode',
             ]);
@@ -69,7 +69,7 @@ class RepairProductController extends Controller
                 'total_custom_price' => $request->total_custom_price,
                 'total_products' => $request->total_products,
                 'product_status' => 'not sale',
-                'barcode' => $request->barcode,
+                'barcode' => barcodeRepair(),
             ]);
 
             $insertData = $productFilters->map(function ($product) use ($repair) {

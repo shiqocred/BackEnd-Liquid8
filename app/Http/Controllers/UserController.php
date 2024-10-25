@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -16,17 +17,14 @@ class UserController extends Controller
         $query = $request->input('q');
 
         $users = User::where(function ($queryBuilder) use ($query) {
-                $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
-                    ->orWhere('username', 'LIKE', '%' . $query . '%');
-            })->with('role')->latest()->paginate(50);
+            $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
+                ->orWhere('username', 'LIKE', '%' . $query . '%');
+        })->with('role')->latest()->paginate(50);
 
         return new ResponseResource(true, "List users", $users);
     }
 
-    public function store(Request $request)
-    {
-       
-    }
+    public function store(Request $request) {}
 
     public function update(Request $request, $id)
     {
@@ -71,32 +69,37 @@ class UserController extends Controller
     }
 
 
-  
+
     public function exportUsers()
     {
         // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-    
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-    
+
         $userHeaders = [
-            'id', 'name', 'username', 'email', 'role_id', 'role_name'
+            'id',
+            'name',
+            'username',
+            'email',
+            'role_id',
+            'role_name'
         ];
-    
+
         $columnIndex = 1;
         foreach ($userHeaders as $header) {
             $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
             $columnIndex++;
         }
-    
+
         $rowIndex = 2; // Mulai dari baris kedua
-    
+
         $users = User::with('role')->get();
         foreach ($users as $user) {
             $columnIndex = 1;
-    
+
             // Menuliskan data user ke sheet
             $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $user->id);
             $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $user->name);
@@ -104,38 +107,54 @@ class UserController extends Controller
             $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $user->email);
             $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $user->role_id);
             $sheet->setCellValueByColumnAndRow($columnIndex++, $rowIndex, $user->role ? $user->role->role_name : '');
-    
+
             $rowIndex++;
         }
-    
+
         // Menyimpan file Excel
         $writer = new Xlsx($spreadsheet);
         $fileName = 'users_export.xlsx';
         $publicPath = 'exports';
         $filePath = public_path($publicPath) . '/' . $fileName;
-    
+
         if (!file_exists(public_path($publicPath))) {
             mkdir(public_path($publicPath), 0777, true);
         }
-    
+
         $writer->save($filePath);
-    
+
         $downloadUrl = url($publicPath . '/' . $fileName);
-    
+
         return new ResponseResource(true, "unduh", $downloadUrl);
     }
 
-    public function generateApiKey($userId){
+    public function generateApiKey($userId)
+    {
         $user = User::find($userId);
 
         if ($user) {
             $apiKey = $user->generateApiKey();
-            
+
             return new ResponseResource(true, "generate api_key", $apiKey);
         }
 
-            return response()->json(['message' => 'User not found'], 404);
+        return response()->json(['message' => 'User not found'], 404);
     }
 
+    public function checkLogin(Request $request)
+    {
+        $user = auth()->user();
+        if (!empty($user)) {
+            $userData = [
+                'username' => $user->username,
+                'email' => $user->email,
+                'role_name' => $user->role->role_name,
+            ];
 
+            return new ResponseResource(true, "login", $userData);
+        } else {
+            $response = new ResponseResource(false, "user tidak valid", null);
+            return $response->response()->setStatusCode(401);
+        }
+    }
 }

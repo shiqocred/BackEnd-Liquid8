@@ -13,7 +13,7 @@ use App\Models\ProductQcd;
 
 class FilterQcdController extends Controller
 {
-    /**
+    /** 
      * Display a listing of the resource.
      */
     public function index()

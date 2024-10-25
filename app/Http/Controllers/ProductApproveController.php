@@ -2,23 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\User;
-use App\Models\Document;
-use App\Models\New_product;
-use App\Models\Product_old;
-use App\Models\Notification;
-use Illuminate\Http\Request;
-use App\Models\ProductApprove;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Http\Resources\ResponseResource;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\ProductapproveResource;
+use App\Http\Resources\ResponseResource;
+use App\Models\Document;
 use App\Models\FilterStaging;
+use App\Models\New_product;
+use App\Models\Notification;
+use App\Models\ProductApprove;
+use App\Models\Product_old;
 use App\Models\RiwayatCheck;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use App\Models\User;
+use App\Jobs\ProcessProductData;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\Validator;
 
 class ProductApproveController extends Controller
 {
@@ -54,8 +55,6 @@ class ProductApproveController extends Controller
         return new ResponseResource(true, "List new products", $newProducts);
     }
 
-
-
     /**
      * Show the form for creating a new resource.
      */
@@ -67,7 +66,6 @@ class ProductApproveController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-
 
     public function store(Request $request)
     {
@@ -88,7 +86,7 @@ class ProductApproveController extends Controller
 
         ], [
             'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.exists' => 'barcode tidak ada'
+            'old_barcode_product.exists' => 'barcode tidak ada',
         ]);
 
         if ($validator->fails()) {
@@ -136,7 +134,7 @@ class ProductApproveController extends Controller
         DB::beginTransaction();
         try {
 
-            $document = Document::where('code_document',  $request->input('code_document'))->first();
+            $document = Document::where('code_document', $request->input('code_document'))->first();
             $maxRetry = 5;
             for ($i = 0; $i < $maxRetry; $i++) {
                 if ($document->custom_barcode) {
@@ -158,11 +156,21 @@ class ProductApproveController extends Controller
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
-            $newProduct = ProductApprove::create($inputData);
+            //start input data new product
+
+            $redisKey = 'product:' . $generate; 
+            Redis::set($redisKey, json_encode($inputData)); 
+            
+            // Kirim job ke queue untuk memproses data dari Redis
+            ProcessProductData::dispatch($generate);
+
+            // End input data
+
+            //start update data history
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
             $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
-    
+
             if ($qualityData['lolos'] != null) {
                 $totalLolos = $riwayatCheck->total_data_lolos + 1;
             } else if ($qualityData['damaged'] != null) {
@@ -170,9 +178,9 @@ class ProductApproveController extends Controller
             } else if ($qualityData['abnormal'] != null) {
                 $totalAbnormal = $riwayatCheck->total_data_abnormal + 1;
             }
-    
+
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
-    
+
             $riwayatCheck->update([
                 'total_data_in' => $totalDataIn,
                 'total_data_lolos' => $totalLolos,
@@ -180,7 +188,7 @@ class ProductApproveController extends Controller
                 'total_data_abnormal' => $totalAbnormal,
                 'total_discrepancy' => count($totalDiscrepancy),
                 'status_approve' => 'pending',
-    
+
                 // persentase
                 'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
                 'percentage_in' => ($totalDataIn / $document->total_column_in_document) * 100,
@@ -189,12 +197,14 @@ class ProductApproveController extends Controller
                 'percentage_abnormal' => ($totalAbnormal / $document->total_column_in_document) * 100,
                 'percentage_discrepancy' => (count($totalDiscrepancy) / $document->total_column_in_document) * 100,
             ]);
-    
+
+            //end data historyh
+
             $this->updateDocumentStatus($request->input('code_document'));
-    
+
             DB::commit();
 
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", []);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
@@ -284,7 +294,7 @@ class ProductApproveController extends Controller
 
             $inputData = $this->prepareInputData($request, $status, $qualityData);
 
-            $document = Document::where('code_document',  $inputData['code_document'])->first();
+            $document = Document::where('code_document', $inputData['code_document'])->first();
             $generate = null;
 
             $maxRetry = 5;
@@ -323,7 +333,6 @@ class ProductApproveController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      */
@@ -358,7 +367,7 @@ class ProductApproveController extends Controller
             'new_category_product' => 'nullable',
             'new_tag_product' => 'nullable|exists:color_tags,name_color',
             'new_discount',
-            'display_price'
+            'display_price',
         ]);
 
         if ($validator->fails()) {
@@ -387,7 +396,7 @@ class ProductApproveController extends Controller
             'new_category_product',
             'new_tag_product',
             'new_discount',
-            'display_price'
+            'display_price',
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -515,7 +524,6 @@ class ProductApproveController extends Controller
 
         return new ResponseResource(true, "Document Approves", $documents);
     }
-
 
     public function productsApproveByDoc(Request $request, $code_document)
     {
