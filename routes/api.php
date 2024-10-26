@@ -145,7 +145,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //bulking
    Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
-   Route::post('/bulkingInventory2', [NewProductController::class, 'processExcelFilesCategory2']);
    // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
 });

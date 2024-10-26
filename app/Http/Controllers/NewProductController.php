@@ -700,127 +700,7 @@ class NewProductController extends Controller
         return $sources;
     }
 
-    public function processExcelFilesCategory2(Request $request)
-    {
-        $user_id = auth()->id();
-        set_time_limit(600); 
-        ini_set('memory_limit', '1024M');
-
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls',
-        ], [
-            'file.required' => 'File harus diunggah.',
-            'file.file' => 'File yang diunggah tidak valid.',
-            'file.mimes' => 'File harus berupa file Excel dengan ekstensi .xlsx atau .xls.',
-        ]);
-
-        $file = $request->file('file');
-        $filePath = $file->getPathname();
-        $fileName = $file->getClientOriginalName();
-        $file->storeAs('public/ekspedisis', $fileName);
-
-        DB::beginTransaction();
-
-        try {
-            $spreadsheet = IOFactory::load($filePath);
-            $sheet = $spreadsheet->getActiveSheet();
-            $ekspedisiData = $sheet->toArray(null, true, true, true);
-
-            $chunkSize = 100;
-            $count = 0;
-            $headerMappings = [
-                'old_barcode_product' => 'Barcode',
-                'new_barcode_product' => 'New Barcode',
-                'new_name_product' => 'Description',
-                'new_quantity_product' => 'Qty',
-                'new_price_product' => 'Price After Discount',
-                'new_category_product' => 'Category',
-                'old_price_product' => 'Unit Price',
-                'new_date_in_product' => 'Date',
-                'display_price' => 'Price After Discount',
-            ];
-
-            $code_document = $this->generateDocumentCode();
-            while (Document::where('code_document', $code_document)->exists()) {
-                $code_document = $this->generateDocumentCode();
-            }
-
-            $duplicateBarcodes = collect();
-
-            for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
-                $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
-                $newProductsToInsert = [];
-
-                foreach ($chunkData as $dataItem) {
-                    $newProductDataToInsert = [];
-
-                    foreach ($headerMappings as $key => $headerName) {
-                        $columnKey = array_search($headerName, $ekspedisiData[1]);
-                        if ($columnKey !== false) {
-                            $value = trim($dataItem[$columnKey]);
-
-                            if ($key === 'new_quantity_product') {
-                                $quantity = $value !== '' ? (int)$value : 0;
-                                $newProductDataToInsert[$key] = $quantity;
-                            } elseif (in_array($key, ['old_price_product', 'display_price', 'new_price_product'])) {
-                                $cleanedValue = str_replace(',', '', $value); // Remove commas
-                                $newProductDataToInsert[$key] = (float)$cleanedValue;
-                            } else {
-                                $newProductDataToInsert[$key] = $value;
-                            }
-                        }
-                    }
-
-                    // Check for duplicate barcodes in various sources
-                    if (isset($newProductDataToInsert['new_barcode_product'])) {
-                        $barcodeToCheck = $newProductDataToInsert['new_barcode_product'];
-                        $sources = $this->checkDuplicateBarcode($barcodeToCheck);
-
-                        if (!empty($sources)) {
-                            $duplicateBarcodes->push($barcodeToCheck . ' - ' . implode(', ', $sources));
-                        }
-                    }
-
-
-                    if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
-                        $newProductsToInsert[] = array_merge($newProductDataToInsert, [
-                            'code_document' => $code_document,
-                            'new_discount' => 0,
-                            'new_tag_product' => null,
-                            'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
-                            'new_quality' => json_encode(['lolos' => 'lolos']),
-                            'created_at' => Carbon::now('Asia/Jakarta')->toDateString(),
-                            'updated_at' => Carbon::now('Asia/Jakarta')->toDateString(),
-                        ]);
-                        $count++;
-                    }
-                }
-
-                if ($duplicateBarcodes->isNotEmpty()) {
-                    return new ResponseResource(false, "Barcode duplikat ditemukan", $duplicateBarcodes);
-                }
-
-                // Insert new product data in chunks
-                if (!empty($newProductsToInsert)) {
-                    New_product::insert($newProductsToInsert);
-                }
-            }
-
-          
-            DB::commit(); // Commit transaction
-
-            return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
-                'code_document' => $code_document,
-                'file_name' => $fileName,
-                'total_column_count' => count($headerMappings),
-                'total_row_count' => count($ekspedisiData) - 1, 
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack(); // Rollback if an error occurs
-            return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
-        }
-    }
-
+   
     public function showRepair(Request $request)
     {
         try {
@@ -1086,7 +966,10 @@ class NewProductController extends Controller
                 ->whereNotNull('new_category_product')
                 ->where('new_tag_product', NULL)
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-                ->where('new_status_product', 'display')
+                ->where(function($status){
+                    $status->where('new_status_product', 'display')
+                    ->orWhere('new_status_product', 'expired');
+                })
                 ->when($query, function ($queryBuilder) use ($query) {
                     $queryBuilder->where(function ($subQuery) use ($query) {
                         $subQuery->where('new_category_product', 'LIKE', '%' . $query . '%')
