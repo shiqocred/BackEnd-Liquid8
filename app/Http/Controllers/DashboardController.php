@@ -378,6 +378,7 @@ class DashboardController extends Controller
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
             ->where('new_status_product', 'display')
+            ->where('new_status_product', 'expired')
             ->groupBy('category_product');
 
         $categoryBundle = Bundle::selectRaw('
@@ -403,6 +404,7 @@ class DashboardController extends Controller
             ->where('new_category_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
             ->where('new_status_product', 'display')
+            ->where('new_status_product', 'expired')
             ->groupBy('new_tag_product')
             ->get();
 
