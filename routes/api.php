@@ -453,10 +453,10 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
+Route::get('exportSale', [SaleController::class, 'exportSale']);
 
 //excel
 Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
-
 
 //api urgent-> persamaan data check history
 

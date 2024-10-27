@@ -32,10 +32,10 @@ class ProductQcdController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     */
+     */ 
     public function store(Request $request)
     {
-        DB::beginTransaction();
+        DB::beginTransaction(); 
         try {
             $product_filters = FilterQcd::all();
             if ($product_filters->isEmpty()) {
@@ -47,7 +47,7 @@ class ProductQcdController extends Controller
                 'total_price_bundle' => $request->total_price_bundle,
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
                 'total_product_bundle' => $request->total_product_bundle,
-                'barcode_bundle' => $request->barcode_bundle,
+                'barcode_bundle' => barcodeQcd(),
                 // 'category' => $request->category,
                 // 'name_color' => $request->name_color,
             ]);

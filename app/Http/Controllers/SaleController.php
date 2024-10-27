@@ -6,9 +6,11 @@ use App\Models\Sale;
 use App\Models\Buyer;
 use App\Models\Bundle;
 use App\Models\New_product;
+use App\Exports\ProductSale;
 use App\Models\SaleDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -381,5 +383,29 @@ class SaleController extends Controller
         $downloadUrl = url($publicPath . '/' . $fileName);
 
         return new ResponseResource(true, "unduh", $downloadUrl);
+    }
+
+    public function exportSale()
+    {
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
+
+        try {
+            $fileName = 'product-staging.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+
+            Excel::store(new ProductSale(Sale::class), $publicPath . '/' . $fileName, 'public');
+
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
+        }
     }
 }

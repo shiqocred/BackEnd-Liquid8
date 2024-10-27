@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
 use App\Http\Resources\ResponseResource;
+use App\Jobs\ProcessProductData;
 use App\Models\Document;
 use App\Models\FilterStaging;
 use App\Models\New_product;
@@ -14,7 +15,6 @@ use App\Models\RiwayatCheck;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use App\Models\User;
-use App\Jobs\ProcessProductData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -158,11 +158,11 @@ class ProductApproveController extends Controller
 
             //start input data new product
 
-            $redisKey = 'product:' . $generate; 
-            Redis::set($redisKey, json_encode($inputData)); 
-            
+            $redisKey = 'product:' . $generate;
+            Redis::set($redisKey, json_encode($inputData));
+
             // Kirim job ke queue untuk memproses data dari Redis
-            ProcessProductData::dispatch($generate);
+            $value = ProcessProductData::dispatch($generate);
 
             // End input data
 

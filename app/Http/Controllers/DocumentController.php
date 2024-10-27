@@ -220,6 +220,7 @@ class DocumentController extends Controller
 
         $productBundle = Product_Bundle::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
+            
         $sales = Sale::where('code_document', $code_document)->select('code_document', 'product_old_price_sale')->get();
 
         $productApprove = ProductApprove::where('code_document', $code_document)
