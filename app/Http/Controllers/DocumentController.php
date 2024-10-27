@@ -350,8 +350,6 @@ class DocumentController extends Controller
             ]);
         }
 
-
-
         $riwayatCheck->update([
             'total_data_in' => $allData,
             'total_data_lolos' => $countDataLolos,
