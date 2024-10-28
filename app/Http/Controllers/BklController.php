@@ -17,7 +17,7 @@ class BklController extends Controller
 {
     /**
      * Display a listing of the resource.
-     */
+     */ 
     public function index(Request $request)
     {
         $searchQuery = $request->input('q');
