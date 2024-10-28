@@ -156,29 +156,30 @@ class ProductApproveController extends Controller
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
-            //start input data new product
-
-            $redisKey = 'product:' . $generate;
-            Redis::set($redisKey, json_encode($inputData));
-
-            // Kirim job ke queue untuk memproses data dari Redis
-            $value = ProcessProductData::dispatch($generate);
-
-            // End input data
-
             //start update data history
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
             // $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
 
             if ($qualityData['lolos'] != null) {
+                //start input data new product
+
+                $redisKey = 'product:' . $generate;
+                Redis::set($redisKey, json_encode($inputData));
+
+                // Kirim job ke queue untuk memproses data dari Redis
+                $value = ProcessProductData::dispatch($generate);
+
+                // End input data
                 $riwayatCheck->total_data_lolos += 1;
+                
             } else if ($qualityData['damaged'] != null) {
+                New_product::create($inputData);
                 $riwayatCheck->total_data_damaged += 1;
             } else if ($qualityData['abnormal'] != null) {
+                New_product::create($inputData);
                 $riwayatCheck->total_data_abnormal += 1;
             }
-
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 
             $riwayatCheck->update([
