@@ -2,25 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
-use App\Jobs\ExportProductsJob;
+use Carbon\Carbon;
+use App\Models\User;
 use App\Models\Document;
-use App\Models\ExcelOld;
 use App\Models\New_product;
 use App\Models\Notification;
-use App\Models\ProductApprove;
 use App\Models\RiwayatCheck;
+use Illuminate\Http\Request;
+use App\Models\FilterStaging;
+use App\Models\ProductApprove;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Http\Resources\ResponseResource;
 use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
+
 
 class StagingProductController extends Controller
 {
@@ -43,6 +43,7 @@ class StagingProductController extends Controller
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -75,7 +76,7 @@ class StagingProductController extends Controller
                     'new_price_product' => $product->new_price_product,
                     'old_price_product' => $product->old_price_product,
                     'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' => $product->new_status_product,
+                    'new_status_product' =>  $product->new_status_product,
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
@@ -93,7 +94,7 @@ class StagingProductController extends Controller
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => null,
                 'repair_id' => null,
-                'status' => 'done',
+                'status' => 'done'
             ]);
 
             FilterStaging::where('user_id', $userId)->delete();
@@ -143,7 +144,7 @@ class StagingProductController extends Controller
             'new_category_product' => 'nullable',
             'new_tag_product' => 'nullable|exists:color_tags,name_color',
             'new_discount',
-            'display_price',
+            'display_price'
         ]);
 
         if ($validator->fails()) {
@@ -172,7 +173,7 @@ class StagingProductController extends Controller
             'new_category_product',
             'new_tag_product',
             'new_discount',
-            'display_price',
+            'display_price'
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -221,7 +222,7 @@ class StagingProductController extends Controller
                         'read_at' => Carbon::now('Asia/Jakarta'),
                         'riwayat_check_id' => $riwayat_check->id,
                         'repair_id' => null,
-                        'status' => 'staging',
+                        'status' => 'staging'
                     ]);
                     $riwayat_check->update(['status_approve', 'staging']);
                     DB::commit();
@@ -229,7 +230,7 @@ class StagingProductController extends Controller
             }
             return new ResponseResource(true, "Data berhasil ditambah", [
                 $riwayat_check,
-                $keterangan,
+                $keterangan
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -278,6 +279,7 @@ class StagingProductController extends Controller
             return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
         }
     }
+
 
     public function documentStagings(Request $request)
     {
@@ -358,7 +360,7 @@ class StagingProductController extends Controller
             $initBarcode = collect($ekspedisiData)->pluck('A');
             $duplicateInitBarcode = $initBarcode->duplicates();
             $barcodesOnly = $duplicateInitBarcode->values();
-
+            
             if ($duplicateInitBarcode->isNotEmpty()) {
                 $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
                 return $response->response()->setStatusCode(422);
@@ -395,11 +397,11 @@ class StagingProductController extends Controller
                             $value = trim($dataItem[$columnKey]);
 
                             if ($key === 'new_quantity_product') {
-                                $quantity = $value !== '' ? (int) $value : 0;
+                                $quantity = $value !== '' ? (int)$value : 0;
                                 $newProductDataToInsert[$key] = $quantity;
                             } elseif (in_array($key, ['old_price_product', 'display_price', 'new_price_product'])) {
                                 $cleanedValue = str_replace(',', '', $value);
-                                $newProductDataToInsert[$key] = (float) $cleanedValue;
+                                $newProductDataToInsert[$key] = (float)$cleanedValue;
                             } else {
                                 $newProductDataToInsert[$key] = $value;
                             }
@@ -429,6 +431,7 @@ class StagingProductController extends Controller
                     }
                 }
 
+
                 if ($duplicateBarcodes->isNotEmpty()) {
                     $response = new ResponseResource(false, "List data barcode yang duplikat", $duplicateBarcodes);
                     return $response->response()->setStatusCode(422);
@@ -446,7 +449,7 @@ class StagingProductController extends Controller
                 'status_document' => 'done',
                 'total_column_document' => count($headerMappings),
                 'total_column_in_document' => count($ekspedisiData) - 1, // Subtract 1 for header
-                'date_document' => Carbon::now('Asia/Jakarta')->toDateString(),
+                'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
             ]);
 
             $history = RiwayatCheck::create([
@@ -466,7 +469,7 @@ class StagingProductController extends Controller
                 'percentage_damaged' => 0,
                 'percentage_abnormal' => 0,
                 'percentage_discrepancy' => 0,
-                'total_price' => 0,
+                'total_price' => 0
             ]);
 
             Notification::create([
@@ -476,7 +479,7 @@ class StagingProductController extends Controller
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => $history->id,
                 'repair_id' => null,
-                'status' => 'display',
+                'status' => 'display'
             ]);
 
             DB::commit();
@@ -583,30 +586,27 @@ class StagingProductController extends Controller
         });
     }
 
-
     public function export()
     {
-        $fileName = 'product-staging.xlsx';
-        $publicPath = 'exports';
-        $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
-    
-        // Cek apakah direktori untuk menyimpan file ada, jika tidak buat
-        if (!file_exists(dirname($filePath))) {
-            mkdir(dirname($filePath), 0777, true);
-        }
-    
-        // Dispatch job untuk export dengan Redis cache dan chunk
-        ExportProductsJob::dispatch(\App\Models\StagingProduct::class, $filePath);
-    
-        // Buat URL untuk mendownload file
-        $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
-    
-        return response()->json([
-            'success' => true,
-            'message' => 'Export job started. The file will be available shortly.',
-            'download_url' => $downloadUrl,
-        ]);
-    }
-    
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
 
+        try {
+            $fileName = 'product-staging.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+
+            Excel::store(new ProductsExportCategory(StagingProduct::class), $publicPath . '/' . $fileName, 'public');
+
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
+        }
+    }
 }
