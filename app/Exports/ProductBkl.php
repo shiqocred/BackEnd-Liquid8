@@ -19,7 +19,7 @@ class ProductBkl implements FromQuery, WithHeadings, WithMapping, WithChunkReadi
     public function __construct(Request $request)
     {
         $this->query = $request->input('q'); 
-    }
+    } 
 
     public function query()
     {
