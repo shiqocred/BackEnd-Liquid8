@@ -204,7 +204,7 @@ class ProductApproveController extends Controller
 
             DB::commit();
 
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", []);
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
