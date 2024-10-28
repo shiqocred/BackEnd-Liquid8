@@ -157,21 +157,24 @@ class ProductApproveController extends Controller
             $inputData['new_barcode_product'] = $generate;
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
-
-            $newProduct = ProductApprove::create($inputData);
             
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
-            // $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
-            $totalDataIn = 1 + $riwayatCheck->total_data_in;
-    
+            
             if ($qualityData['lolos'] != null) {
+                ProductApprove::create($inputData);
                 $riwayatCheck->total_data_lolos += 1;
             } else if ($qualityData['damaged'] != null) {
+                New_product::create($inputData);
                 $riwayatCheck->total_data_damaged += 1;
             } else if ($qualityData['abnormal'] != null) {
+                New_product::create($inputData);
                 $riwayatCheck->total_data_abnormal += 1;
             }
     
+            // $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
+            $totalDataIn = 1 + $riwayatCheck->total_data_in;
+    
+           
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
     
             $riwayatCheck->update([
@@ -195,7 +198,7 @@ class ProductApproveController extends Controller
     
             DB::commit();
 
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $newProduct);
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
