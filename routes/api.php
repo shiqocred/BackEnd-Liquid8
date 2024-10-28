@@ -156,7 +156,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 // Admin,Spv,Admin Kasir
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasir'])->group(function () {
    //store nya untuk mindah ke approve staging
-   Route::resource('staging_products', StagingProductController::class);
+   Route::resource('staging_products', StagingProductController::class); 
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
@@ -437,7 +437,6 @@ Route::delete('cleargenerate', [GenerateController::class, 'deleteAll']);
 
 Route::delete('deleteAll', [GenerateController::class, 'deleteAllData']);
 Route::get('updateCategoryPalet', [PaletController::class, 'updateCategoryPalet']);
-
 
 // route untuk cek koneksi
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
