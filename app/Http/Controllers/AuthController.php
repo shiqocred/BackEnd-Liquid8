@@ -15,7 +15,7 @@ class AuthController extends Controller
         $loginField = filter_var($request->input('email_or_username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
         $credentials = [
             $loginField => $request->input('email_or_username'),
-            'password' => $request->input('password')
+            'password' => $request->input('password') 
         ];
 
         if (Auth::attempt($credentials)) {

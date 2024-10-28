@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
+use App\Exports\ProductBkl;
+use App\Http\Resources\ResponseResource;
 use App\Models\Bkl;
 use App\Models\FilterBkl;
-use App\Exports\ProductBkl;
 use App\Models\New_product;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BklController extends Controller
 {
+
     /**
      * Display a listing of the resource.
      */
@@ -64,7 +65,7 @@ class BklController extends Controller
                     'new_price_product' => $product->new_price_product,
                     'old_price_product' => $product->old_price_product,
                     'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' =>  $product->new_status_product,
+                    'new_status_product' => $product->new_status_product,
                     'new_quality' => $product->new_quality,
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
@@ -72,7 +73,7 @@ class BklController extends Controller
                     'display_price' => $product->display_price,
                     'created_at' => $product->created_at,
                     'updated_at' => now(),
-                    'user_id' => $userId
+                    'user_id' => $userId,
                 ];
             })->toArray();
 
@@ -123,7 +124,7 @@ class BklController extends Controller
             'new_category_product' => 'nullable',
             'new_tag_product' => 'nullable|exists:color_tags,name_color',
             'new_discount',
-            'display_price'
+            'display_price',
         ]);
 
         if ($validator->fails()) {
@@ -152,7 +153,7 @@ class BklController extends Controller
             'new_category_product',
             'new_tag_product',
             'new_discount',
-            'display_price'
+            'display_price',
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');
