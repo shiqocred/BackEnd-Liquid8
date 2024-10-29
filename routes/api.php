@@ -1,7 +1,11 @@
 <?php
 
+use App\Models\New_product;
 use Illuminate\Http\Request;
+use App\Models\StagingApprove;
+use App\Http\Middleware\CheckApiKey;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BklController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SaleController;
@@ -18,17 +22,21 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\BundleQcdController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FilterBklController;
 use App\Http\Controllers\FilterQcdController;
 use App\Http\Controllers\NewProductController;
+use App\Http\Controllers\PaletBrandController;
 use App\Http\Controllers\PaletImageController;
 use App\Http\Controllers\ProductOldController;
 use App\Http\Controllers\ProductQcdController;
 use App\Http\Controllers\DestinationController;
 use App\Http\Controllers\PaletFilterController;
-use App\Http\Controllers\PaletBrandController;
+use App\Http\Controllers\ProductScanController;
+use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaletProductController;
 use App\Http\Controllers\ProductBrandController;
+use App\Http\Controllers\ProductInputController;
 use App\Http\Controllers\RepairFilterController;
 use App\Http\Controllers\RiwayatCheckController;
 use App\Http\Controllers\SaleDocumentController;
@@ -38,20 +46,14 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductStatusController;
 use App\Http\Controllers\RepairProductController;
 use App\Http\Controllers\ArchiveStorageController;
-use App\Http\Controllers\BklController;
 use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\StagingApproveController;
 use App\Http\Controllers\StagingProductController;
 use App\Http\Controllers\CheckConnectionController;
-use App\Http\Controllers\FilterBklController;
 use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
-use App\Http\Controllers\ProductScanController;
+use App\Http\Controllers\FilterProductInputController;
 use App\Http\Controllers\SpecialTransactionController;
-use App\Http\Controllers\VehicleTypeController;
-use App\Http\Middleware\CheckApiKey;
-use App\Models\New_product;
-use App\Models\StagingApprove;
 
 Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
@@ -156,7 +158,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 // Admin,Spv,Admin Kasir
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasir'])->group(function () {
    //store nya untuk mindah ke approve staging
-   Route::resource('staging_products', StagingProductController::class); 
+   Route::resource('staging_products', StagingProductController::class);
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
@@ -415,6 +417,14 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::get('list-categories', [CategoryController::class, 'index']);
 
    //================================================product-collab======================================================
+
+   //product input
+   Route::resource('product_inputs', ProductInputController::class);
+   //filter product input
+   Route::get('filter-product-input', [FilterProductInputController::class, 'index']);
+   Route::post('filter-product-input/{id}/add', [FilterProductInputController::class, 'store']);
+   Route::delete('filter-product-input/destroy/{id}', [FilterProductInputController::class, 'destroy']);
+   Route::post('move_to_stagings', [ProductInputController::class, 'move_to_stagings']);
 
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
