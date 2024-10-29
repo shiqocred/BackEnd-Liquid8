@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\FilterBkl;
+use App\Models\ProductInput;
 use Illuminate\Http\Request;
+use App\Models\FilterProductInput;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
-use App\Models\Bkl;
-use App\Models\New_product;
 
-class FilterBklController extends Controller 
+class FilterProductInputController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    { 
+    {
         $searchQuery = $request->input('q');
-        $newProducts = FilterBkl::latest()
+        $newProducts = FilterProductInput::latest()
             ->where(function ($queryBuilder) use ($searchQuery) {
                 $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
@@ -26,7 +25,7 @@ class FilterBklController extends Controller
             })
             ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
             ->whereNull('new_tag_product')
-            ->paginate(50);
+            ->paginate(30);
 
         return new ResponseResource(true, "list new product", $newProducts);
     }
@@ -47,10 +46,10 @@ class FilterBklController extends Controller
         DB::beginTransaction();
         $userId = auth()->id();
         try {
-            $product = New_product::findOrFail($id);
+            $product = ProductInput::findOrFail($id);
             $product->user_id = $userId;
 
-            $productFilter = FilterBkl::create($product->toArray());
+            $productFilter = FilterProductInput::create($product->toArray());
             $product->delete();
             DB::commit();
             return new ResponseResource(true, "berhasil menambah list product bkl", $productFilter);
@@ -60,18 +59,19 @@ class FilterBklController extends Controller
         }
     }
 
+
     /**
      * Display the specified resource.
      */
-    public function show(FilterBkl $filterBkl)
+    public function show(FilterProductInput $filterProductInput)
     {
-        //
+        return new ResponseResource(true, 'product', $filterProductInput);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(FilterBkl $filterBkl)
+    public function edit(FilterProductInput $filterProductInput)
     {
         //
     }
@@ -79,7 +79,7 @@ class FilterBklController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, FilterBkl $filterBkl)
+    public function update(Request $request, FilterProductInput $filterProductInput)
     {
         //
     }
@@ -91,8 +91,8 @@ class FilterBklController extends Controller
     {
         DB::beginTransaction();
         try {
-            $product_filter = FilterBkl::findOrFail($id);
-            New_product::create($product_filter->toArray());
+            $product_filter = FilterProductInput::findOrFail($id);
+            ProductInput::create($product_filter->toArray());
             $product_filter->delete();
             DB::commit();
             return new ResponseResource(true, "berhasil menghapus list product filter", $product_filter);

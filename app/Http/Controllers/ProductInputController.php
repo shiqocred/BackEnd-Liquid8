@@ -3,20 +3,16 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
-use App\Models\Document;
-use App\Models\New_product;
-use App\Models\Product_old;
+
+use App\Models\Color_tag;
+use App\Models\Notification;
 use App\Models\ProductInput;
-use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
-use App\Models\FilterStaging;
-use App\Models\ProductApprove;
-use App\Models\StagingApprove;
-use App\Models\StagingProduct;
+use App\Models\FilterProductInput;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Resources\ProductapproveResource;
 
 class ProductInputController extends Controller
 {
@@ -35,7 +31,7 @@ class ProductInputController extends Controller
             });
         $totalPrice = $newProducts->sum('new_price_product');
         $newProducts = $newProducts->paginate(50);
-        return new ResponseResource(true, "list product bkl", ['tota_price' => $totalPrice, 'products' => $newProducts]);
+        return new ResponseResource(true, "list product scans", ['tota_price' => $totalPrice, 'products' => $newProducts]);
     }
 
     /**
@@ -53,214 +49,91 @@ class ProductInputController extends Controller
     {
         $userId = auth()->id();
         $validator = Validator::make($request->all(), [
-            'code_document' => 'required',
-            'old_barcode_product' => 'required',
-            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
+            // 'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
-            'old_price_product' => 'required|numeric',
-            // 'new_date_in_product' => 'required|date',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
-            'condition' => 'required|in:lolos,damaged,abnormal',
+            'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
+            'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
-
-        ], [
-            'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.exists' => 'barcode tidak ada'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+        ],  [
+            'new_barcode_product.unique' => 'barcode sudah ada'
         ]);
+
+        // $validator->sometimes('new_category_product', 'required', function ($input) {
+        //     return $input->new_price_product >= 100000;
+        // });
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $status = $request->input('condition');
-        $description = $request->input('deskripsi', '');
-
-        $qualityData = $this->prepareQualityData($status, $description);
-
-        $inputData = $this->prepareInputData($request, $status, $qualityData);
-
-        $oldBarcode = $request->input('old_barcode_product');
-        $newBarcode = $request->input('new_barcode_product');
-
-        $tables = [
-            New_product::class,
-            ProductApprove::class,
-            StagingProduct::class,
-            StagingApprove::class,
-            FilterStaging::class,
-        ];
-
-        $oldBarcodeExists = false;
-        $newBarcodeExists = false;
-
-        foreach ($tables as $table) {
-            if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
-                $oldBarcodeExists = true;
-            }
-            if ($table::where('new_barcode_product', $newBarcode)->exists()) {
-                $newBarcodeExists = true;
-            }
-        }
-
-        if ($oldBarcodeExists) {
-            return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
-        }
-
-        if ($newBarcodeExists) {
-            return new ResponseResource(false, "The new barcode already exists", $inputData);
-        }
-
         DB::beginTransaction();
+
         try {
+            // Logika untuk memproses data
+            $status = $request->input('condition');
+            $description = $request->input('description', '');
 
-            $document = Document::where('code_document',  $request->input('code_document'))->first();
-            $maxRetry = 5;
-            for ($i = 0; $i < $maxRetry; $i++) {
-                if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
-                } else {
-                    $generate = generateNewBarcode($inputData['new_category_product']);
-                }
+            $qualityData = [
+                'lolos' => $status === 'lolos' ? 'lolos' : null,
+                'damaged' => $status === 'damaged' ? $description : null,
+                'abnormal' => $status === 'abnormal' ? $description : null,
+            ];
 
-                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
-                    break;
-                }
 
-                if ($i === $maxRetry - 1) {
-                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
-                }
-            }
-
-            $inputData['new_barcode_product'] = $generate;
-
-            $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
-            
-            $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
-            
-            if ($qualityData['lolos'] != null) {
-                ProductApprove::create($inputData);
-                $riwayatCheck->total_data_lolos += 1;
-            } else if ($qualityData['damaged'] != null) {
-                New_product::create($inputData);
-                $riwayatCheck->total_data_damaged += 1;
-            } else if ($qualityData['abnormal'] != null) {
-                New_product::create($inputData);
-                $riwayatCheck->total_data_abnormal += 1;
-            }
-    
-            // $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
-            $totalDataIn = 1 + $riwayatCheck->total_data_in;
-    
-           
-            $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
-    
-            $riwayatCheck->update([
-                'total_data_in' => $totalDataIn,
-                'total_data_lolos' => $riwayatCheck->total_data_lolos,
-                'total_data_damaged' => $riwayatCheck->total_data_damaged,
-                'total_data_abnormal' => $riwayatCheck->total_data_abnormal,
-                'total_discrepancy' => count($totalDiscrepancy),
-                'status_approve' => 'pending',
-    
-                // persentase
-                'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
-                'percentage_in' => ($totalDataIn / $document->total_column_in_document) * 100,
-                'percentage_lolos' => ($riwayatCheck->total_data_lolos / $document->total_column_in_document) * 100,
-                'percentage_damaged' => ($riwayatCheck->total_data_damaged / $document->total_column_in_document) * 100,
-                'percentage_abnormal' => ($riwayatCheck->total_data_abnormal / $document->total_column_in_document) * 100,
-                'percentage_discrepancy' => (count($totalDiscrepancy) / $document->total_column_in_document) * 100,
+            $inputData = $request->only([
+                'old_price_product',
+                'new_barcode_product',
+                'new_name_product',
+                'new_quantity_product',
+                'new_price_product',
+                'new_status_product',
+                'new_category_product',
+                'new_tag_product',
+                'price_discount',
             ]);
-    
-            $this->updateDocumentStatus($request->input('code_document'));
-    
+
+            $inputData['new_status_product'] = 'display';
+            $inputData['user_id'] = $userId;
+
+            $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
+            $inputData['new_quality'] = json_encode($qualityData);
+
+            if ($status !== 'lolos') {
+                $inputData['new_category_product'] = null;
+            }
+            $inputData['new_discount'] = 0;
+            $inputData['display_price'] = $inputData['new_price_product'];
+
+            $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);
+
+            $newProduct = ProductInput::create($inputData);
+
+            // $this->deleteOldProduct($request->input('old_barcode_product')); 
+
             DB::commit();
 
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
+            return new ResponseResource(true, "berhasil menambah data", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    private function prepareQualityData($status, $description)
-    {
-        return [
-            'lolos' => $status === 'lolos' ? 'lolos' : null,
-            'damaged' => $status === 'damaged' ? $description : null,
-            'abnormal' => $status === 'abnormal' ? $description : null,
-        ];
-    }
-
-    private function prepareInputData($request, $status, $qualityData)
-    {
-
-        $inputData = $request->only([
-            'code_document',
-            'old_barcode_product',
-            'new_barcode_product',
-            'new_name_product',
-            'new_quantity_product',
-            'new_price_product',
-            'old_price_product',
-            'new_status_product',
-            'new_category_product',
-            'new_tag_product',
-            'condition',
-            'deskripsi',
-
-        ]);
-
-        if ($inputData['old_price_product'] < 100000) {
-            $inputData['new_barcode_product'] = $inputData['old_barcode_product'];
-        }
-
-        $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
-        $inputData['new_quality'] = json_encode($qualityData);
-
-        $inputData['new_discount'] = 0;
-        $inputData['display_price'] = $inputData['new_price_product'];
-
-        if ($status !== 'lolos') {
-            $inputData['new_category_product'] = null;
-            $inputData['new_price_product'] = null;
-        }
-
-        if ($inputData['new_price_product'] == null) {
-            $inputData['display_price'] = 0;
-        }
-
-        return $inputData;
-    }
-
-    private function updateDocumentStatus($codeDocument)
-    {
-        $document = Document::where('code_document', $codeDocument)->firstOrFail();
-        if ($document->status_document === 'pending') {
-            $document->update(['status_document' => 'in progress']);
-        }
-    }
-
-    private function deleteOldProduct($code_document, $old_barcode_product)
-    {
-        $affectedRows = DB::table('product_olds')->where('code_document', $code_document)
-            ->where('old_barcode_product', $old_barcode_product)->delete();
-
-        if ($affectedRows > 0) {
-            return true;
-        } else {
-            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
-        }
-    }
-
+ 
+  
     /**
      * Display the specified resource.
      */
     public function show(ProductInput $productInput)
     {
-        //
+        if($productInput){
+            return new ResponseResource(true, "detail product input", $productInput);
+        }else{
+            return new ResponseResource(false, "id tidak ada", []);
+        }
     }
 
     /**
@@ -276,7 +149,82 @@ class ProductInputController extends Controller
      */
     public function update(Request $request, ProductInput $productInput)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'nullable',
+            'old_barcode_product' => 'nullable',
+            'new_barcode_product' => 'required',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|integer',
+            'new_price_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump,sale,migrate',
+            'condition' => 'nullable',
+            'new_category_product' => 'nullable',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_discount' => 'nullable|numeric',
+            'display_price' => 'required|numeric'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $status = $request->input('condition');
+        $description = $request->input('deskripsi', '');
+
+        $qualityData = [
+            'lolos' => $status === 'lolos' ? 'lolos' : null,
+            'damaged' => $status === 'damaged' ? $description : null,
+            'abnormal' => $status === 'abnormal' ? $description : null,
+        ];
+
+
+        $inputData = $request->only([
+            'code_document',
+            'new_barcode_product',
+            'new_name_product',
+            'new_quantity_product',
+            'new_price_product',
+            'old_price_product',
+            'new_status_product',
+            'new_category_product',
+            'new_tag_product',
+            'new_discount',
+            'display_price'
+        ]);
+
+        $indonesiaTime = Carbon::now('Asia/Jakarta');
+        $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
+
+
+        if ($inputData['old_price_product'] > 100000) {
+            $inputData['new_tag_product'] = null;
+        }
+
+        if ($request->input('old_price_product') <= 100000) {
+            $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
+                ->where('max_price_color', '>=', $request->input('old_price_product'))
+                ->select('fixed_price_color', 'name_color')->first();
+            $inputData['new_tag_product'] = $tagwarna['name_color'];
+            $inputData['new_price_product'] = $tagwarna['fixed_price_color'];
+            $inputData['new_category_product'] = null;
+        }
+
+        if ($status !== 'lolos') {
+            // Set nilai-nilai default jika status bukan 'lolos'
+            $inputData['new_price_product'] = null;
+            $inputData['new_category_product'] = null;
+        }
+
+        $inputData['new_quality'] = json_encode($qualityData);
+
+        if ($productInput->new_category_product != null) {
+            $inputData['new_barcode_product'] = $productInput->new_barcode_product;
+        }
+
+        $productInput->update($inputData);
+
+        return new ResponseResource(true, "New Produk Berhasil di Update", $productInput);
     }
 
     /**
@@ -284,6 +232,60 @@ class ProductInputController extends Controller
      */
     public function destroy(ProductInput $productInput)
     {
-        //
+        $productInput->delete();
+        return new ResponseResource(true, "data berhasil di hapus", $productInput);
+    }
+
+    public function move_to_stagings(Request $request){
+        DB::beginTransaction();
+        $userId = auth()->id();
+        try {
+            $product_filters = FilterProductInput::where('user_id', $userId)->get();
+            if ($product_filters->isEmpty()) {
+                return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
+            }
+
+            $insertData = $product_filters->map(function ($product) use ($userId) {
+                return [
+                    'code_document' => $product->code_document,
+                    'old_barcode_product' => $product->old_barcode_product,
+                    'new_barcode_product' => $product->new_barcode_product,
+                    'new_name_product' => $product->new_name_product,
+                    'new_quantity_product' => $product->new_quantity_product,
+                    'new_price_product' => $product->new_price_product,
+                    'old_price_product' => $product->old_price_product,
+                    'new_date_in_product' => $product->new_date_in_product,
+                    'new_status_product' =>  $product->new_status_product,
+                    'new_quality' => $product->new_quality,
+                    'new_category_product' => $product->new_category_product,
+                    'new_tag_product' => $product->new_tag_product,
+                    'new_discount' => $product->new_discount,
+                    'display_price' => $product->display_price,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })->toArray();
+
+            Notification::create([
+                'user_id' => $userId,
+                'notification_name' => 'butuh approvemend untuk product staging',
+                'role' => 'Spv',
+                'read_at' => Carbon::now('Asia/Jakarta'),
+                'riwayat_check_id' => null,
+                'repair_id' => null,
+                'status' => 'done'
+            ]);
+
+            FilterProductInput::where('user_id', $userId)->delete();
+            StagingProduct::insert($insertData);
+
+            logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle");
+
+            DB::commit();
+            return new ResponseResource(true, "staging approve berhasil dibuat", null);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke approve', 'error' => $e->getMessage()], 500);
+        }
     }
 }
