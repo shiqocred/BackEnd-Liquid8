@@ -7,8 +7,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Redis; // <--- Pastikan ini ada
-use App\Models\ProductApprove; // Import model ProductApprove
+use Illuminate\Support\Facades\Redis; 
+use App\Models\ProductApprove;
 
 
 class ProcessProductData implements ShouldQueue
@@ -16,24 +16,25 @@ class ProcessProductData implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $barcode;
+    protected $modelClass;
 
-    public function __construct($barcode)
+    public function __construct($barcode, $modelClass)
     {
         $this->barcode = $barcode;
+        $this->modelClass = $modelClass;
     }
 
     public function handle()
     {
-        // Ambil data dari Redis menggunakan barcode
         $redisKey = 'product:' . $this->barcode;
-        $data = Redis::get($redisKey); // Redis facade digunakan disini
+        $data = Redis::get($redisKey); 
 
         if ($data) {
             $inputData = json_decode($data, true);
 
-            ProductApprove::create($inputData);
+            $model = new $this->modelClass;
+            $model->create($inputData);
 
-            // Hapus data dari Redis setelah berhasil disimpan
             Redis::del($redisKey);
         }
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use Illuminate\Support\Facades\Redis; 
 use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
@@ -16,25 +17,34 @@ class CategoryController extends Controller
      * Display a listing of the resource.
      */
 
-    public function index(Request $request)
-    {
-
-        $query = $request->input('q');
-        $categories = Category::query();
-
-        if ($query) {
-            $categories = $categories->where(function ($search) use ($query) {
-                $search->where('name_category', 'LIKE', '%' . $query . '%')
-                    ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
-                    ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
-            });
-        }
-
-        $categories = $categories->get();
-
-        return new ResponseResource(true, "data category", $categories);
-    }
-
+     public function index(Request $request)
+     {
+         $query = $request->input('q');
+         $cacheKey = 'categories:all';
+     
+         $categories = Redis::get($cacheKey);
+     
+         if (!$categories) {
+             $categories = Category::query();
+     
+             if ($query) {
+                 $categories = $categories->where(function ($search) use ($query) {
+                     $search->where('name_category', 'LIKE', '%' . $query . '%')
+                         ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
+                         ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
+                 });
+             }
+     
+             $categories = $categories->get();
+     
+             Redis::set($cacheKey, json_encode($categories));
+         } else {
+             $categories = json_decode($categories);
+         }
+     
+         return new ResponseResource(true, "data category", $categories);
+     }
+     
 
     /**
      * Show the form for creating a new resource.

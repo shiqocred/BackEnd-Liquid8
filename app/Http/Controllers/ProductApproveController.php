@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
+use Illuminate\Support\Facades\Redis; // Tambahkan ini
 use App\Http\Resources\ResponseResource;
-use App\Jobs\ProcessProductData;
 use App\Models\Document;
 use App\Models\FilterStaging;
 use App\Models\New_product;
@@ -18,8 +18,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use App\Jobs\ProcessProductData;
 
 class ProductApproveController extends Controller
 {
@@ -162,23 +162,23 @@ class ProductApproveController extends Controller
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
 
             if ($qualityData['lolos'] != null) {
-                //start input data new product
+                $modelClass = ProductApprove::class;
+                $riwayatCheck->total_data_lolos += 1;
 
+            } else if ($qualityData['damaged'] != null) {
+                $modelClass = New_product::class;
+                $riwayatCheck->total_data_damaged += 1;
+
+            } else if ($qualityData['abnormal'] != null) {
+                $modelClass = New_product::class;
+                $riwayatCheck->total_data_abnormal += 1;
+            }
+            if (isset($modelClass)) {
                 $redisKey = 'product:' . $generate;
                 Redis::set($redisKey, json_encode($inputData));
 
-                // Kirim job ke queue untuk memproses data dari Redis
-                $value = ProcessProductData::dispatch($generate);
-
-                // End input data
-                $riwayatCheck->total_data_lolos += 1;
-                
-            } else if ($qualityData['damaged'] != null) {
-                New_product::create($inputData);
-                $riwayatCheck->total_data_damaged += 1;
-            } else if ($qualityData['abnormal'] != null) {
-                New_product::create($inputData);
-                $riwayatCheck->total_data_abnormal += 1;
+                // Kirim job ke queue dengan model yang ditentukan
+                ProcessProductData::dispatch($generate, $modelClass);
             }
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 
