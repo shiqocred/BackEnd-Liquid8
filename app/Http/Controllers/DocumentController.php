@@ -2,26 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Sale;
+use App\Http\Resources\ResponseResource;
 use App\Models\Document;
+use App\Models\FilterStaging;
 use App\Models\New_product;
+use App\Models\ProductApprove;
+use App\Models\Product_Bundle;
 use App\Models\Product_old;
 use App\Models\RepairFilter;
-use App\Models\RiwayatCheck;
-use Illuminate\Http\Request;
 use App\Models\RepairProduct;
-use App\Models\Product_Bundle;
-use App\Models\ProductApprove;
+use App\Models\RiwayatCheck;
+use App\Models\Sale;
+use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use App\Http\Resources\ResponseResource;
-use App\Models\FilterStaging;
-use App\Models\StagingApprove;
 use Illuminate\Support\Facades\Validator;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx\Rels;
-use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class DocumentController extends Controller
 {
@@ -51,12 +48,10 @@ class DocumentController extends Controller
         //
     }
 
-
     public function store(Request $request)
     {
         //
     }
-
 
     public function show(Document $document)
     {
@@ -68,12 +63,10 @@ class DocumentController extends Controller
         //
     }
 
-
     public function update(Request $request, Document $document)
     {
         //
     }
-
 
     public function destroy(Document $document)
     {
@@ -126,7 +119,6 @@ class DocumentController extends Controller
         return new ResponseResource(true, "List document progress", $documents->paginate(30));
     }
 
-
     public function documentDone(Request $request) // halaman list product staging by doc
     {
         $query = $request->input('q');
@@ -146,7 +138,6 @@ class DocumentController extends Controller
         // Mengembalikan hasil dalam bentuk paginasi
         return new ResponseResource(true, "list document progress", $documents->paginate(50));
     }
-
 
     private function changeBarcodeByDocument($code_document, $init_barcode)
     {
@@ -169,7 +160,7 @@ class DocumentController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
-            'init_barcode' => 'required'
+            'init_barcode' => 'required',
         ]);
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -220,12 +211,15 @@ class DocumentController extends Controller
         $stagings = StagingProduct::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
 
+        $stagingApproves = StagingApprove::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+
         $filterStagings = FilterStaging::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
 
         $productBundle = Product_Bundle::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
-            
+
         $sales = Sale::where('code_document', $code_document)->select('code_document', 'product_old_price_sale')->get();
 
         $productApprove = ProductApprove::where('code_document', $code_document)
@@ -238,10 +232,10 @@ class DocumentController extends Controller
             ->select('new_quality', 'code_document', 'old_price_product')->get();
 
         $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
-            + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales);
+         + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
 
         $totalInventoryPrice = $inventory->sum('old_price_product');
-        $totalStagingsPrice = $stagings->sum('old_price_product') + $filterStagings->sum('old_price_product');
+        $totalStagingsPrice = $stagings->sum('old_price_product') + $filterStagings->sum('old_price_product') + $stagingApproves->sum('old_price_product');
         $totalProductBundlePrice = $productBundle->sum('old_price_product');
         $totalSalesPrice = $sales->sum('product_old_price_sale');
         $totalProductApprovePrice = $productApprove->sum('old_price_product');
@@ -257,65 +251,67 @@ class DocumentController extends Controller
         $countDataLolos = New_product::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            StagingProduct::where('code_document', $code_document)
+         +
+        StagingProduct::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            FilterStaging::where('code_document', $code_document)
+         +
+        FilterStaging::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            StagingApprove::where('code_document', $code_document)
+         +
+        StagingApprove::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            Product_Bundle::where('code_document', $code_document)
+         +
+        Product_Bundle::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            ProductApprove::where('code_document', $code_document)
+         +
+        ProductApprove::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            RepairFilter::where('code_document', $code_document)
+         +
+        RepairFilter::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
-            +
-            RepairProduct::where('code_document', $code_document)
+         +
+        RepairProduct::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
-            ->count();
+            ->count()
+         +
+        Sale::where('code_document', $code_document)->count();
 
         // Menghitung 'damaged' secara langsung menggunakan query
         $countDataDamaged = New_product::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            StagingProduct::where('code_document', $code_document)
+         +
+        StagingProduct::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            FilterStaging::where('code_document', $code_document)
+         +
+        FilterStaging::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            StagingApprove::where('code_document', $code_document)
+         +
+        StagingApprove::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            Product_Bundle::where('code_document', $code_document)
+         +
+        Product_Bundle::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            ProductApprove::where('code_document', $code_document)
+         +
+        ProductApprove::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            RepairFilter::where('code_document', $code_document)
+         +
+        RepairFilter::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
-            +
-            RepairProduct::where('code_document', $code_document)
+         +
+        RepairProduct::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count();
 
@@ -323,32 +319,32 @@ class DocumentController extends Controller
         $countDataAbnormal = New_product::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            StagingProduct::where('code_document', $code_document)
+         +
+        StagingProduct::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            FilterStaging::where('code_document', $code_document)
+         +
+        FilterStaging::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            StagingApprove::where('code_document', $code_document)
+         +
+        StagingApprove::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            Product_Bundle::where('code_document', $code_document)
+         +
+        Product_Bundle::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            ProductApprove::where('code_document', $code_document)
+         +
+        ProductApprove::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            RepairFilter::where('code_document', $code_document)
+         +
+        RepairFilter::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
-            +
-            RepairProduct::where('code_document', $code_document)
+         +
+        RepairProduct::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count();
 
@@ -375,7 +371,7 @@ class DocumentController extends Controller
                 'percentage_abnormal' => 0,
                 'percentage_discrepancy' => 0,
 
-                'total_price' => $totalPrice // Pastikan $totalPrice terinisialisasi
+                'total_price' => $totalPrice, // Pastikan $totalPrice terinisialisasi
             ]);
         }
 
@@ -401,13 +397,9 @@ class DocumentController extends Controller
             "lolos" => $countDataLolos,
             "abnormal" => $countDataAbnormal,
             "damaged" => $countDataDamaged,
-            'total_price' => $totalPrice
+            'total_price' => $totalPrice,
         ]);
     }
-
-
-
-
 
     // public function findDataDocs(Request $request, $code_document)
     // {
@@ -548,8 +540,6 @@ class DocumentController extends Controller
     //             'total_price' => $totalPrice // Pastikan $totalPrice terinisialisasi
     //         ]);
     //     }
-
-
 
     //     $riwayatCheck->update([
     //         'total_data_in' => $allData,

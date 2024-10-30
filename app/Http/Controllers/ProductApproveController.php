@@ -177,7 +177,6 @@ class ProductApproveController extends Controller
                 $redisKey = 'product:' . $generate;
                 Redis::set($redisKey, json_encode($inputData));
 
-                // Kirim job ke queue dengan model yang ditentukan
                 ProcessProductData::dispatch($generate, $modelClass);
             }
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
