@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Http\Resources\ResponseResource;
+use App\Models\FilterStaging;
+use App\Models\StagingApprove;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx\Rels;
 use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
@@ -218,6 +220,9 @@ class DocumentController extends Controller
         $stagings = StagingProduct::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
 
+        $filterStagings = FilterStaging::where('code_document', $code_document)
+            ->select('new_quality', 'code_document', 'old_price_product')->get();
+
         $productBundle = Product_Bundle::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
             
@@ -232,11 +237,11 @@ class DocumentController extends Controller
         $repairProduct = RepairProduct::where('code_document', $code_document)
             ->select('new_quality', 'code_document', 'old_price_product')->get();
 
-        $allData = count($inventory) + count($stagings) + count($productBundle)
+        $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
             + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales);
 
         $totalInventoryPrice = $inventory->sum('old_price_product');
-        $totalStagingsPrice = $stagings->sum('old_price_product');
+        $totalStagingsPrice = $stagings->sum('old_price_product') + $filterStagings->sum('old_price_product');
         $totalProductBundlePrice = $productBundle->sum('old_price_product');
         $totalSalesPrice = $sales->sum('product_old_price_sale');
         $totalProductApprovePrice = $productApprove->sum('old_price_product');
@@ -254,6 +259,14 @@ class DocumentController extends Controller
             ->count()
             +
             StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            FilterStaging::where('code_document', $code_document)
+            ->where('new_quality->lolos', '!=', null)
+            ->count()
+            +
+            StagingApprove::where('code_document', $code_document)
             ->where('new_quality->lolos', '!=', null)
             ->count()
             +
@@ -282,6 +295,14 @@ class DocumentController extends Controller
             ->where('new_quality->damaged', '!=', null)
             ->count()
             +
+            FilterStaging::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
+            StagingApprove::where('code_document', $code_document)
+            ->where('new_quality->damaged', '!=', null)
+            ->count()
+            +
             Product_Bundle::where('code_document', $code_document)
             ->where('new_quality->damaged', '!=', null)
             ->count()
@@ -304,6 +325,14 @@ class DocumentController extends Controller
             ->count()
             +
             StagingProduct::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            FilterStaging::where('code_document', $code_document)
+            ->where('new_quality->abnormal', '!=', null)
+            ->count()
+            +
+            StagingApprove::where('code_document', $code_document)
             ->where('new_quality->abnormal', '!=', null)
             ->count()
             +
