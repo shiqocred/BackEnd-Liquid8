@@ -210,6 +210,7 @@ class NewProductController extends Controller
      */
     public function update(Request $request, New_product $new_product)
     {
+        $user = auth()->user()->email;
         $validator = Validator::make($request->all(), [
             'code_document' => 'nullable',
             'old_barcode_product' => 'nullable',
@@ -286,17 +287,19 @@ class NewProductController extends Controller
         }
 
         $new_product->update($inputData);
-
+        logUserAction($request, $request->user(), "storage/product/category/detail", "update product->" . $user);
         return new ResponseResource(true, "New Produk Berhasil di Update", $new_product);
     }
 
-
+ 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(New_product $new_product)
+    public function destroy(New_product $new_product, Request $request)
     {
+        $user = auth()->user()->email;
         $new_product->delete();
+        logUserAction($request, $request->user(), "storage/product/category", "menghapus product->" . $user);
         return new ResponseResource(true, "data berhasil di hapus", $new_product);
     }
 

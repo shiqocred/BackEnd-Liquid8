@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Sale;
-use App\Models\Buyer;
-use App\Models\Bundle;
-use App\Models\New_product;
 use App\Exports\ProductSale;
+use App\Http\Resources\ResponseResource;
+use App\Models\Bundle;
+use App\Models\Buyer;
+use App\Models\New_product;
+use App\Models\Sale;
 use App\Models\SaleDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -55,7 +56,6 @@ class SaleController extends Controller
         return $resource->response();
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
@@ -68,7 +68,7 @@ class SaleController extends Controller
             $request->all(),
             [
                 'sale_barcode' => 'required',
-                'buyer_id' => 'required|numeric'
+                'buyer_id' => 'required|numeric',
             ]
         );
 
@@ -162,9 +162,9 @@ class SaleController extends Controller
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses',
                     'total_discount_sale' => $data[4] - $data[3],
-                    'new_discount' => $data[5] ?? NULL,
+                    'new_discount' => $data[5] ?? null,
                     'display_price' => $data[3],
-                    'code_document' => $data[7]?? NULL
+                    'code_document' => $data[7] ?? null,
                 ]
             );
 
@@ -176,20 +176,17 @@ class SaleController extends Controller
         }
     }
 
-
-
     public function show(Sale $sale)
     {
         $resource = new ResponseResource(true, "data sale", $sale);
         return $resource->response();
     }
 
-
-
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Sale $sale) {}
+    public function update(Request $request, Sale $sale)
+    {}
 
     /**
      * Remove the specified resource from storage.
@@ -219,49 +216,57 @@ class SaleController extends Controller
 
     public function products()
     {
-        $productSaleBarcodes = Sale::where('status_sale', 'proses')->pluck('product_barcode_sale')->toArray();
-
         $searchQuery = request()->has('q') ? request()->q : null;
 
-        $newProductsQuery = New_product::whereNotIn('new_barcode_product', $productSaleBarcodes)
-            ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
-            ->whereNotNull('new_category_product')
-            ->where('new_status_product', '!=', 'sale')
-            ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date');
+        $cachekey = 'product-sale:' . ($searchQuery ?? 'all');
 
-        if ($searchQuery) {
-            $newProductsQuery->where(function ($query) use ($searchQuery) {
-                $query->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%');
-            });
+        if (Redis::exists($cachekey)) {
+            $products = json_decode(Redis::get($cachekey), true);
+        } else {
+
+            $productSaleBarcodes = Sale::where('status_sale', 'proses')->pluck('product_barcode_sale')->toArray();
+
+            $newProductsQuery = New_product::whereNotIn('new_barcode_product', $productSaleBarcodes)
+                ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
+                ->whereNotNull('new_category_product')
+                ->where('new_status_product', '!=', 'sale')
+                ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date');
+
+            if ($searchQuery) {
+                $newProductsQuery->where(function ($query) use ($searchQuery) {
+                    $query->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%');
+                });
+            }
+
+            $bundleQuery = Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date');
+
+            if ($searchQuery) {
+                $bundleQuery->where(function ($query) use ($searchQuery) {
+                    $query->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('category', 'like', '%' . $searchQuery . '%');
+                });
+            }
+
+            $products = $newProductsQuery->union($bundleQuery)
+                ->orderBy('created_date', 'desc')
+                ->paginate(10);
+            
+            Redis::set($cachekey, json_decode($products));
+            Redis::expire($cachekey, 600);
         }
-
-        $bundleQuery = Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date');
-
-        if ($searchQuery) {
-            $bundleQuery->where(function ($query) use ($searchQuery) {
-                $query->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('category', 'like', '%' . $searchQuery . '%');
-            });
-        }
-
-        $products = $newProductsQuery->union($bundleQuery)
-            ->orderBy('created_date', 'desc')
-            ->paginate(10);
 
         $resource = new ResponseResource(true, "list data product", $products);
         return $resource->response();
     }
 
-
-
     public function updatePriceSale(Request $request, Sale $sale)
     {
 
         $validator = Validator::make($request->all(), [
-            'product_price_sale' => 'required|numeric'
+            'product_price_sale' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -293,7 +298,7 @@ class SaleController extends Controller
     public function livePriceUpdates(Request $request, Sale $sale)
     {
         $validator = Validator::make($request->all(), [
-            'update_price_sale' => 'required|numeric'
+            'update_price_sale' => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
