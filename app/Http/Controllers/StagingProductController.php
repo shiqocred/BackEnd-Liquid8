@@ -100,7 +100,7 @@ class StagingProductController extends Controller
             FilterStaging::where('user_id', $userId)->delete();
             StagingApprove::insert($insertData);
 
-            logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle");
+            logUserAction($request, $request->user(), "stagging/list_product_stagging", "to staging approve");
 
             DB::commit();
             return new ResponseResource(true, "staging approve berhasil dibuat", null);

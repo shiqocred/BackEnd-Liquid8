@@ -282,7 +282,7 @@ class ProductInputController extends Controller
             FilterProductInput::where('user_id', $userId)->delete();
             StagingProduct::insert($insertData);
 
-            logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle");
+            logUserAction($request, $request->user(), "product input", "product input");
 
             DB::commit();
             return new ResponseResource(true, "staging approve berhasil dibuat", null);
