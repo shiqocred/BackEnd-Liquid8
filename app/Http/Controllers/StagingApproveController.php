@@ -2,22 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\User;
+use App\Http\Resources\ResponseResource;
 use App\Models\New_product;
-use Illuminate\Http\Request;
+use App\Models\ProductApprove;
+use App\Models\Product_old;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App\Http\Resources\ResponseResource;
-use App\Models\Product_Bundle;
-use App\Models\Product_old;
-use App\Models\ProductApprove;
-use App\Models\Sale;
-use Maatwebsite\Excel\Facades\Excel;
-use ProductStagingsExport;
 
 class StagingApproveController extends Controller
 {
@@ -50,7 +44,8 @@ class StagingApproveController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {}
+    public function store(Request $request)
+    {}
 
     /**
      * Display the specified resource.
@@ -165,26 +160,34 @@ class StagingApproveController extends Controller
         // Memperpanjang waktu eksekusi dan batas memori
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
+        $inventory = New_product::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        // Mengambil barcode dari berbagai sumber berdasarkan code_document '0172/10/2024'
-        $lolos = New_product::where('code_document', '0172/10/2024')
-            ->pluck('old_barcode_product');
+        $stagings = StagingProduct::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        $stagings = StagingProduct::where('code_document', '0172/10/2024')
-            ->pluck('old_barcode_product');
+        $stagingApproves = StagingApprove::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        $product_olds = Product_old::where('code_document', '0172/10/2024')
-            ->pluck('old_barcode_product');
+        $filterStagings = FilterStaging::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        $product_approve = ProductApprove::where('code_document', '0172/10/2024')
-            ->pluck('old_barcode_product');
+        $productBundle = Product_Bundle::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        // Mengambil semua barcode dari dokumen '0183/10/2024'
-        $product_all = Product_old::where('code_document', '0183/10/2024')
-            ->pluck('old_barcode_product');
+        $sales = Sale::where('code_document', '0130/10/2024')->select('code_document')->get();
 
-        // Menggabungkan data barcode dari sumber-sumber yang ada
-        $combined = $lolos->merge($stagings)->merge($product_approve)->merge($product_olds);
+        $productApprove = ProductApprove::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
+
+        $repairFilter = RepairFilter::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
+
+        $repairProduct = RepairProduct::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
+
+        $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
+         + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
 
         // Cek duplikasi di dalam $combined dan $product_all
         $duplicates_combined = $combined->duplicates();
@@ -193,9 +196,10 @@ class StagingApproveController extends Controller
         // Menampilkan hasil debugging
         return [
             'total_product_all' => count($product_all),
-            'total_combined' => count($combined),
-            'duplicates_combined' => $duplicates_combined,
-            'duplicates_product_all' => $duplicates_product_all,
+            // 'total_combined' => count($combined),
+            'totaldiff' => count($product_all->diff($combined)),
+            // 'duplicates_combined' => count($duplicates_combined),
+            // 'duplicates_product_all' => count($duplicates_product_all),
             'unique_barcodes' => $product_all->diff($combined),
         ];
     }
@@ -225,7 +229,7 @@ class StagingApproveController extends Controller
         // $combined = $lolos->merge($sales);
 
         // Memeriksa barcode yang duplikat
-        $duplicateBarcodes = $product_olds->duplicates();;
+        $duplicateBarcodes = $product_olds->duplicates();
 
         // $stagings = StagingProduct::where('code_document', '0068/09/2024')
         //     ->pluck('new_name_product');
@@ -236,15 +240,12 @@ class StagingApproveController extends Controller
         // $product_olds2 = Product_old::where('code_document', '0068/09/2024')
         //     ->pluck('old_name_product');
 
-
-
         // $approve = Product_Bundle::where('code_document', '0068/09/2024')
         //     ->pluck('new_name_product');
 
         // $combined = $lolos->merge($stagings)->merge($product_olds2)->merge($sales)->merge($approve);
 
         // Menggabungkan dua koleksi ($lolos dan $sales)
-
 
         // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
         if ($duplicateBarcodes->isNotEmpty()) {

@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use Illuminate\Support\Facades\Redis; 
-use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
+use App\Models\Category;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Reader\Exception as ReaderException;
 
 class CategoryController extends Controller
 {
@@ -17,34 +15,24 @@ class CategoryController extends Controller
      * Display a listing of the resource.
      */
 
-     public function index(Request $request)
-     {
-         $query = $request->input('q');
-         $cacheKey = 'categories:all';
-     
-         $categories = Redis::get($cacheKey);
-     
-         if (!$categories) {
-             $categories = Category::query();
-     
-             if ($query) {
-                 $categories = $categories->where(function ($search) use ($query) {
-                     $search->where('name_category', 'LIKE', '%' . $query . '%')
-                         ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
-                         ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
-                 });
-             }
-     
-             $categories = $categories->get();
-     
-             Redis::set($cacheKey, json_encode($categories));
-         } else {
-             $categories = json_decode($categories);
-         }
-     
-         return new ResponseResource(true, "data category", $categories);
-     }
-     
+    public function index(Request $request)
+    {
+        $query = $request->input('q');
+
+        $categories = Category::query();
+
+        if ($query) {
+            $categories = $categories->where(function ($search) use ($query) {
+                $search->where('name_category', 'LIKE', '%' . $query . '%')
+                    ->orWhere('discount_category', 'LIKE', '%' . $query . '%')
+                    ->orWhere('max_price_category', 'LIKE', '%' . $query . '%');
+            });
+        }
+
+        $categories = $categories->get();
+
+        return new ResponseResource(true, "data category", $categories);
+    }
 
     /**
      * Show the form for creating a new resource.
@@ -66,7 +54,7 @@ class CategoryController extends Controller
             'discount_category' => 'required',
             'max_price_category' => 'required',
         ], [
-            'name_category.unique' => "nama category sudah ada"
+            'name_category.unique' => "nama category sudah ada",
         ]);
 
         if ($validation->fails()) {
@@ -76,7 +64,7 @@ class CategoryController extends Controller
         $category = Category::create([
             'name_category' => $request['name_category'],
             'discount_category' => $request['discount_category'],
-            'max_price_category' => $request['max_price_category']
+            'max_price_category' => $request['max_price_category'],
         ]);
 
         return new ResponseResource(true, "berhasil menambahkan category", $category);
@@ -139,7 +127,7 @@ class CategoryController extends Controller
         // Menentukan headers berdasarkan nama kolom di tabel new_products
         $headers = [
             'ID', 'Nama Category', 'Discount', 'Max Price Discount',
-            'Created At', 'Updated At'
+            'Created At', 'Updated At',
         ];
 
         // Menuliskan headers ke sheet
