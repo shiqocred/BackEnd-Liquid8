@@ -190,7 +190,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
 
 
-
    Route::resource('new_products', NewProductController::class)->except(['destroy']);
 });
 
@@ -308,9 +307,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leade
    Route::get('sale-products', [SaleController::class, 'products']);
 
    Route::apiResource('buyers', BuyerController::class)->except(['destroy']);
-
-   Route::get('new_products/{new_product}', [NewProductController::class, 'show']);
-   Route::get('new_products', [NewProductController::class, 'index']);
 
    Route::resource('vehicle-types', VehicleTypeController::class);
 });
