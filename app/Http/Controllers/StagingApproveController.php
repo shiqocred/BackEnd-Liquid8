@@ -214,16 +214,18 @@ class StagingApproveController extends Controller
 
     public function findSimilarTabel(Request $request)
     {
-        $lolos = New_product::where('code_document', '0068/09/2024')
-            ->pluck('new_barcode_product');
+        // $lolos = New_product::where('code_document', '0068/09/2024')
+        //     ->pluck('new_barcode_product');
 
-        $sales = Sale::latest()->pluck('product_barcode_sale');
+        // $sales = Sale::latest()->pluck('product_barcode_sale');
+
+        $product_olds = Product_old::where('code_document', '0010/10/2024')->pluck('old_barcode_product');
 
         // Menggabungkan data $lolos dan $sales
-        $combined = $lolos->merge($sales);
+        // $combined = $lolos->merge($sales);
 
         // Memeriksa barcode yang duplikat
-        $duplicateBarcodes = $combined->duplicates();;
+        $duplicateBarcodes = $product_olds->duplicates();;
 
         // $stagings = StagingProduct::where('code_document', '0068/09/2024')
         //     ->pluck('new_name_product');

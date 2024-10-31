@@ -68,12 +68,15 @@ class DocumentController extends Controller
         //
     }
 
-    public function destroy(Document $document)
+    public function destroy(Document $document, Request $request)
     {
+        $user = auth()->user()->email;
         try {
             $product_old = Product_old::where('code_document', $document->code_document)->delete();
             $approve = ProductApprove::where('code_document', $document->code_document)->delete();
             $document->delete();
+
+            logUserAction($request, $request->user(), "inbound/check_product/list_data", "delete document->" . $user);
 
             return new ResponseResource(true, "data berhasil dihapus", $document);
         } catch (\Exception $e) {
