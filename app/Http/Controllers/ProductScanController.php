@@ -50,6 +50,7 @@ class ProductScanController extends Controller
         $validator = Validator::make($request->all(), [
             'product_name' => 'required|string',
             'product_price' => 'required|numeric',
+            'image' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -59,13 +60,15 @@ class ProductScanController extends Controller
         DB::beginTransaction();
 
         try {
+            
             $productScan = ProductScan::create([
                 'user_id' => auth()->id(),
                 'product_name' => $request['product_name'],
                 'product_price' => $request['product_price'],
+                'image' => $request['image']
             ]);
 
-            DB::commit(); // Commit setelah create berhasil
+            DB::commit(); 
 
             return new ResponseResource(true, "berhasil menambah data scan", $productScan);
         } catch (\Exception $e) {
