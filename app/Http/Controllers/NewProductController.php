@@ -291,7 +291,7 @@ class NewProductController extends Controller
         return new ResponseResource(true, "New Produk Berhasil di Update", $new_product);
     }
 
- 
+
     /**
      * Remove the specified resource from storage.
      */
@@ -340,13 +340,13 @@ class NewProductController extends Controller
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $search . '%');
                 })
                 ->paginate(50);
-    
+
             return new ResponseResource(true, "list product expired", $productExpired);
         } catch (\Exception $e) {
             return response()->json(["error" => $e->getMessage()], 500);
         }
     }
-    
+
 
     public function listProductExpDisplay(Request $request)
     {
@@ -393,7 +393,7 @@ class NewProductController extends Controller
     //baru inject product warna
     public function processExcelFilesTagColor(Request $request)
     {
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
         $request->validate([
@@ -417,7 +417,7 @@ class NewProductController extends Controller
             $ekspedisiData = $sheet->toArray(null, true, true, true);
 
             $chunkSize = 100;
-            $count = 0; // Initialize the count variable
+            $count = 0;
             $headerMappings = [
                 'old_barcode_product' => 'Waybill',
                 'new_name_product' => 'Isi Barang',
@@ -425,7 +425,6 @@ class NewProductController extends Controller
                 'old_price_product' => 'Nilai Barang Satuan',
                 'new_category_product' => null,
                 'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
-                'new_quality' => json_encode(['lolos' => 'lolos']),
                 'new_discount' => 0,
                 'display_price' => 'Nilai Barang Satuan',
             ];
@@ -479,6 +478,7 @@ class NewProductController extends Controller
                     $newProductDataToInsert = array_merge($newProductDataToInsert, [
                         'code_document' => $code_document,
                         'new_tag_product' => $newProductDataToInsert['new_tag_product'] ?? null,
+                        'new_quality' => json_encode(['lolos' => 'lolos']),
                         'new_barcode_product' => newBarcodeScan(),
                     ]);
 
@@ -521,7 +521,7 @@ class NewProductController extends Controller
     public function processExcelFilesCategory(Request $request)
     {
         $user_id = auth()->id();
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
         $request->validate([
@@ -703,7 +703,7 @@ class NewProductController extends Controller
         return $sources;
     }
 
-   
+
     public function showRepair(Request $request)
     {
         try {
@@ -929,31 +929,42 @@ class NewProductController extends Controller
     public function getTagColor(Request $request)
     {
         $query = $request->input('q');
+        $page = $request->input('page', 1);
+
         try {
-            $productByTagColor = New_product::latest()
+            $productByTagColor = New_product::query()
                 ->whereNotNull('new_tag_product')
-                ->where('new_category_product', NULL)
+                ->whereNull('new_category_product')
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
                 ->where('new_status_product', 'display')
-                ->when($query, function ($queryBuilder) use ($query) {
+                ->latest();
+
+            if ($query) {
+                $productByTagColor->where(function ($queryBuilder) use ($query) {
                     $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-                })
-                ->paginate(50);
+                });
+
+                $page = 1;
+            }
+
+            $paginatedProducts = $productByTagColor->paginate(30, ['*'], 'page', $page);
+
+            return new ResponseResource(true, "list product by tag color", $paginatedProducts);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
         }
-
-        return new ResponseResource(true, "list product by tag color", $productByTagColor);
     }
+
+
 
     public function getByCategory(Request $request)
     {
         $query = $request->input('q');
+        $page = $request->input('page', 1);
+
         try {
             $productQuery = New_product::select(
                 'id',
@@ -961,7 +972,7 @@ class NewProductController extends Controller
                 'new_name_product',
                 'new_category_product',
                 'new_price_product',
-                'created_at', 
+                'created_at',
                 'new_status_product',
                 'display_price',
                 'new_date_in_product'
@@ -969,19 +980,11 @@ class NewProductController extends Controller
                 ->whereNotNull('new_category_product')
                 ->where('new_tag_product', NULL)
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-                ->where(function($status){
+                ->where(function ($status) {
                     $status->where('new_status_product', 'display')
-                    ->orWhere('new_status_product', 'expired');
-                })
-                ->when($query, function ($queryBuilder) use ($query) {
-                    $queryBuilder->where(function ($subQuery) use ($query) {
-                        $subQuery->where('new_category_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
-                    });
+                        ->orWhere('new_status_product', 'expired');
                 });
+
 
             $bundleQuery = Bundle::select(
                 'id',
@@ -996,17 +999,29 @@ class NewProductController extends Controller
             )
                 ->where('total_price_custom_bundle', '>=', 100000)
                 ->where('name_color',  NULL)
-                ->where('product_status', '!=', 'bundle')
-                ->when($query, function ($dataBundle) use ($query) {
+                ->where('product_status', '!=', 'bundle');
+
+            if ($query) {
+                $productQuery->where(function ($queryBuilder) use ($query) {
+                    $queryBuilder->where(function ($subQuery) use ($query) {
+                        $subQuery->where('new_category_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_status_product', 'LIKE', '%' . $query . '%');
+                    });
+                });
+                $bundleQuery->where(function ($dataBundle) use ($query) {
                     $dataBundle->where('name_bundle', 'LIKE', '%' . $query . '%')
                         ->orWhere('barcode_bundle', 'LIKE', '%' . $query . '%')
                         ->orWhere('category', 'LIKE', '%' . $query . '%')
                         ->orWhere('product_status', 'LIKE', '%' . $query . '%');
                 });
+                $page = 1;
+            }
 
-            $mergedQuery = $productQuery->union($bundleQuery)
-                ->orderBy('created_at', 'desc')
-                ->paginate(50);
+            $mergedQuery = $productQuery->unionAll($bundleQuery)->paginate(5, ['*'], 'page', $page);
+
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(404);
         }
@@ -1044,7 +1059,7 @@ class NewProductController extends Controller
 
     public function exportDumpToExcel(Request $request, $id)
     {
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
         $bundleQcds = BundleQcd::find($id)->load(['product_qcds']);
@@ -1240,7 +1255,7 @@ class NewProductController extends Controller
 
     public function exportProductByCategory(Request $request)
     {
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
         try {
@@ -1263,11 +1278,11 @@ class NewProductController extends Controller
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
-    
+
     public function export_product_expired(Request $request)
     {
-        set_time_limit(600); 
-        ini_set('memory_limit', '1024M'); 
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
 
         try {
             $fileName = 'product-inventory.xlsx';

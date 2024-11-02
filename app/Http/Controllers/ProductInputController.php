@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Models\FilterProductInput;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\ProductScan;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\Validator;
 
@@ -56,7 +57,8 @@ class ProductInputController extends Controller
             'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color'
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'image' => 'nullable|mimes:jpg,jpeg,png,webp,gif,svg,bmp,tiff|max:1024',
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada'
         ]);
@@ -72,6 +74,16 @@ class ProductInputController extends Controller
         DB::beginTransaction();
 
         try {
+
+            $imageName = null;
+
+            // Simpan file gambar jika ada
+            if ($request->hasFile('image') && $request->file('image')->isValid()) {
+                $folderName = 'product_images';
+                $imageName = $request->file('image')->hashName();
+                $request->file('image')->storeAs($folderName, $imageName, 'public'); 
+            }
+
             // Logika untuk memproses data
             $status = $request->input('condition');
             $description = $request->input('description', '');
@@ -109,14 +121,23 @@ class ProductInputController extends Controller
 
             if (!empty($inputData['new_barcode_product'])) {
                 $inputData['new_barcode_product'] = $request->input('new_barcode_product');
-            }else{
+            } else {
                 $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);
             }
 
             $newProduct = ProductInput::create($inputData);
 
+            $inputData['image'] = $imageName;
 
-            DB::commit();
+            ProductScan::create([
+                'user_id' => $userId,
+                'product_name' => $inputData['new_name_product'],
+                'product_price' => $inputData['old_price_product'],
+                'image' => $imageName
+            ]);
+
+
+                DB::commit();
 
             return new ResponseResource(true, "berhasil menambah data", $newProduct);
         } catch (\Exception $e) {
@@ -125,16 +146,16 @@ class ProductInputController extends Controller
         }
     }
 
- 
-  
+
+
     /**
      * Display the specified resource.
      */
     public function show(ProductInput $productInput)
     {
-        if($productInput){
+        if ($productInput) {
             return new ResponseResource(true, "detail product input", $productInput);
-        }else{
+        } else {
             return new ResponseResource(false, "id tidak ada", []);
         }
     }
@@ -239,7 +260,8 @@ class ProductInputController extends Controller
         return new ResponseResource(true, "data berhasil di hapus", $productInput);
     }
 
-    public function move_to_stagings(Request $request){
+    public function move_to_stagings(Request $request)
+    {
         DB::beginTransaction();
         $userId = auth()->id();
         try {

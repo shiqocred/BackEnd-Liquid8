@@ -30,19 +30,36 @@ class StagingProductController extends Controller
     public function index(Request $request)
     {
         $searchQuery = $request->input('q');
-        $newProducts = StagingProduct::latest()
-            ->where(function ($queryBuilder) use ($searchQuery) {
-                $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('new_category_product', 'LIKE', '%' . $searchQuery . '%')
-                    ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
-            })
-            ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
-            ->whereNull('new_tag_product')
-            ->paginate(20);
+        $page = $request->input('page', 1);
+        try {
+            // Buat query dasar untuk StagingProduct
+            $newProductsQuery = StagingProduct::query()
+                ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
+                ->whereNull('new_tag_product')
+                ->latest();
 
-        return new ResponseResource(true, "list new product", $newProducts);
+            // Jika ada query pencarian, abaikan sementara parameter `page`
+            if ($searchQuery) {
+                $newProductsQuery->where(function ($queryBuilder) use ($searchQuery) {
+                    $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('new_category_product', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
+                });
+
+                // // Paksa hasil pencarian di halaman pertama
+                $page = 1;
+            }
+
+            // Terapkan pagination setelah pencarian selesai
+            $paginatedProducts = $newProductsQuery->paginate(20, ['*'], 'page', $page);
+            return new ResponseResource(true, "List of new products", $paginatedProducts);
+        } catch (\Exception $e) {
+            return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
+        }
     }
+
+
 
 
     /**
@@ -360,7 +377,7 @@ class StagingProductController extends Controller
             $initBarcode = collect($ekspedisiData)->pluck('A');
             $duplicateInitBarcode = $initBarcode->duplicates();
             $barcodesOnly = $duplicateInitBarcode->values();
-            
+
             if ($duplicateInitBarcode->isNotEmpty()) {
                 $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
                 return $response->response()->setStatusCode(422);
@@ -374,7 +391,7 @@ class StagingProductController extends Controller
             if ($uniqueCategory->isNotEmpty()) {
                 $response = new ResponseResource(false, "category ada yang beda", $categoryOnly);
                 return $response->response()->setStatusCode(422);
-            } 
+            }
 
             // Generate document code
             $code_document = $this->generateDocumentCode();

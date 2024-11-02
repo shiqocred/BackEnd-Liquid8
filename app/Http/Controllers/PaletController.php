@@ -11,6 +11,7 @@ use App\Models\PaletFilter;
 use App\Models\PaletProduct;
 use Illuminate\Http\Request;
 use App\Models\ProductStatus;
+use App\Models\StagingProduct;
 use App\Models\ProductCondition;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -26,22 +27,36 @@ class PaletController extends Controller
     public function display(Request $request)
     {
         $query = $request->input('q');
-
-        $new_products = New_product::query()
+        $page = $request->input('page');
+        $newProductsQuery = New_product::latest()
             ->where('new_status_product', 'display')
             ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
-            ->where(function ($queryBuilder) use ($query) {
+            ->whereNull('new_tag_product');
+
+        $stagingProductsQuery = StagingProduct::latest()
+            ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
+            ->whereNull('new_tag_product');
+
+        if ($query) {
+            $newProductsQuery->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                    ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_category_product', 'LIKE', '%' . $query . '%');
-            })
-            ->where('new_tag_product', null)
-            ->paginate(50);
+            });
 
-        return new ResponseResource(true, "Data produk dengan status display.", $new_products);
+            $stagingProductsQuery->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                    ->orWhere('new_category_product', 'LIKE', '%' . $query . '%');
+            });
+            $page = 1;
+        }
+
+        $products = $newProductsQuery->unionAll($stagingProductsQuery)->paginate(20, ['*'], 'page', $page);
+        return new ResponseResource(true, "Data produk dengan status display.", $products);
     }
-
 
 
     public function index(Request $request)
@@ -154,7 +169,7 @@ class PaletController extends Controller
             }
 
             $userId = auth()->id();
-            $product_filters = PaletFilter::where('user_id', $userId)->get();  
+            $product_filters = PaletFilter::where('user_id', $userId)->get();
 
             $insertData = $product_filters->map(function ($product) use ($palet) {
                 return [
@@ -172,8 +187,8 @@ class PaletController extends Controller
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
-                    'display_price'=> $product->display_price,
-                    'created_at' => now(),  
+                    'display_price' => $product->display_price,
+                    'created_at' => now(),
                     'updated_at' => now(),
                 ];
             })->toArray();
