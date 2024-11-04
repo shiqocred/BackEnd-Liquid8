@@ -422,6 +422,7 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
 
    //product input
    Route::resource('product_inputs', ProductInputController::class);
+   
    //filter product input
    Route::get('filter-product-input', [FilterProductInputController::class, 'index']);
    Route::post('filter-product-input/{id}/add', [FilterProductInputController::class, 'store']);
@@ -431,7 +432,7 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
    Route::get('product_scan_search ', [ProductScanController::class, 'product_scan_search']);
-   Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
+   // Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 });
 

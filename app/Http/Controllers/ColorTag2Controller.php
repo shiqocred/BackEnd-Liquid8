@@ -66,15 +66,15 @@ class ColorTag2Controller extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ColorTag2 $color_tag)
+    public function show(ColorTag2 $color_tags2)
     {
-        return new ResponseResource(true, "data tag warna", $color_tag);
+        return new ResponseResource(true, "data tag warna", $color_tags2);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(ColorTag2 $color_tag)
+    public function edit(ColorTag2 $color_tags2)
     {
         //
     }
@@ -82,7 +82,7 @@ class ColorTag2Controller extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ColorTag2 $color_tag)
+    public function update(Request $request, ColorTag2 $color_tags2)
     {
         $validator = Validator::make($request->all(), [
             'hexa_code_color' => 'required',
@@ -95,17 +95,17 @@ class ColorTag2Controller extends Controller
         if($validator->fails()){
             return response()->json(['errors' => $validator->errors()], 422);
         };
-        $color_tag->update($request->all());
-        return new ResponseResource(true, "berhasil mengedit tag warna", $color_tag);
+        $color_tags2->update($request->all());
+        return new ResponseResource(true, "berhasil mengedit tag warna", $color_tags2);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ColorTag2 $color_tag)
+    public function destroy(ColorTag2 $color_tags2)
     {
-        $color_tag->delete();
-        return new ResponseResource(true, "berhasil menghapus tag warna", $color_tag);
+        $color_tags2->delete();
+        return new ResponseResource(true, "berhasil menghapus tag warna", $color_tags2);
 
     }
 

@@ -19,7 +19,6 @@ class FilterStagingController extends Controller
     {
         $userId = auth()->id();
         $product_filtersByuser = FilterStaging::where('user_id', $userId)->get();
-        $totalNewPrice = $product_filtersByuser->sum('new_price_product');
 
         $totalNewPriceWithCategory = $product_filtersByuser->whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = $product_filtersByuser->whereNull('new_category_product')->sum('old_price_product');
