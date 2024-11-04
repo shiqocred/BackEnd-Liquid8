@@ -1020,7 +1020,8 @@ class NewProductController extends Controller
                 $page = 1;
             }
 
-            $mergedQuery = $productQuery->unionAll($bundleQuery)->paginate(5, ['*'], 'page', $page);
+            $mergedQuery = $productQuery->unionAll($bundleQuery)->orderBy('created_at', 'desc')
+            ->paginate(33, ['*'], 'page', $page);
 
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(404);

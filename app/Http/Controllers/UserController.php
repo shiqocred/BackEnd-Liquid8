@@ -24,6 +24,14 @@ class UserController extends Controller
         return new ResponseResource(true, "List users", $users);
     }
 
+    public function show(Request $request, User $user){
+        if($user){
+            return new ResponseResource(true, "detail user ", $user);
+        }else{
+            return new ResponseResource(false, "data user tidak ada", []);
+        }
+    }
+
     public function store(Request $request) {}
 
     public function update(Request $request, $id)
