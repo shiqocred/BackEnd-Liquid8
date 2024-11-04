@@ -54,7 +54,8 @@ class PaletController extends Controller
             $page = 1;
         }
 
-        $products = $newProductsQuery->unionAll($stagingProductsQuery)->paginate(33, ['*'], 'page', $page);
+        $products = $newProductsQuery->unionAll($stagingProductsQuery)
+        ->orderBy('created_at', 'desc')->paginate(33, ['*'], 'page', $page);
         return new ResponseResource(true, "Data produk dengan status display.", $products);
     }
 
