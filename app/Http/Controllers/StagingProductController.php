@@ -626,4 +626,26 @@ class StagingProductController extends Controller
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
         }
     }
+    public function toLpr(Request $request, $id){
+        DB::beginTransaction();
+        $userId = auth()->id();
+        try {
+            $product = StagingProduct::findOrFail($id);
+            $product->user_id = $userId;
+
+            $duplicate = New_product::where('new_barcode_product', $product->new_barcode_product)->exists();
+            if ($duplicate) {
+                return new ResponseResource(false, "barcode product di inventory sudah ada : " . $product->new_barcode_product, null);
+            }
+
+            $productFilter = New_product::create($product->toArray());
+            $product->delete();
+            DB::commit();
+            return new ResponseResource(true, "berhasil menambah list product staging", $productFilter);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
 }

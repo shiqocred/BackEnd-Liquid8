@@ -161,6 +161,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    Route::resource('staging_products', StagingProductController::class);
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
+   Route::post('staging/move_to_lpr/{id}', [StagingProductController::class, 'toLpr']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
