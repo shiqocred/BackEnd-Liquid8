@@ -12,6 +12,10 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\DeleteDuplicateProductsJob;
+
+use Illuminate\Support\Facades\Redis;
+
 
 class StagingApproveController extends Controller
 {
@@ -204,16 +208,37 @@ class StagingApproveController extends Controller
         ];
     }
 
-    public function findSimilarStagingProducts()
+    public function dataSelection()
     {
-        // Tentukan awalan yang ingin diperiksa
-        $prefix = '179';
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
 
-        $similarStagingProducts = New_product::where('code_document', '0068/09/2024')->get();
-        $count = count($similarStagingProducts);
+        // Ambil semua barcode dari `code_document` = '0001/11/2024' sebagai acuan
+        $productOldInit = Product_old::where('code_document', '0001/11/2024')
+            ->pluck('old_barcode_product')
+            ->toArray();
 
-        // Mengembalikan respon dengan data yang ditemukan
-        return new ResponseResource(true, "Products with similar barcode prefix found", $count);
+        // Jalankan proses penghapusan pada data dengan `code_document` = '0003/11/2024'
+        $data = Product_old::where('code_document', '0004/11/2024')->cursor()->each(function ($product) use (&$productOldInit) {
+            // Jika barcode di data '0003/11/2024' ada di daftar '0001/11/2024', hapus dari kedua code_document
+            if (in_array($product->old_barcode_product, $productOldInit)) {
+                $product->delete(); // Hapus dari '0003/11/2024'
+
+                // Cari indeks barcode yang cocok di '0001/11/2024' dan hapus
+                $index = array_search($product->old_barcode_product, $productOldInit);
+                if ($index !== false) {
+                    // Hapus data yang ditemukan di `code_document` '0001/11/2024'
+                    Product_old::where('code_document', '0001/11/2024')
+                        ->where('old_barcode_product', $product->old_barcode_product)
+                        ->delete();
+
+                    // Hapus barcode dari array untuk menghindari pengecekan ulang
+                    unset($productOldInit[$index]);
+                }
+            }
+        });
+
+        return new ResponseResource(true, "Berhasil melakukan seleksi dan penghapusan data duplikat", $data);
     }
 
     public function findSimilarTabel(Request $request)
@@ -223,7 +248,7 @@ class StagingApproveController extends Controller
 
         // $sales = Sale::latest()->pluck('product_barcode_sale');
 
-        $product_olds = Product_old::where('code_document', '0010/10/2024')->pluck('old_barcode_product');
+        $product_olds = Product_old::where('code_document', '0002/11/2024')->pluck('old_barcode_product');
 
         // Menggabungkan data $lolos dan $sales
         // $combined = $lolos->merge($sales);
@@ -249,9 +274,40 @@ class StagingApproveController extends Controller
 
         // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
         if ($duplicateBarcodes->isNotEmpty()) {
-            return response()->json($duplicateBarcodes);
+            return count($duplicateBarcodes);
+            // return response()->json($duplicateBarcodes);
         } else {
             return response()->json("Tidak ada data duplikat.");
         }
     }
+
+    public function cacheProductBarcodes()
+    {
+        // Cache barcodes dari '0001/11/2024' di Redis
+        $productOldInit = Product_old::where('code_document', '0001/11/2024')
+            ->pluck('old_barcode_product')
+            ->toArray();
+
+        // Simpan data di Redis dengan TTL, misalnya 10 menit
+        Redis::set('product_old:code_document:0001', json_encode($productOldInit), 'EX', 600);
+
+        return new ResponseResource(true, "Data berhasil di-cache di Redis", []);
+    }
+
+    public function dataSelectionRedis()
+    {
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
+    
+        // Menyimpan barcode di Redis sebelum menjalankan job
+        $barcodes = Product_old::pluck('old_barcode_product')->toArray();
+        Redis::set('product_old:code_document:0001', json_encode($barcodes), 'EX', 600);
+    
+        // Jalankan job untuk menghapus duplikat
+        DeleteDuplicateProductsJob::dispatch(Product_old::class);
+    
+        return new ResponseResource(true, "Proses penghapusan duplikat sedang berjalan di background", []);
+    }
+    
+
 }

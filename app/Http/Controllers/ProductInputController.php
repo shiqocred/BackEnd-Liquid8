@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 
-use App\Models\Color_tag;
+use App\Models\ColorTag2;
 use App\Models\Notification;
 use App\Models\ProductInput;
 use Illuminate\Http\Request;
@@ -57,7 +57,7 @@ class ProductInputController extends Controller
             'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+            'new_tag_product' => 'nullable|exists:color_tag2s,name_color',
             'image' => 'nullable|mimes:jpg,jpeg,png,webp,gif,svg,bmp,tiff|max:1024',
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada'
@@ -221,12 +221,12 @@ class ProductInputController extends Controller
         $inputData['new_date_in_product'] = $indonesiaTime->toDateString();
 
 
-        if ($inputData['old_price_product'] > 100000) {
+        if ($inputData['old_price_product'] > 120000) {
             $inputData['new_tag_product'] = null;
         }
 
-        if ($request->input('old_price_product') <= 100000) {
-            $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
+        if ($request->input('old_price_product') <= 120000) {
+            $tagwarna = ColorTag2::where('min_price_color', '<=', $request->input('old_price_product'))
                 ->where('max_price_color', '>=', $request->input('old_price_product'))
                 ->select('fixed_price_color', 'name_color')->first();
             $inputData['new_tag_product'] = $tagwarna['name_color'];
@@ -293,7 +293,7 @@ class ProductInputController extends Controller
 
             Notification::create([
                 'user_id' => $userId,
-                'notification_name' => 'butuh approvemend untuk product staging',
+                'notification_name' => 'butuh approvemend untuk product input',
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => null,
@@ -307,7 +307,7 @@ class ProductInputController extends Controller
             logUserAction($request, $request->user(), "product input", "product input");
 
             DB::commit();
-            return new ResponseResource(true, "staging approve berhasil dibuat", null);
+            return new ResponseResource(true, "product input approve berhasil dibuat", null);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke approve', 'error' => $e->getMessage()], 500);

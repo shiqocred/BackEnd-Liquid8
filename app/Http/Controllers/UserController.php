@@ -40,28 +40,34 @@ class UserController extends Controller
             'name' => 'required|min:2',
             'username' => 'required|min:2|unique:users,username,' . $id,
             'email' => 'required|min:2|unique:users,email,' . $id,
-            'password' => 'required',
+            'password' => 'nullable', 
             'role_id' => 'required|exists:roles,id'
         ], [
             'username.unique' => 'Username sudah ada',
             'email.unique' => 'Email sudah ada',
             'role_id.exists' => 'Role tidak ada'
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(["errors" => $validator->errors()], 422);
         }
-
+    
         $user = User::find($id);
-
         if (!$user) {
             return new ResponseResource(false, "User not found", null);
         }
-
-        $user->update($request->all());
-
+    
+        $dataToUpdate = $request->only(['name', 'username', 'email', 'role_id']);
+        
+        if ($request->filled('password')) {
+            $dataToUpdate['password'] = $request->input('password');
+        }
+    
+        $user->update($dataToUpdate);
+    
         return new ResponseResource(true, "User updated successfully", $user);
     }
+    
 
     public function destroy($id)
     {

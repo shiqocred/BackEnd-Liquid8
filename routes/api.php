@@ -162,6 +162,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    Route::resource('staging_products', StagingProductController::class);
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
    Route::post('staging/filter_product/{id}/add', [FilterStagingController::class, 'store']);
+   Route::post('staging/move_to_lpr/{id}', [StagingProductController::class, 'toLpr']);
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
@@ -421,6 +422,7 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
 
    //product input
    Route::resource('product_inputs', ProductInputController::class);
+   
    //filter product input
    Route::get('filter-product-input', [FilterProductInputController::class, 'index']);
    Route::post('filter-product-input/{id}/add', [FilterProductInputController::class, 'store']);
@@ -430,7 +432,7 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
    Route::get('product_scan_search ', [ProductScanController::class, 'product_scan_search']);
-   Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
+   // Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 });
 
@@ -454,8 +456,12 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('findSimilarStagingProducts', [StagingApproveController::class, 'findSimilarStagingProducts']);
+Route::get('dataSelection', [StagingApproveController::class, 'dataSelection']);
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+
+Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
+Route::get('selectionDataRedis', [StagingApproveController::class, 'dataSelectionRedis']);
+
 
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
 

@@ -239,3 +239,5 @@ function newBarcodeScan()
 
     return $newBarcode;
 }
+
+
