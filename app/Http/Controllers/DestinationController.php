@@ -14,9 +14,9 @@ class DestinationController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-        $destinations = Destination::latest();
+        $destinations = Destination::query();
         if($query){
-            $destinations = $destinations->where('shop_name', 'LIKE', '%' . $query . 'LIKE');
+            $destinations = $destinations->latest()->where('shop_name', 'LIKE', '%' . $query . '%');
         }
         $destinations = $destinations->paginate(50);
         return new ResponseResource(true, "list Destinasi Toko", $destinations );

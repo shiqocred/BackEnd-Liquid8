@@ -21,6 +21,7 @@ use App\Http\Controllers\ColorTagController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\BundleQcdController;
+use App\Http\Controllers\ColorTag2Controller;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FilterBklController;
 use App\Http\Controllers\FilterQcdController;
@@ -278,6 +279,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::resource('categories', CategoryController::class)->except(['destroy']);
    //colortags diskon
    Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
+   Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
 });
 
 //end inventory=========================================== Inventory ==========================================================
@@ -318,9 +320,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    //colortags dan category
    Route::get('categories', [CategoryController::class, 'index']);
    Route::get('color_tags', [ColorTagController::class, 'index']);
+   Route::get('color_tags2', [ColorTag2Controller::class, 'index']);
    Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
    Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
+   Route::get('getByNameColor2', [ColorTag2Controller::class, 'getByNameColor2']);
 
    //filter-bkl
    Route::resource('bkls', BklController::class);
@@ -355,11 +359,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('buyers/{buyer}', [BuyerController::class, 'destroy']);
    Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
    Route::delete('color_tags/{color_tag}', [ColorTagController::class, 'destroy']);
+   Route::delete('color_tags2/{color_tag}', [ColorTag2Controller::class, 'destroy']);
    Route::delete('product_olds/{product_old}', [ProductOldController::class, 'destroy']);
    Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
-   Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']);
+   Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']); 
    Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
    Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
