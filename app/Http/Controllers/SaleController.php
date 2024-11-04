@@ -11,7 +11,6 @@ use App\Models\Sale;
 use App\Models\SaleDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -218,45 +217,35 @@ class SaleController extends Controller
     {
         $searchQuery = request()->has('q') ? request()->q : null;
 
-        $cachekey = 'product-sale:' . ($searchQuery ?? 'all');
+        $productSaleBarcodes = Sale::where('status_sale', 'proses')->pluck('product_barcode_sale')->toArray();
 
-        if (Redis::exists($cachekey)) {
-            $products = json_decode(Redis::get($cachekey), true);
-        } else {
+        $newProductsQuery = New_product::whereNotIn('new_barcode_product', $productSaleBarcodes)
+            ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
+            ->whereNotNull('new_category_product')
+            ->where('new_status_product', '!=', 'sale')
+            ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date');
 
-            $productSaleBarcodes = Sale::where('status_sale', 'proses')->pluck('product_barcode_sale')->toArray();
-
-            $newProductsQuery = New_product::whereNotIn('new_barcode_product', $productSaleBarcodes)
-                ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
-                ->whereNotNull('new_category_product')
-                ->where('new_status_product', '!=', 'sale')
-                ->select('new_barcode_product as barcode', 'new_name_product as name', 'new_category_product as category', 'created_at as created_date');
-
-            if ($searchQuery) {
-                $newProductsQuery->where(function ($query) use ($searchQuery) {
-                    $query->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%');
-                });
-            }
-
-            $bundleQuery = Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date');
-
-            if ($searchQuery) {
-                $bundleQuery->where(function ($query) use ($searchQuery) {
-                    $query->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('category', 'like', '%' . $searchQuery . '%');
-                });
-            }
-
-            $products = $newProductsQuery->union($bundleQuery)
-                ->orderBy('created_date', 'desc')
-                ->paginate(10);
-            
-            Redis::set($cachekey, json_decode($products));
-            Redis::expire($cachekey, 600);
+        if ($searchQuery) {
+            $newProductsQuery->where(function ($query) use ($searchQuery) {
+                $query->where('new_barcode_product', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('new_name_product', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('new_category_product', 'like', '%' . $searchQuery . '%');
+            });
         }
+
+        $bundleQuery = Bundle::select('barcode_bundle as barcode', 'name_bundle as name', 'category', 'created_at as created_date');
+
+        if ($searchQuery) {
+            $bundleQuery->where(function ($query) use ($searchQuery) {
+                $query->where('barcode_bundle', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('name_bundle', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('category', 'like', '%' . $searchQuery . '%');
+            });
+        }
+
+        $products = $newProductsQuery->union($bundleQuery)
+            ->orderBy('created_date', 'desc')
+            ->paginate(10);
 
         $resource = new ResponseResource(true, "list data product", $products);
         return $resource->response();
