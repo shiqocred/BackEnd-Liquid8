@@ -215,8 +215,10 @@ if (! function_exists('logUserAction')) {
 
 function barcodeScan()
 {
-    return 'SC-' . now()->format('YmdHis');
+    return 'SC/' . now()->format('m/Y');
 }
+
+
 
 
 function newBarcodeScan()

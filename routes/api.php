@@ -422,12 +422,12 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
 
    //product input
    Route::resource('product_inputs', ProductInputController::class);
-   
+
    //filter product input
    Route::get('filter-product-input', [FilterProductInputController::class, 'index']);
    Route::post('filter-product-input/{id}/add', [FilterProductInputController::class, 'store']);
    Route::delete('filter-product-input/destroy/{id}', [FilterProductInputController::class, 'destroy']);
-   Route::post('move_to_stagings', [ProductInputController::class, 'move_to_stagings']);
+   Route::post('move_products', [ProductInputController::class, 'move_products']);
 
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
