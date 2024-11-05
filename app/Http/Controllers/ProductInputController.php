@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\ProductScan;
 use App\Models\StagingProduct;
+use App\Models\New_product;
 use Illuminate\Support\Facades\Validator;
 
 class ProductInputController extends Controller
@@ -57,7 +58,7 @@ class ProductInputController extends Controller
             'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tag2s,name_color',
+            'new_tag_product' => 'nullable',
             'image' => 'nullable|mimes:jpg,jpeg,png,webp,gif,svg,bmp,tiff|max:1024',
         ],  [
             'new_barcode_product.unique' => 'barcode sudah ada'
@@ -109,6 +110,7 @@ class ProductInputController extends Controller
 
             $inputData['new_status_product'] = 'display';
             $inputData['user_id'] = $userId;
+            $inputData['code_document'] = barcodeScan();
 
             $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
             $inputData['new_quality'] = json_encode($qualityData);
@@ -260,57 +262,95 @@ class ProductInputController extends Controller
         return new ResponseResource(true, "data berhasil di hapus", $productInput);
     }
 
-    public function move_to_stagings(Request $request)
+    public function move_products(Request $request)
     {
         DB::beginTransaction();
         $userId = auth()->id();
+    
         try {
             $product_filters = FilterProductInput::where('user_id', $userId)->get();
+    
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
+    
+            $stagings = [];
+            $productColor = [];
+            $categorywrong = [];
+            $tagcolorwrong = [];
+    
+            $product_filters->each(function ($product) use (&$stagings, &$productColor, &$categorywrong, &$tagcolorwrong) {
+                if ($product->old_price_product >= 120000) {
+                    if (is_null($product->new_category_product)) {
+                        $categorywrong[] = $product->new_barcode_product;
+                    }elseif($product->new_tag_product !== null){
+                        $categorywrong = $product->new_barcode_product;
 
-            $insertData = $product_filters->map(function ($product) use ($userId) {
-                return [
-                    'code_document' => $product->code_document,
-                    'old_barcode_product' => $product->old_barcode_product,
-                    'new_barcode_product' => $product->new_barcode_product,
-                    'new_name_product' => $product->new_name_product,
-                    'new_quantity_product' => $product->new_quantity_product,
-                    'new_price_product' => $product->new_price_product,
-                    'old_price_product' => $product->old_price_product,
-                    'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' =>  $product->new_status_product,
-                    'new_quality' => $product->new_quality,
-                    'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product,
-                    'new_discount' => $product->new_discount,
-                    'display_price' => $product->display_price,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            })->toArray();
-
-            Notification::create([
-                'user_id' => $userId,
-                'notification_name' => 'butuh approvemend untuk product input',
-                'role' => 'Spv',
-                'read_at' => Carbon::now('Asia/Jakarta'),
-                'riwayat_check_id' => null,
-                'repair_id' => null,
-                'status' => 'done'
-            ]);
-
+                    }   else {
+                        $stagings[] = [
+                            'code_document' => $product->code_document,
+                            'old_barcode_product' => $product->old_barcode_product,
+                            'new_barcode_product' => $product->new_barcode_product,
+                            'new_name_product' => $product->new_name_product,
+                            'new_quantity_product' => $product->new_quantity_product,
+                            'new_price_product' => $product->new_price_product,
+                            'old_price_product' => $product->old_price_product,
+                            'new_date_in_product' => $product->new_date_in_product,
+                            'new_status_product' => $product->new_status_product,
+                            'new_quality' => $product->new_quality,
+                            'new_category_product' => $product->new_category_product,
+                            'new_tag_product' => $product->new_tag_product,
+                            'new_discount' => $product->new_discount,
+                            'display_price' => $product->display_price,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                } elseif ($product->old_price_product <= 119000) {
+                    if (is_null($product->new_tag_product) || !is_null($product->new_category_product)) {
+                        $tagcolorwrong[] = $product;
+                    } else {
+                        $productColor[] = [
+                            'code_document' => $product->code_document,
+                            'old_barcode_product' => $product->old_barcode_product,
+                            'new_barcode_product' => $product->new_barcode_product,
+                            'new_name_product' => $product->new_name_product,
+                            'new_quantity_product' => $product->new_quantity_product,
+                            'new_price_product' => $product->new_price_product,
+                            'old_price_product' => $product->old_price_product,
+                            'new_date_in_product' => $product->new_date_in_product,
+                            'new_status_product' => $product->new_status_product,
+                            'new_quality' => $product->new_quality,
+                            'new_category_product' => $product->new_category_product,
+                            'new_tag_product' => $product->new_tag_product,
+                            'new_discount' => $product->new_discount,
+                            'display_price' => $product->display_price,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+            });
+    
+            if (!empty($categorywrong)) {
+                return new ResponseResource(false, "Data kategori tidak sesuai", $categorywrong);
+            }
+            if (!empty($tagcolorwrong)) {
+                return new ResponseResource(false, "Data tag color tidak sesuai", $tagcolorwrong);
+            }
+    
             FilterProductInput::where('user_id', $userId)->delete();
-            StagingProduct::insert($insertData);
-
+            StagingProduct::insert($stagings);
+            New_product::insert($productColor);
+    
             logUserAction($request, $request->user(), "product input", "product input");
-
+    
             DB::commit();
-            return new ResponseResource(true, "product input approve berhasil dibuat", null);
+            return new ResponseResource(true, "Product input approve berhasil dibuat", null);
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke approve', 'error' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memindahkan produk ke approve', 'error' => $e->getMessage()], 500);
         }
     }
+    
 }

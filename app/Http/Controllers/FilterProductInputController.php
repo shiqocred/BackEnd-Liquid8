@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ResponseResource;
+use App\Models\FilterProductInput;
 use App\Models\ProductInput;
 use Illuminate\Http\Request;
-use App\Models\FilterProductInput;
 use Illuminate\Support\Facades\DB;
-use App\Http\Resources\ResponseResource;
 
 class FilterProductInputController extends Controller
 {
@@ -16,18 +16,22 @@ class FilterProductInputController extends Controller
     public function index(Request $request)
     {
         $searchQuery = $request->input('q');
-        $newProducts = FilterProductInput::latest()
-            ->where(function ($queryBuilder) use ($searchQuery) {
+
+        $newProducts = FilterProductInput::latest();
+
+        if ($searchQuery) {
+            $newProducts->where(function ($queryBuilder) use ($searchQuery) {
                 $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_category_product', 'LIKE', '%' . $searchQuery . '%')
                     ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
-            })
-            ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
-            ->whereNull('new_tag_product')
-            ->paginate(30);
+            });
+        }
 
-        return new ResponseResource(true, "list new product", $newProducts);
+        $paginatedProducts = $newProducts->paginate(30);
+
+        // Mengembalikan respons dengan data yang telah dipaginasi
+        return new ResponseResource(true, "list new product", $paginatedProducts);
     }
 
     /**
@@ -52,13 +56,12 @@ class FilterProductInputController extends Controller
             $productFilter = FilterProductInput::create($product->toArray());
             $product->delete();
             DB::commit();
-            return new ResponseResource(true, "berhasil menambah list product bkl", $productFilter);
+            return new ResponseResource(true, "berhasil menambah list product", $productFilter);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-
 
     /**
      * Display the specified resource.
