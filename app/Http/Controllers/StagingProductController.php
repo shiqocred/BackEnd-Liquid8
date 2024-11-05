@@ -599,7 +599,7 @@ class StagingProductController extends Controller
 
     public function export()
     {
-        set_time_limit(600);
+        set_time_limit(600); 
         ini_set('memory_limit', '1024M');
 
         try {
