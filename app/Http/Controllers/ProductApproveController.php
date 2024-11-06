@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
-use Illuminate\Support\Facades\Redis; // Tambahkan ini
-use App\Http\Resources\ResponseResource;
+use App\Http\Resources\ResponseResource; // Tambahkan ini
+use App\Jobs\ProcessProductData;
 use App\Models\Document;
 use App\Models\FilterStaging;
 use App\Models\New_product;
@@ -18,8 +18,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-use App\Jobs\ProcessProductData;
 
 class ProductApproveController extends Controller
 {
@@ -134,6 +134,7 @@ class ProductApproveController extends Controller
         DB::beginTransaction();
         try {
 
+            $batchSize = 7;
             $document = Document::where('code_document', $request->input('code_document'))->first();
             $maxRetry = 5;
             for ($i = 0; $i < $maxRetry; $i++) {
@@ -173,11 +174,17 @@ class ProductApproveController extends Controller
                 $modelClass = New_product::class;
                 $riwayatCheck->total_data_abnormal += 1;
             }
-            if (isset($modelClass)) {
-                $redisKey = 'product:' . $generate;
-                Redis::set($redisKey, json_encode($inputData));
 
-                ProcessProductData::dispatch($generate, $modelClass);
+            if (isset($modelClass)) {
+                $redisKey = 'product_batch';
+                Redis::rpush($redisKey, json_encode($inputData));
+                
+                if (Redis::llen($redisKey) >= $batchSize) {
+                    \Log::info('Dispatching job for batch processing');
+                    ProcessProductData::dispatch($batchSize, $modelClass);
+                }
+
+
             }
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 
@@ -585,4 +592,17 @@ class ProductApproveController extends Controller
             return new ResponseResource(false, "transaksi salah: ", $e->getMessage());
         }
     }
+    // public function processRemainingBatch()
+    // {
+    //     $batchSize = 5;
+    //     $redisKey = 'product_batch';
+
+    //     $currentBatchCount = Redis::llen($redisKey);
+
+    //     if ($currentBatchCount > 0 && $currentBatchCount < $batchSize) {
+    //         \Log::info("Processing remaining batch data with size: $currentBatchCount");
+
+    //         ProcessProductData::dispatch($currentBatchCount, \App\Models\ProductApprove::class);
+    //     }
+    // }
 }

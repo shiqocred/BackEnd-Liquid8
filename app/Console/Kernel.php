@@ -18,6 +18,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('end-of-month:task')->when(function () {
             return now()->isLastOfMonth();
         })->dailyAt('23:59');
+
+        $schedule->command('batch:processRemaining')->everyMinute();
+
     }
 
     /**

@@ -477,3 +477,7 @@ Route::get('export-category-color-null', [NewProductController::class, 'exportCa
 //api urgent-> persamaan data check history
 
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
+
+//test function untuk cronjob cok
+// Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
+
