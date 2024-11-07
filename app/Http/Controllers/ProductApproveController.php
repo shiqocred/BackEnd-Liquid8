@@ -177,10 +177,14 @@ class ProductApproveController extends Controller
 
             if (isset($modelClass)) {
                 $redisKey = 'product_batch';
+                \Log::info($modelClass);
+
                 Redis::rpush($redisKey, json_encode($inputData));
+                \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => Redis::llen($redisKey)]);
+
                 
                 if (Redis::llen($redisKey) >= $batchSize) {
-                    \Log::info('Dispatching job for batch processing');
+                    \Log::info('Dispatching job for batch processing', ['batch_size' => $batchSize]);
                     ProcessProductData::dispatch($batchSize, $modelClass);
                 }
 
