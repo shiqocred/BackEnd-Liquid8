@@ -22,7 +22,7 @@ class ProcessRemainingBatch extends Command
         $currentBatchCount = Redis::llen($redisKey);
 
         if ($currentBatchCount > 0 && $currentBatchCount < $batchSize) {
-            // \Log::info("Processing remaining batch data with size: $currentBatchCount");
+            \Log::info("Processing remaining batch data with size: $currentBatchCount");
 
             ProcessProductData::dispatch($currentBatchCount, ProductApprove::class);
         }
