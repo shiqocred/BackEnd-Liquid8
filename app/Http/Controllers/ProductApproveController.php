@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ProductapproveResource;
 use App\Http\Resources\ResponseResource; // Tambahkan ini
 use App\Jobs\ProcessProductData;
+use App\Jobs\ProductBatch;
 use App\Models\Document;
 use App\Models\FilterStaging;
 use App\Models\New_product;
@@ -182,12 +183,10 @@ class ProductApproveController extends Controller
                 Redis::rpush($redisKey, json_encode($inputData));
                 \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => Redis::llen($redisKey)]);
 
-                
                 if (Redis::llen($redisKey) >= $batchSize) {
                     \Log::info('Dispatching job for batch processing', ['batch_size' => $batchSize]);
                     ProcessProductData::dispatch($batchSize, $modelClass);
                 }
-
 
             }
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
@@ -609,4 +608,68 @@ class ProductApproveController extends Controller
     //         ProcessProductData::dispatch($currentBatchCount, \App\Models\ProductApprove::class);
     //     }
     // }
+
+    public function jobBatch(Request $request)
+    {
+        $userId = auth()->id();
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'required',
+            'old_barcode_product' => 'required',
+            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|integer',
+            'new_price_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
+            // 'new_date_in_product' => 'required|date',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+            'condition' => 'required|in:lolos,damaged,abnormal',
+            'new_category_product' => 'nullable|exists:categories,name_category',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+
+        ], [
+            'new_barcode_product.unique' => 'barcode sudah ada',
+            'old_barcode_product.exists' => 'barcode tidak ada',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $status = $request->input('condition');
+        $description = $request->input('deskripsi', '');
+
+        $qualityData = $this->prepareQualityData($status, $description);
+
+        $inputData = $this->prepareInputData($request, $status, $qualityData);
+
+        $oldBarcode = $request->input('old_barcode_product');
+        $newBarcode = $request->input('new_barcode_product');
+
+        DB::beginTransaction();
+        try {
+
+            $redisKey = 'product_batch';
+            $batchSize = 7;
+
+            // Tambahkan data ke Redis list
+            Redis::rpush($redisKey, json_encode($inputData));
+
+            // Cek panjang list Redis
+            $listSize = Redis::llen($redisKey);
+            \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => $listSize]);
+
+            // Jika panjang list mencapai atau lebih dari batchSize, dispatch job
+            if ($listSize >= $batchSize) {
+                ProductBatch::dispatch($batchSize);
+                \Log::info('Dispatching job for batch processing', ['batch_size' => $batchSize]);
+            }
+
+            DB::commit();
+
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

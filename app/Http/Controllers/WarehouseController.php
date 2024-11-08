@@ -28,7 +28,7 @@ class WarehouseController extends Controller
                     ->orWhere('kecamatan', 'LIKE', '%' . $query . '%');
             }
 
-            $warehouses = $warehouses->get();
+            $warehouses = $warehouses->paginate(33);
 
             return new ResponseResource(true, "List of warehouses", $warehouses);
         } catch (\Exception $e) {

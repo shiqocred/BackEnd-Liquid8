@@ -483,3 +483,6 @@ Route::resource('warehouses', WarehouseController::class);
 //test function untuk cronjob cok
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
+Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);
+
+
