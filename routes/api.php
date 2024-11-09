@@ -57,6 +57,8 @@ use App\Http\Controllers\FilterProductInputController;
 use App\Http\Controllers\MigrateBulkyController;
 use App\Http\Controllers\MigrateBulkyProductController;
 use App\Http\Controllers\SpecialTransactionController;
+use App\Http\Controllers\WarehouseController;
+
 
 Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
@@ -485,3 +487,10 @@ Route::get('export-category-color-null', [NewProductController::class, 'exportCa
 //api urgent-> persamaan data check history
 
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
+Route::resource('warehouses', WarehouseController::class);
+//test function untuk cronjob cok
+// Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
+
+Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);
+
+

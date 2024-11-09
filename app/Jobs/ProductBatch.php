@@ -8,39 +8,37 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Log;
 
-class ProcessProductData implements ShouldQueue
+class ProductBatch implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $batchSize;
-    protected $modelClass;
 
-    public function __construct($batchSize, $modelClass)
+    public function __construct($batchSize)
     {
         $this->batchSize = $batchSize;
-        $this->modelClass = $modelClass;
     }
 
     public function handle()
     {
         $redisKey = 'product_batch';
 
-        
         // Ambil batch data dari Redis
         $batchData = Redis::lrange($redisKey, 0, $this->batchSize - 1);
 
-        
-        foreach ($batchData as $data) {
-            $inputData = json_decode($data, true);
-            
+        // Jika ada data untuk diproses
+        if ($batchData) {
+            foreach ($batchData as $data) {
+                $inputData = json_decode($data, true);
 
-            $model = new $this->modelClass;
-            $model->create($inputData);
+                // Proses data - sebagai contoh, menyimpan data ke database
+                $model = new \App\Models\ProductApprove;
+                $model->create($inputData);
+            }
 
+            // Hapus data yang telah diproses dari Redis list
+            Redis::ltrim($redisKey, $this->batchSize, -1);
         }
-
-        Redis::ltrim($redisKey, $this->batchSize, -1);
     }
 }

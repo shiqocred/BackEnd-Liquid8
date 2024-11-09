@@ -17,7 +17,7 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
     {
         $this->model = $model;
     } 
-
+ 
     public function query()
     {
         return $this->model::query()
