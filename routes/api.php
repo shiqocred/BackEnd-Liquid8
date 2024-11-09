@@ -54,6 +54,8 @@ use App\Http\Controllers\CheckConnectionController;
 use App\Http\Controllers\MigrateDocumentController;
 use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\FilterProductInputController;
+use App\Http\Controllers\MigrateBulkyController;
+use App\Http\Controllers\MigrateBulkyProductController;
 use App\Http\Controllers\SpecialTransactionController;
 
 Route::fallback(function () {
@@ -296,6 +298,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
    Route::get('displayMigrate', [MigrateController::class, 'displayMigrate']);
    Route::post('migrate-finish', [MigrateDocumentController::class, 'MigrateDocumentFinish']);
    Route::resource('migrate-documents', MigrateDocumentController::class)->except(['destroy']);
+
+   Route::get('migrate-bulky', [MigrateBulkyController::class, 'index']);
+   Route::get('migrate-bulky/{migrate_bulky}', [MigrateBulkyController::class, 'show']);
+   Route::post('migrate-bulky-finish', [MigrateBulkyController::class, 'finishMigrateBulky']);
+   Route::get('migrate-bulky-product/{new_product}/add', [MigrateBulkyProductController::class, 'store']);
+   Route::delete('migrate-bulky-product/{migrate_bulky_product}/delete', [MigrateBulkyProductController::class, 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leader'])->group(function () {
@@ -364,7 +372,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
-   Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']); 
+   Route::delete('destinations/{destination}', [DestinationController::class, 'destroy']);
    Route::delete('bundle/qcd/{bundleQcd}/destroy', [BundleQcdController::class, 'destroyBundle']);
    Route::delete('new_products/{new_product}', [NewProductController::class, 'destroy']);
    Route::delete('delete-all-products-old', [ProductOldController::class, 'deleteAll']);
