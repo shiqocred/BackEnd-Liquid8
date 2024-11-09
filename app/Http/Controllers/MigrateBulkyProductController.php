@@ -32,17 +32,18 @@ class MigrateBulkyProductController extends Controller
 
         $newProduct = New_product::find($new_product->id);
         if (!$newProduct) {
-            return response()->json(['errors' => ['new_product_id' => ['Product tidak di temukan!']]], 422);
+            return response()->json(['errors' => ['new_product_id' => ['Produk tidak di temukan!']]], 422);
         }
 
         $migrateBulkyProduct = MigrateBulkyProduct::where('new_barcode_product', $new_product->new_barcode_product)->first();
         if ($migrateBulkyProduct) {
-            return response()->json(['errors' => ['new_product_id' => ['Product ini sudah di tambahkan!']]], 422);
+            return response()->json(['errors' => ['new_product_id' => ['Produk ini sudah di tambahkan!']]], 422);
         }
 
         if (!$migrateBulky) {
             // logic formater
-            $lastCode = MigrateBulky::max(DB::raw("CAST(SUBSTRING_INDEX(code_document, '/', 1) AS UNSIGNED)"));
+            $lastCode = MigrateBulky::whereDate('created_at', today())
+                ->max(DB::raw("CAST(SUBSTRING_INDEX(code_document, '/', 1) AS UNSIGNED)"));
             $newCode = str_pad(($lastCode + 1), 4, '0', STR_PAD_LEFT);
             $codeDocument = sprintf('%s/%s/%s', $newCode, date('m'), date('d'));
             // logic create
