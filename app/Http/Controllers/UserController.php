@@ -219,7 +219,12 @@ class UserController extends Controller
     {
         $user = User::find($id);
         $formatBarcode = $user->format_barcode;
-        return new ResponseResource(true, "format barcode", ['user_id' => $id, 'format_barcode' => $formatBarcode]);
+        return new ResponseResource(true, "format barcode", [
+            'user_id' => $id, 
+            'format_barcode' => $formatBarcode,
+            'name' => $user->name,
+            'username' => $user->username
+        ]);
     }
 
     public function allFormatBarcode(Request $request)
