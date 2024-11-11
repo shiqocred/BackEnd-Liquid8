@@ -277,9 +277,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
     //colortags diskon
     Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
     Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
-    Route::post('add-format-barcode', [UserController::class, 'addFormatBarcode']);
-    Route::delete('delete-format-barcode/{id}', [UserController::class, 'deleteFormatBarcode']);
-    Route::get('show-format-barcode/{id}', [UserController::class, 'showFormatBarcode']);
+    Route::post('panel-spv', [UserController::class, 'addFormatBarcode']);
+    Route::delete('panel-spv/{id}', [UserController::class, 'deleteFormatBarcode']);
+    Route::get('panel-spv/{id}', [UserController::class, 'showFormatBarcode']);
+    Route::get('panel-spv', [UserController::class, 'allFormatBarcode']);
+
 
 });
 
