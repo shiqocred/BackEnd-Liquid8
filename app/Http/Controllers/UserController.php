@@ -215,10 +215,27 @@ class UserController extends Controller
         return new ResponseResource(true, "Berhasil menambahkan format barcode", []);
     }
 
-    public function showFormatBarcode($id){
+    public function showFormatBarcode($id)
+    {
         $user = User::find($id);
         $formatBarcode = $user->format_barcode;
         return new ResponseResource(true, "format barcode", ['user_id' => $id, 'format_barcode' => $formatBarcode]);
+    }
+
+    public function allFormatBarcode(Request $request)
+    {
+        $query = $request->input('q');
+        $users = User::whereNotNull('format_barcode')
+            ->select('id', 'username', 'format_barcode');
+
+        if ($query) {
+            $users->where('username', 'LIKE', '%' . $query . '%')
+                ->orWhere('format_barcode', 'LIKE', '%' . $query . '%');
+        }
+
+        $results = $users->paginate(33);
+
+        return new ResponseResource(true, "list user berformat barcode", $results);
     }
 
 }
