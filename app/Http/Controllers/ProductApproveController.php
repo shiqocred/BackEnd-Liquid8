@@ -295,7 +295,7 @@ class ProductApproveController extends Controller
         $affectedRows = DB::table('product_olds')
             ->where('code_document', $code_document)
             ->where('old_barcode_product', $old_barcode_product)
-            ->limit(1) // Membatasi penghapusan hanya pada satu baris
+            ->limit(1) 
             ->delete();
     
         if ($affectedRows > 0) {
