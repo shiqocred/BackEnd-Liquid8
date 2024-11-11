@@ -232,7 +232,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
     Route::get('/export-dumps-excel/{id}', [NewProductController::class, 'exportDumpToExcel']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
     //filters product bundle
     Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
     Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
