@@ -304,6 +304,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
    Route::get('migrate-bulky', [MigrateBulkyController::class, 'index']);
    Route::get('migrate-bulky/{migrate_bulky}', [MigrateBulkyController::class, 'show']);
    Route::post('migrate-bulky-finish', [MigrateBulkyController::class, 'finishMigrateBulky']);
+   Route::get('migrate-bulky-product', [MigrateBulkyProductController::class, 'index']);
    Route::get('migrate-bulky-product/{new_product}/add', [MigrateBulkyProductController::class, 'store']);
    Route::delete('migrate-bulky-product/{migrate_bulky_product}/delete', [MigrateBulkyProductController::class, 'destroy']);
 });
@@ -492,5 +493,3 @@ Route::resource('warehouses', WarehouseController::class);
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
 Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);
-
-
