@@ -38,7 +38,8 @@ class UserFactory extends Factory
             'firdy',
             'freddy',
             'safrudin',
-            'hayyi'
+            'hayyi',
+            'developer'
         ];
 
         $username = [
@@ -47,7 +48,8 @@ class UserFactory extends Factory
             'firdy1',
             'freddy1', 
             'safrudin1',
-            'hayyi1'
+            'hayyi1',
+            'developer'
         ];
         
         $email = [
@@ -56,9 +58,10 @@ class UserFactory extends Factory
             'isagagah3@gmail.com',
             'freddy@gmail.com',
             'gebus@gmail.com',
-            'cok@gmail.com'
+            'cok@gmail.com',
+            'developer@gmail.com'
         ];
-        $role_id = [1, 2, 3, 4, 5, 6];
+        $role_id = [1, 2, 3, 4, 5, 6,7];
 
         return $this->state(function (array $attributes) use ($name, $username, $email, $role_id, $index){
             return [

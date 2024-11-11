@@ -48,12 +48,12 @@ class DatabaseSeeder extends Seeder
 
 
         $users = Role::factory();
-        foreach (range(0, 5) as $index) {
+        foreach (range(0, 6) as $index) {
             $users->role($index)->create();
         };
 
         $users = User::factory();
-        foreach (range(0, 5) as $index) {
+        foreach (range(0, 6) as $index) {
             $users->account($index)->create();
         };
     }

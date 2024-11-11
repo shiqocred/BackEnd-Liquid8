@@ -28,7 +28,8 @@ class RoleFactory extends Factory
             'Team leader',
             'Crew',
             'Admin Kasir',
-            'Reparasi' 
+            'Reparasi',
+            'Developer'
         ];
 
         return $this->state(function (array $attributes) use ($roles, $index){
