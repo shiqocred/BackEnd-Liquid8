@@ -69,7 +69,7 @@ class DashboardController extends Controller
                 "product_sales" => $totalNewProductSaleByCategory,
                 "inbound_data" => $document,
                 "expired_data" => $totalNewProductExpiredByCategory,
-                "product_data" => $totalNewProductByCategory
+                "product_data" => $totalNewProductByCategory,
             ]
         );
         return $resource->response();
@@ -259,7 +259,7 @@ class DashboardController extends Controller
                     ],
                 ],
                 'final_total' => $summaryTransactionTotal,
-                'charts' => $summaryTransaction
+                'charts' => $summaryTransaction,
             ]
         );
 
@@ -355,7 +355,7 @@ class DashboardController extends Controller
                     ],
                 ],
                 'anual_sales' => $anualSales,
-                'chart' => $summarySales
+                'chart' => $summarySales,
             ]
         );
 
@@ -375,10 +375,12 @@ class DashboardController extends Controller
                 SUM(new_price_product) as total_price_category
             ')
             ->whereNotNull('new_category_product')
-            ->where('new_tag_product', NULL)
+            ->where('new_tag_product', null)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->where('new_status_product', 'display')
-            ->where('new_status_product', 'expired')
+            ->where(function ($query) {
+                $query->where('new_status_product', 'display')
+                    ->orWhere('new_status_product', 'expired');
+            })
             ->groupBy('category_product');
 
         $categoryBundle = Bundle::selectRaw('
@@ -387,13 +389,12 @@ class DashboardController extends Controller
                 SUM(total_price_custom_bundle) as total_price_category
             ')
             ->whereNotNull('category')
-            ->where('name_color', NULL)
+            ->where('name_color', null)
             ->whereNotIn('product_status', ['bundle'])
             ->groupBy('category_product');
 
         // merge / gabung kedua hasil query diatas
         $categoryCount = $categoryNewProduct->union($categoryBundle)->get();
-
 
         $tagProductCount = New_product::selectRaw('
                 new_tag_product as tag_product,
@@ -401,10 +402,9 @@ class DashboardController extends Controller
                 SUM(new_price_product) as total_price_tag_product
             ')
             ->whereNotNull('new_tag_product')
-            ->where('new_category_product', NULL)
+            ->where('new_category_product', null)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
             ->where('new_status_product', 'display')
-            ->where('new_status_product', 'expired')
             ->groupBy('new_tag_product')
             ->get();
 
@@ -447,11 +447,11 @@ class DashboardController extends Controller
         $toInput = $request->input('to');
 
         $fromDate = $fromInput
-            ? Carbon::parse($fromInput)->startOfDay()
-            : Carbon::now()->startOfMonth()->startOfDay();
+        ? Carbon::parse($fromInput)->startOfDay()
+        : Carbon::now()->startOfMonth()->startOfDay();
         $toDate = $toInput
-            ? Carbon::parse($toInput)->endOfDay()
-            : Carbon::now()->endOfMonth()->endOfDay();
+        ? Carbon::parse($toInput)->endOfDay()
+        : Carbon::now()->endOfMonth()->endOfDay();
 
         //tanggal sekarang
         $currentDate = Carbon::now();
@@ -513,7 +513,7 @@ class DashboardController extends Controller
                     ],
                 ],
                 'chart' => $generalSale,
-                'list_document_sale' => $listDocumentSale
+                'list_document_sale' => $listDocumentSale,
             ]
         );
 
@@ -535,11 +535,11 @@ class DashboardController extends Controller
         $toInput = $request->input('to');
 
         $fromDate = $fromInput
-            ? Carbon::parse($fromInput)->startOfDay()
-            : Carbon::now()->startOfMonth()->startOfDay();
+        ? Carbon::parse($fromInput)->startOfDay()
+        : Carbon::now()->startOfMonth()->startOfDay();
         $toDate = $toInput
-            ? Carbon::parse($toInput)->endOfDay()
-            : Carbon::now()->endOfMonth()->endOfDay();
+        ? Carbon::parse($toInput)->endOfDay()
+        : Carbon::now()->endOfMonth()->endOfDay();
 
         //tanggal sekarang
         $currentDate = Carbon::now();
@@ -765,9 +765,9 @@ class DashboardController extends Controller
                 ->where('new_status_product', 'expired');
 
             $queryListProductExpired = New_product::selectRaw("
-                    new_barcode_product, 
-                    new_name_product, 
-                    new_price_product, 
+                    new_barcode_product,
+                    new_name_product,
+                    new_price_product,
                     new_quantity_product,
                     FLOOR(DATEDIFF(NOW(), created_at) / 7) - 4 as weeks_expired,
                     DATEDIFF(NOW(), created_at) % 7 as days_expired
@@ -792,7 +792,7 @@ class DashboardController extends Controller
             return new ResponseResource(true, "Data of expired products", [
                 'total_expired_product' => $totalExpiredProduct,
                 'expired_product_categories' => $expiredProductCategories,
-                'list_expired_product' => $listExpiredProduct
+                'list_expired_product' => $listExpiredProduct,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'An error occurred: ' . $e->getMessage()], 500);
@@ -809,9 +809,9 @@ class DashboardController extends Controller
 
         // Query untuk mendapatkan produk yang sudah expired
         $queryListProductExpired = New_product::selectRaw("
-            new_barcode_product AS barcode_product, 
-            new_name_product AS name_product, 
-            new_price_product AS price_product, 
+            new_barcode_product AS barcode_product,
+            new_name_product AS name_product,
+            new_price_product AS price_product,
             new_quantity_product AS qty_product,
             FLOOR(DATEDIFF(NOW(), created_at) / 7) - $expirationThreshold AS weeks_expired,
             DATEDIFF(NOW(), created_at) % 7 AS days_expired
