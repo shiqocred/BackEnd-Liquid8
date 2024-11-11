@@ -241,6 +241,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
     //bundle
     Route::get('bundle', [BundleController::class, 'index']);
     Route::get('bundle/{bundle}', [BundleController::class, 'show']);
+    Route::put('bundle/{bundle}', [BundleController::class, 'update']);
     Route::post('bundle', [ProductBundleController::class, 'store']);
     Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
     Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
@@ -281,7 +282,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
     Route::delete('panel-spv/{id}', [UserController::class, 'deleteFormatBarcode']);
     Route::get('panel-spv/{id}', [UserController::class, 'showFormatBarcode']);
     Route::get('panel-spv', [UserController::class, 'allFormatBarcode']);
-
 
 });
 
