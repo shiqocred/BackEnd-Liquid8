@@ -178,33 +178,44 @@ class UserController extends Controller
                 'format_barcode' => 'required|string',
                 'user_id' => 'required|integer|exists:users,id',
             ]);
-    
+
             if ($validator->fails()) {
                 return response()->json(["errors" => $validator->errors()], 422);
             }
-    
+
             $formatBarcode = $request->input('format_barcode');
             $user_id = $request->input('user_id');
-    
+
             $user = User::find($user_id);
-            
+
             if (!$user) {
                 return response()->json(['message' => 'User not found'], 404);
             }
-    
+
             $user->update([
                 'format_barcode' => $formatBarcode,
             ]);
-    
-            return response()->json([
-                'success' => true,
-                'message' => 'Berhasil menambahkan format barcode',
-                'data' => $user->format_barcode,
-            ], 200);
-    
+
+            return new ResponseResource(true, "Berhasil menambahkan format barcode", $user->format_barcode);
+
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
-    
+
+    public function deleteFormatBarcode($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->update([
+            'format_barcode' => null,
+        ]);
+
+        return new ResponseResource(true, "Berhasil menambahkan format barcode", []);
+
+    }
+
 }
