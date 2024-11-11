@@ -19,7 +19,9 @@ class MigrateBulkyProductController extends Controller
      */
     public function index()
     {
-        //
+        $user = Auth::user();
+        $migrateBulky = MigrateBulky::where('user_id', $user->id)->where('status_bulky', 'proses')->first();
+        return new ResponseResource(true, "List data persiapan produk migrate!", $migrateBulky->load('migrateBulkyProducts'));
     }
 
     /**
