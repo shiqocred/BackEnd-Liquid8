@@ -32,7 +32,6 @@ class ProductBatch implements ShouldQueue
             foreach ($batchData as $data) {
                 $inputData = json_decode($data, true);
 
-                // Proses data - sebagai contoh, menyimpan data ke database
                 $model = new \App\Models\ProductApprove;
                 $model->create($inputData);
             }

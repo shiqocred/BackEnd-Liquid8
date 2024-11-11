@@ -436,6 +436,10 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::get('product_scan_search ', [ProductScanController::class, 'product_scan_search']);
    // Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
+
+   //warehouse
+   Route::resource('warehouses', WarehouseController::class);
+
 });
 
 //all- check user login > request fe
@@ -477,12 +481,10 @@ Route::get('exportSale', [SaleController::class, 'exportSale']);
 Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
 
 //api urgent-> persamaan data check history
-
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
-Route::resource('warehouses', WarehouseController::class);
 //test function untuk cronjob cok
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
-Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);
+// Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);
 
 
