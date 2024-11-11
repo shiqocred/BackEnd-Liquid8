@@ -279,6 +279,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
     Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
     Route::post('add-format-barcode', [UserController::class, 'addFormatBarcode']);
     Route::delete('delete-format-barcode/{id}', [UserController::class, 'deleteFormatBarcode']);
+    Route::get('show-format-barcode/{id}', [UserController::class, 'showFormatBarcode']);
+
 });
 
 //end inventory=========================================== Inventory ==========================================================

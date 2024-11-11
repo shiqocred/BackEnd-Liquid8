@@ -209,13 +209,16 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['message' => 'User not found'], 404);
         }
-
         $user->update([
             'format_barcode' => null,
         ]);
-
         return new ResponseResource(true, "Berhasil menambahkan format barcode", []);
+    }
 
+    public function showFormatBarcode($id){
+        $user = User::find($id);
+        $formatBarcode = $user->format_barcode;
+        return new ResponseResource(true, "format barcode", ['user_id' => $id, 'format_barcode' => $formatBarcode]);
     }
 
 }
