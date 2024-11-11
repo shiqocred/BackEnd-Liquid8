@@ -1,64 +1,57 @@
 <?php
 
-use App\Models\New_product;
-use Illuminate\Http\Request;
-use App\Models\StagingApprove;
-use App\Http\Middleware\CheckApiKey;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\BklController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\SaleController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\BuyerController;
-use App\Http\Controllers\PaletController;
-use App\Http\Controllers\PromoController;
+use App\Http\Controllers\BklController;
 use App\Http\Controllers\BundleController;
-use App\Http\Controllers\RepairController;
-use App\Http\Controllers\MigrateController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ColorTagController;
-use App\Http\Controllers\DocumentController;
-use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\BundleQcdController;
-use App\Http\Controllers\ColorTag2Controller;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\FilterBklController;
-use App\Http\Controllers\FilterQcdController;
-use App\Http\Controllers\NewProductController;
-use App\Http\Controllers\PaletBrandController;
-use App\Http\Controllers\PaletImageController;
-use App\Http\Controllers\ProductOldController;
-use App\Http\Controllers\ProductQcdController;
-use App\Http\Controllers\DestinationController;
-use App\Http\Controllers\PaletFilterController;
-use App\Http\Controllers\ProductScanController;
-use App\Http\Controllers\VehicleTypeController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\PaletProductController;
-use App\Http\Controllers\ProductBrandController;
-use App\Http\Controllers\ProductInputController;
-use App\Http\Controllers\RepairFilterController;
-use App\Http\Controllers\RiwayatCheckController;
-use App\Http\Controllers\SaleDocumentController;
-use App\Http\Controllers\FilterStagingController;
-use App\Http\Controllers\ProductBundleController;
-use App\Http\Controllers\ProductFilterController;
-use App\Http\Controllers\ProductStatusController;
-use App\Http\Controllers\RepairProductController;
-use App\Http\Controllers\ArchiveStorageController;
-use App\Http\Controllers\ProductApproveController;
-use App\Http\Controllers\StagingApproveController;
-use App\Http\Controllers\StagingProductController;
+use App\Http\Controllers\BuyerController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CheckConnectionController;
-use App\Http\Controllers\MigrateDocumentController;
-use App\Http\Controllers\ProductConditionController;
+use App\Http\Controllers\ColorTag2Controller;
+use App\Http\Controllers\ColorTagController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DestinationController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\FilterBklController;
 use App\Http\Controllers\FilterProductInputController;
+use App\Http\Controllers\FilterQcdController;
+use App\Http\Controllers\FilterStagingController;
+use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\MigrateBulkyController;
 use App\Http\Controllers\MigrateBulkyProductController;
-use App\Http\Controllers\SpecialTransactionController;
+use App\Http\Controllers\MigrateController;
+use App\Http\Controllers\MigrateDocumentController;
+use App\Http\Controllers\NewProductController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaletBrandController;
+use App\Http\Controllers\PaletController;
+use App\Http\Controllers\PaletFilterController;
+use App\Http\Controllers\PaletImageController;
+use App\Http\Controllers\PaletProductController;
+use App\Http\Controllers\ProductApproveController;
+use App\Http\Controllers\ProductBrandController;
+use App\Http\Controllers\ProductBundleController;
+use App\Http\Controllers\ProductConditionController;
+use App\Http\Controllers\ProductFilterController;
+use App\Http\Controllers\ProductInputController;
+use App\Http\Controllers\ProductOldController;
+use App\Http\Controllers\ProductQcdController;
+use App\Http\Controllers\ProductScanController;
+use App\Http\Controllers\ProductStatusController;
+use App\Http\Controllers\PromoController;
+use App\Http\Controllers\RepairController;
+use App\Http\Controllers\RepairFilterController;
+use App\Http\Controllers\RepairProductController;
+use App\Http\Controllers\RiwayatCheckController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SaleDocumentController;
+use App\Http\Controllers\StagingApproveController;
+use App\Http\Controllers\StagingProductController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\WarehouseController;
-
+use Illuminate\Support\Facades\Route;
 
 Route::fallback(function () {
    return response()->json(['status' => false, 'message' => 'Not Found!'], 404);
@@ -85,12 +78,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 
 // end dashboard =========================================== Dashboard ==================================================
 
-
 //=========================================== inbound ==========================================================
 
-//inbound process, check history, check product, Manual inbound : Admin,Spv,Team leader
+//inbound process, check history, check product, Manual inbound : Admin,Spv,Team leader, kasir leader
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader'])->group(function () {
-   //generates file excel -> input data ekspedisi 
+   //generates file excel -> input data ekspedisi
    Route::post('/generate', [GenerateController::class, 'processExcelFiles']);
    Route::post('/generate/merge-headers', [GenerateController::class, 'mapAndMergeHeaders']);
 
@@ -98,7 +90,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
    //change barcode
    Route::post('changeBarcodeDocument', [DocumentController::class, 'changeBarcodeDocument']);
 
-   //product approve 
+   //product approve
    Route::resource('product-approves', ProductApproveController::class);
 
    Route::get('productApprovesByDoc', [ProductApproveController::class, 'searchByDocument']);
@@ -173,7 +165,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
-   //untuk spv me approve staging ke inventory 
+   //untuk spv me approve staging ke inventory
    Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 });
 
@@ -195,7 +187,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::put('promo/{promo}', [PromoController::class, 'update']);
    Route::delete('promo/destroy/{promoId}/{productId}', [PromoController::class, 'destroy']);
 
-
    Route::resource('new_products', NewProductController::class)->except(['destroy']);
 });
 
@@ -203,7 +194,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    //tabel kiri repair
    Route::get('new_product/display-expired', [NewProductController::class, 'listProductExpDisplay']);
 
-   //to display 
+   //to display
    Route::get('getProductRepair', [RepairController::class, 'getProductRepair']);
 
    //qcd
@@ -255,9 +246,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(f
    Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
    Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
 
-
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+
+   //warehouse
+   Route::resource('warehouses', WarehouseController::class);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
@@ -284,6 +277,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //colortags diskon
    Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
    Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
+   Route::post('panel-spv', [UserController::class, 'addFormatBarcode']);
+   Route::delete('panel-spv/{id}', [UserController::class, 'deleteFormatBarcode']);
+   Route::get('panel-spv/{id}', [UserController::class, 'showFormatBarcode']);
+   Route::get('panel-spv', [UserController::class, 'allFormatBarcode']);
 });
 
 //end inventory=========================================== Inventory ==========================================================
@@ -354,7 +351,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('export-bkl', [BklController::class, 'exportProduct']);
 });
 
-
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
    Route::resource('users', UserController::class)->except(['store']);
@@ -363,7 +359,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
    Route::get('generateApikey/{userId}', [UserController::class, 'generateApiKey']);
 
-   // Tombol delete 
+   // Tombol delete
    Route::delete('migrates/{migrate}', [MigrateController::class, 'destroy']);
    Route::delete('migrate-documents/{migrateDocument}', [MigrateDocumentController::class, 'destroy']);
    Route::delete('sale-documents/{saleDocument}', [SaleDocumentController::class, 'destroy']);
@@ -452,7 +448,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('checkLogin', [UserController::class, 'checkLogin']);
 });
 
-//non auth 
+//non auth
 
 //login
 Route::post('login', [AuthController::class, 'login']);
@@ -473,9 +469,7 @@ Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTab
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
 Route::get('selectionDataRedis', [StagingApproveController::class, 'dataSelectionRedis']);
 
-
 Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyData']);
-
 
 //download template
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
@@ -486,10 +480,8 @@ Route::get('exportSale', [SaleController::class, 'exportSale']);
 Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
 
 //api urgent-> persamaan data check history
-
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
-Route::resource('warehouses', WarehouseController::class);
 //test function untuk cronjob cok
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
-Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);
+// Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);

@@ -68,7 +68,7 @@ class ProductApproveController extends Controller
      * Store a newly created resource in storage.
      */
 
-    public function store(Request $request)
+ public function store(Request $request)
     {
         $userId = auth()->id();
         $validator = Validator::make($request->all(), [
@@ -135,7 +135,6 @@ class ProductApproveController extends Controller
         DB::beginTransaction();
         try {
 
-            $batchSize = 7;
             $document = Document::where('code_document', $request->input('code_document'))->first();
             $maxRetry = 5;
             for ($i = 0; $i < $maxRetry; $i++) {
@@ -175,20 +174,33 @@ class ProductApproveController extends Controller
                 $modelClass = New_product::class;
                 $riwayatCheck->total_data_abnormal += 1;
             }
+            
+            //redis /data
+            //  if (isset($modelClass)) {
+            //     $redisKey = 'product:' . $generate;
+            //     Redis::set($redisKey, json_encode($inputData));
 
-            if (isset($modelClass)) {
-                $redisKey = 'product_batch';
-                \Log::info($modelClass);
-
+            //     ProcessProductData::dispatch($generate, $modelClass);
+            // }
+            
+            $redisKey = 'product_batch';
+            $batchSize = 7;
+            
+            if(isset($modelClass)){
+                // Tambahkan data ke Redis list
                 Redis::rpush($redisKey, json_encode($inputData));
-                \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => Redis::llen($redisKey)]);
-
-                if (Redis::llen($redisKey) >= $batchSize) {
+    
+                // Cek panjang list Redis
+                $listSize = Redis::llen($redisKey);
+                \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => $listSize]);
+    
+                // Jika panjang list mencapai atau lebih dari batchSize, dispatch job
+                if ($listSize >= $batchSize) {
+                    ProductBatch::dispatch($batchSize);
                     \Log::info('Dispatching job for batch processing', ['batch_size' => $batchSize]);
-                    ProcessProductData::dispatch($batchSize, $modelClass);
                 }
-
-            }
+            }   
+            
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 
             $riwayatCheck->update([
@@ -198,7 +210,6 @@ class ProductApproveController extends Controller
                 'total_data_abnormal' => $riwayatCheck->total_data_abnormal,
                 'total_discrepancy' => count($totalDiscrepancy),
                 'status_approve' => 'pending',
-
                 // persentase
                 'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
                 'percentage_in' => ($totalDataIn / $document->total_column_in_document) * 100,
@@ -281,15 +292,19 @@ class ProductApproveController extends Controller
 
     private function deleteOldProduct($code_document, $old_barcode_product)
     {
-        $affectedRows = DB::table('product_olds')->where('code_document', $code_document)
-            ->where('old_barcode_product', $old_barcode_product)->delete();
-
+        $affectedRows = DB::table('product_olds')
+            ->where('code_document', $code_document)
+            ->where('old_barcode_product', $old_barcode_product)
+            ->limit(1) 
+            ->delete();
+    
         if ($affectedRows > 0) {
             return true;
         } else {
             return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
         }
     }
+
 
     public function addProductOld(Request $request)
     {
@@ -608,8 +623,7 @@ class ProductApproveController extends Controller
     //         ProcessProductData::dispatch($currentBatchCount, \App\Models\ProductApprove::class);
     //     }
     // }
-
-    public function jobBatch(Request $request)
+      public function jobBatch(Request $request)
     {
         $userId = auth()->id();
         $validator = Validator::make($request->all(), [
