@@ -74,6 +74,7 @@ class BklController extends Controller
                     'created_at' => $product->created_at,
                     'updated_at' => now(),
                     'user_id' => $userId,
+                    'type' => $product->type
                 ];
             })->toArray();
 
@@ -196,6 +197,7 @@ class BklController extends Controller
                 'display_price' => $bkl->display_price,
                 'created_at' => $bkl->created_at,
                 'updated_at' => $bkl->updated_at,
+                'type' => $bkl->type,
             ]);
 
             $bkl->delete();

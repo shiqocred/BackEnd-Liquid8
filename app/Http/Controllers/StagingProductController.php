@@ -95,6 +95,7 @@ class StagingProductController extends Controller
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
+                    'type' => $product->type,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -435,6 +436,7 @@ class StagingProductController extends Controller
                             'new_discount' => 0,
                             'new_tag_product' => null,
                             'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                            'type' => 'type1',
                             'new_quality' => json_encode(['lolos' => 'lolos']),
                             'created_at' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'updated_at' => Carbon::now('Asia/Jakarta')->toDateString(),
@@ -586,6 +588,7 @@ class StagingProductController extends Controller
                     'new_tag_product' => $productApprove->new_tag_product,
                     'new_discount' => $productApprove->new_discount,
                     'display_price' => $productApprove->display_price,
+                    'type' => $productApprove->type,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

@@ -146,7 +146,8 @@ class BundleController extends Controller
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
                     'display_price' => $product->display_price,
-                    'new_discount' => $product->new_discount
+                    'new_discount' => $product->new_discount,
+                    'type' => $product->type
                 ]);
 
                 $product->delete();
@@ -413,6 +414,7 @@ class BundleController extends Controller
                         'display_price' => $item->display_price,
                         'created_at' => now(),
                         'updated_at' => now(),
+                        'type' => $item->type
                     ];
                 })->toArray();
 
