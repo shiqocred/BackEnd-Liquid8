@@ -184,20 +184,15 @@ class ProductApproveController extends Controller
             // }
             
             $redisKey = 'product_batch';
-            $batchSize = 7;
+            $batchSize = 3;
             
             if(isset($modelClass)){
-                // Tambahkan data ke Redis list
                 Redis::rpush($redisKey, json_encode($inputData));
     
-                // Cek panjang list Redis
                 $listSize = Redis::llen($redisKey);
-                \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => $listSize]);
     
-                // Jika panjang list mencapai atau lebih dari batchSize, dispatch job
                 if ($listSize >= $batchSize) {
                     ProductBatch::dispatch($batchSize);
-                    \Log::info('Dispatching job for batch processing', ['batch_size' => $batchSize]);
                 }
             }   
             
@@ -219,7 +214,7 @@ class ProductApproveController extends Controller
                 'percentage_discrepancy' => (count($totalDiscrepancy) / $document->total_column_in_document) * 100,
             ]);
 
-            //end data historyh
+            //end data history
 
             $this->updateDocumentStatus($request->input('code_document'));
 
@@ -243,7 +238,6 @@ class ProductApproveController extends Controller
 
     private function prepareInputData($request, $status, $qualityData)
     {
-
         $inputData = $request->only([
             'code_document',
             'old_barcode_product',
@@ -257,7 +251,7 @@ class ProductApproveController extends Controller
             'new_tag_product',
             'condition',
             'deskripsi',
-
+            'type'
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -266,6 +260,7 @@ class ProductApproveController extends Controller
 
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
         $inputData['new_quality'] = json_encode($qualityData);
+        $inputData['type'] = 'type1';
 
         $inputData['new_discount'] = 0;
         $inputData['display_price'] = $inputData['new_price_product'];

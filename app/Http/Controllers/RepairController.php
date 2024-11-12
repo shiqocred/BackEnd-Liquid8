@@ -104,6 +104,7 @@ class RepairController extends Controller
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
+                    'type' => $product->type
                 ]);
 
                 $product->delete();

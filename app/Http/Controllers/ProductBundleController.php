@@ -73,6 +73,7 @@ class ProductBundleController extends Controller
                     'display_price' => $product->display_price,
                     'created_at' => now(),
                     'updated_at' => now(),
+                    'type' => $product->type
                 ];
             })->toArray();
 
@@ -140,6 +141,7 @@ class ProductBundleController extends Controller
                 'display_price' => $productBundle->display_price,
                 'created_at' => $productBundle->created_at,
                 'updated_at' => $productBundle->updated_at,
+                'type' => $productBundle->type
             ]);
     
             $bundle = Bundle::findOrFail($productBundle->bundle_id);
@@ -187,7 +189,8 @@ class ProductBundleController extends Controller
                 'new_category_product' => $new_product->new_category_product,
                 'new_tag_product' => $new_product->new_tag_product,
                 'new_discount' => $new_product->new_discount,
-                'display_price' => $new_product->display_price
+                'display_price' => $new_product->display_price,
+                'type' => $new_product->type
             ]);
 
             $bundle->update([

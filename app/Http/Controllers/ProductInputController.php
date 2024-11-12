@@ -91,6 +91,7 @@ class ProductInputController extends Controller
                 'new_category_product',
                 'new_tag_product',
                 'price_discount',
+                'type'
             ]);
 
             $inputData['new_quantity_product'] = $inputData['new_quantity_product'] ?? 1;
@@ -99,6 +100,7 @@ class ProductInputController extends Controller
             $inputData['user_id'] = $userId;
             $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
             $inputData['new_quality'] = json_encode($qualityData);
+            $inputData['type'] = 'type2';
 
             $user = User::find($userId); 
 
@@ -285,6 +287,7 @@ class ProductInputController extends Controller
                             'display_price' => $product->display_price,
                             'created_at' => now(),
                             'updated_at' => now(),
+                            'type' => 'type2'
                         ];
                     }
                 } elseif ($product->old_price_product <= 119000) {
@@ -308,6 +311,7 @@ class ProductInputController extends Controller
                             'display_price' => $product->display_price,
                             'created_at' => now(),
                             'updated_at' => now(),
+                            'type' => 'type2'
                         ];
                     }
                 }

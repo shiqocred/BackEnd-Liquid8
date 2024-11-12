@@ -74,6 +74,7 @@ class PaletProductController extends Controller
                     'display_price'=> $product->display_price,
                     'created_at' => now(),  
                     'updated_at' => now(),
+                    'type' => $product->type
                 ];
             })->toArray();
 
@@ -135,7 +136,8 @@ class PaletProductController extends Controller
                 'new_category_product' => $paletProduct->new_category_product,
                 'new_tag_product' => $paletProduct->new_tag_product,
                 'new_discount' => $paletProduct->new_discount,
-                'display_price' => $paletProduct->display_price
+                'display_price' => $paletProduct->display_price,
+                'type' => $paletProduct->type
             ]);
 
 
@@ -177,7 +179,8 @@ class PaletProductController extends Controller
                 'new_category_product' => $new_product->new_category_product,
                 'new_tag_product' => $new_product->new_tag_product,
                 'new_discount' => $new_product->new_discount,
-                'display_price' => $new_product->display_price
+                'display_price' => $new_product->display_price,
+                'type' => $new_product->type
             ]);
 
             $palet->update([

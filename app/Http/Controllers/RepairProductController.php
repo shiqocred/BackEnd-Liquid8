@@ -89,6 +89,7 @@ class RepairProductController extends Controller
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
+                    'type' => $product->type,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -198,6 +199,7 @@ class RepairProductController extends Controller
                 'new_tag_product' => $repairProduct->new_tag_product,
                 'new_discount' => $repairProduct->new_discount,
                 'display_price' => $repairProduct->display_price,
+                'type' => 'type1'
             ]);
     
             // Update data repair
@@ -289,6 +291,7 @@ class RepairProductController extends Controller
                 "new_tag_product" => $product->new_tag_product,
                 'new_discount' => $product->new_discount,
                 'display_price' => $product->display_price,
+                'type' => $product->type
             ]);
 
             // Hancurkan objek produk
