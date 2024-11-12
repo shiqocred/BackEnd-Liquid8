@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
 use App\Http\Resources\ResponseResource; // Tambahkan ini
-use App\Jobs\ProcessProductData;
 use App\Jobs\ProductBatch;
 use App\Models\Document;
 use App\Models\FilterStaging;
@@ -68,7 +67,7 @@ class ProductApproveController extends Controller
      * Store a newly created resource in storage.
      */
 
- public function store(Request $request)
+    public function store(Request $request)
     {
         $userId = auth()->id();
         $validator = Validator::make($request->all(), [
@@ -136,30 +135,18 @@ class ProductApproveController extends Controller
         try {
 
             $document = Document::where('code_document', $request->input('code_document'))->first();
-            $maxRetry = 5;
-            for ($i = 0; $i < $maxRetry; $i++) {
-                if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
-                } else {
-                    $generate = generateNewBarcode($inputData['new_category_product']);
-                }
 
-                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
-                    break;
-                }
-
-                if ($i === $maxRetry - 1) {
-                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
-                }
+            if ($document->custom_barcode) {
+                $generate = newBarcodeCustom($document->custom_barcode, $userId);
+            } else {
+                $generate = generateNewBarcode($inputData['new_category_product']);
             }
 
             $inputData['new_barcode_product'] = $generate;
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
-            //start update data history
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
-            // $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
 
             if ($qualityData['lolos'] != null) {
@@ -174,7 +161,7 @@ class ProductApproveController extends Controller
                 $modelClass = New_product::class;
                 $riwayatCheck->total_data_abnormal += 1;
             }
-            
+
             //redis /data
             //  if (isset($modelClass)) {
             //     $redisKey = 'product:' . $generate;
@@ -182,20 +169,20 @@ class ProductApproveController extends Controller
 
             //     ProcessProductData::dispatch($generate, $modelClass);
             // }
-            
+
             $redisKey = 'product_batch';
-            $batchSize = 3;
-            
-            if(isset($modelClass)){
+            $batchSize = 7;
+
+            if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));
-    
+
                 $listSize = Redis::llen($redisKey);
-    
+
                 if ($listSize >= $batchSize) {
                     ProductBatch::dispatch($batchSize);
                 }
-            }   
-            
+            }
+
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 
             $riwayatCheck->update([
@@ -251,7 +238,7 @@ class ProductApproveController extends Controller
             'new_tag_product',
             'condition',
             'deskripsi',
-            'type'
+            'type',
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -277,22 +264,14 @@ class ProductApproveController extends Controller
         return $inputData;
     }
 
-    private function updateDocumentStatus($codeDocument)
-    {
-        $document = Document::where('code_document', $codeDocument)->firstOrFail();
-        if ($document->status_document === 'pending') {
-            $document->update(['status_document' => 'in progress']);
-        }
-    }
-
     private function deleteOldProduct($code_document, $old_barcode_product)
     {
         $affectedRows = DB::table('product_olds')
             ->where('code_document', $code_document)
             ->where('old_barcode_product', $old_barcode_product)
-            ->limit(1) 
+            ->limit(1)
             ->delete();
-    
+
         if ($affectedRows > 0) {
             return true;
         } else {
@@ -300,6 +279,13 @@ class ProductApproveController extends Controller
         }
     }
 
+    private function updateDocumentStatus($codeDocument)
+    {
+        $document = Document::where('code_document', $codeDocument)->firstOrFail();
+        if ($document->status_document === 'pending') {
+            $document->update(['status_document' => 'in progress']);
+        }
+    }
 
     public function addProductOld(Request $request)
     {
@@ -618,7 +604,7 @@ class ProductApproveController extends Controller
     //         ProcessProductData::dispatch($currentBatchCount, \App\Models\ProductApprove::class);
     //     }
     // }
-      public function jobBatch(Request $request)
+    public function jobBatch(Request $request)
     {
         $userId = auth()->id();
         $validator = Validator::make($request->all(), [
