@@ -133,6 +133,7 @@ class StagingApproveController extends Controller
                                 'new_tag_product' => $productApprove->new_tag_product,
                                 'new_discount' => $productApprove->new_discount,
                                 'display_price' => $productApprove->display_price,
+                                'type' => $productApprove->type,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ];

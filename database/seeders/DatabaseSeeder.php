@@ -43,17 +43,19 @@ class DatabaseSeeder extends Seeder
         Category::factory()->cat14()->create();
         Category::factory()->cat15()->create();
         Category::factory()->cat16()->create();
+        Category::factory()->cat17()->create();
+
         Color_tag::factory()->merah()->create();
         Color_tag::factory()->biru()->create();
 
 
         $users = Role::factory();
-        foreach (range(0, 5) as $index) {
+        foreach (range(0, 6) as $index) {
             $users->role($index)->create();
         };
 
         $users = User::factory();
-        foreach (range(0, 5) as $index) {
+        foreach (range(0, 6) as $index) {
             $users->account($index)->create();
         };
     }

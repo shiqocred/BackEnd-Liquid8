@@ -12,12 +12,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('batch:processRemaining')->everyTenMinutes();
+        
         $schedule->command('cron:expiredProduct')->everyTwoHours();
 
         // Jadwalkan command untuk dijalankan pada pukul 23:59 pada hari terakhir bulan
         $schedule->command('end-of-month:task')->when(function () {
             return now()->isLastOfMonth();
         })->dailyAt('23:59');
+
     }
 
     /**

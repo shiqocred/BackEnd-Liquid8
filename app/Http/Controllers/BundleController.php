@@ -90,25 +90,29 @@ class BundleController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name_bundle' => 'required',
-            'category' => 'required',
+            'category' => 'nullable',
             'total_price_bundle' => 'required|numeric',
             'total_price_custom_bundle' => 'required|numeric',
+            'total_product_bundle' => 'required',
+            'name_color' => 'nullable'
         ]);
-
+    
         if ($validator->fails()) {
             $resource = new ResponseResource(false, "Input tidak valid!", $validator->errors());
             return $resource->response()->setStatusCode(422);
         }
-
+    
         DB::beginTransaction();
         try {
             $bundle->update([
                 'name_bundle' => $request->name_bundle,
-                'category' => $request->category,
+                'category' => $request->has('category') ? $request->category : null,
                 'total_price_bundle' => $request->total_price_bundle,
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
+                'total_product_bundle' => $request->total_product_bundle,
+                'name_color' => $request->has('name_color') ? $request->name_color : null
             ]);
-
+    
             DB::commit();
             return new ResponseResource(true, "Bundle berhasil di edit", $bundle);
         } catch (\Exception $e) {
@@ -117,6 +121,7 @@ class BundleController extends Controller
             return response()->json(['success' => false, 'message' => 'Bundle gagal di edit', 'error' => $e->getMessage()], 500);
         }
     }
+    
 
     /**
      * Remove the specified resource from storage.
@@ -141,7 +146,8 @@ class BundleController extends Controller
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
                     'display_price' => $product->display_price,
-                    'new_discount' => $product->new_discount
+                    'new_discount' => $product->new_discount,
+                    'type' => $product->type
                 ]);
 
                 $product->delete();
@@ -408,6 +414,7 @@ class BundleController extends Controller
                         'display_price' => $item->display_price,
                         'created_at' => now(),
                         'updated_at' => now(),
+                        'type' => $item->type
                     ];
                 })->toArray();
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
-use Illuminate\Support\Facades\Redis; // Tambahkan ini
-use App\Http\Resources\ResponseResource;
+use App\Http\Resources\ResponseResource; // Tambahkan ini
+use App\Jobs\ProductBatch;
 use App\Models\Document;
 use App\Models\FilterStaging;
 use App\Models\New_product;
@@ -18,8 +18,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-use App\Jobs\ProcessProductData;
 
 class ProductApproveController extends Controller
 {
@@ -67,149 +67,152 @@ class ProductApproveController extends Controller
      * Store a newly created resource in storage.
      */
 
-    public function store(Request $request)
-    {
-        $userId = auth()->id();
-        $validator = Validator::make($request->all(), [
-            'code_document' => 'required',
-            'old_barcode_product' => 'required',
-            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
-            'new_name_product' => 'required',
-            'new_quantity_product' => 'required|integer',
-            'new_price_product' => 'required|numeric',
-            'old_price_product' => 'required|numeric',
-            // 'new_date_in_product' => 'required|date',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
-            'condition' => 'required|in:lolos,damaged,abnormal',
-            'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
-
-        ], [
-            'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.exists' => 'barcode tidak ada',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $status = $request->input('condition');
-        $description = $request->input('deskripsi', '');
-
-        $qualityData = $this->prepareQualityData($status, $description);
-
-        $inputData = $this->prepareInputData($request, $status, $qualityData);
-
-        $oldBarcode = $request->input('old_barcode_product');
-        $newBarcode = $request->input('new_barcode_product');
-
-        $tables = [
-            New_product::class,
-            ProductApprove::class,
-            StagingProduct::class,
-            StagingApprove::class,
-            FilterStaging::class,
-        ];
-
-        $oldBarcodeExists = false;
-        $newBarcodeExists = false;
-
-        foreach ($tables as $table) {
-            if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
-                $oldBarcodeExists = true;
-            }
-            if ($table::where('new_barcode_product', $newBarcode)->exists()) {
-                $newBarcodeExists = true;
-            }
-        }
-
-        if ($oldBarcodeExists) {
-            return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
-        }
-
-        if ($newBarcodeExists) {
-            return new ResponseResource(false, "The new barcode already exists", $inputData);
-        }
-
-        DB::beginTransaction();
-        try {
-
-            $document = Document::where('code_document', $request->input('code_document'))->first();
-            $maxRetry = 5;
-            for ($i = 0; $i < $maxRetry; $i++) {
-                if ($document->custom_barcode) {
-                    $generate = newBarcodeCustom($document->custom_barcode, $userId);
-                } else {
-                    $generate = generateNewBarcode($inputData['new_category_product']);
-                }
-
-                if (!ProductApprove::where('new_barcode_product', $generate)->exists()) {
-                    break;
-                }
-
-                if ($i === $maxRetry - 1) {
-                    throw new \Exception("Failed to generate unique barcode after multiple attempts.");
-                }
-            }
-
-            $inputData['new_barcode_product'] = $generate;
-
-            $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
-
-            //start update data history
-            $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
-            // $totalDataIn = $totalLolos = $totalDamaged = $totalAbnormal = 0;
-            $totalDataIn = 1 + $riwayatCheck->total_data_in;
-
-            if ($qualityData['lolos'] != null) {
-                $modelClass = ProductApprove::class;
-                $riwayatCheck->total_data_lolos += 1;
-
-            } else if ($qualityData['damaged'] != null) {
-                $modelClass = New_product::class;
-                $riwayatCheck->total_data_damaged += 1;
-
-            } else if ($qualityData['abnormal'] != null) {
-                $modelClass = New_product::class;
-                $riwayatCheck->total_data_abnormal += 1;
-            }
-            if (isset($modelClass)) {
-                $redisKey = 'product:' . $generate;
-                Redis::set($redisKey, json_encode($inputData));
-
-                ProcessProductData::dispatch($generate, $modelClass);
-            }
-            $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
-
-            $riwayatCheck->update([
-                'total_data_in' => $totalDataIn,
-                'total_data_lolos' => $riwayatCheck->total_data_lolos,
-                'total_data_damaged' => $riwayatCheck->total_data_damaged,
-                'total_data_abnormal' => $riwayatCheck->total_data_abnormal,
-                'total_discrepancy' => count($totalDiscrepancy),
-                'status_approve' => 'pending',
-
-                // persentase
-                'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
-                'percentage_in' => ($totalDataIn / $document->total_column_in_document) * 100,
-                'percentage_lolos' => ($riwayatCheck->total_data_lolos / $document->total_column_in_document) * 100,
-                'percentage_damaged' => ($riwayatCheck->total_data_damaged / $document->total_column_in_document) * 100,
-                'percentage_abnormal' => ($riwayatCheck->total_data_abnormal / $document->total_column_in_document) * 100,
-                'percentage_discrepancy' => (count($totalDiscrepancy) / $document->total_column_in_document) * 100,
-            ]);
-
-            //end data historyh
-
-            $this->updateDocumentStatus($request->input('code_document'));
-
-            DB::commit();
-
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
+     public function store(Request $request)
+     {
+         $userId = auth()->id();
+         $validator = Validator::make($request->all(), [
+             'code_document' => 'required',
+             'old_barcode_product' => 'required',
+             // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
+             'new_name_product' => 'required',
+             'new_quantity_product' => 'required|integer',
+             'new_price_product' => 'required|numeric',
+             'old_price_product' => 'required|numeric',
+             // 'new_date_in_product' => 'required|date',
+             'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+             'condition' => 'required|in:lolos,damaged,abnormal',
+             'new_category_product' => 'nullable|exists:categories,name_category',
+             'new_tag_product' => 'nullable|exists:color_tags,name_color',
+ 
+         ], [
+             'new_barcode_product.unique' => 'barcode sudah ada',
+             'old_barcode_product.exists' => 'barcode tidak ada',
+         ]);
+ 
+         if ($validator->fails()) {
+             return response()->json($validator->errors(), 422);
+         }
+ 
+         $status = $request->input('condition');
+         $description = $request->input('deskripsi', '');
+ 
+         $qualityData = $this->prepareQualityData($status, $description);
+ 
+         $inputData = $this->prepareInputData($request, $status, $qualityData);
+ 
+         $oldBarcode = $request->input('old_barcode_product');
+         $newBarcode = $request->input('new_barcode_product');
+ 
+         $tables = [
+             New_product::class,
+             ProductApprove::class,
+             StagingProduct::class,
+             StagingApprove::class,
+             FilterStaging::class,
+         ];
+ 
+         $oldBarcodeExists = false;
+         $newBarcodeExists = false;
+ 
+         foreach ($tables as $table) {
+             if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
+                 $oldBarcodeExists = true;
+             }
+             if ($table::where('new_barcode_product', $newBarcode)->exists()) {
+                 $newBarcodeExists = true;
+             }
+         }
+ 
+         if ($oldBarcodeExists) {
+             return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
+         }
+ 
+         if ($newBarcodeExists) {
+             return new ResponseResource(false, "The new barcode already exists", $inputData);
+         }
+ 
+         DB::beginTransaction();
+         try {
+ 
+             $document = Document::where('code_document', $request->input('code_document'))->first();
+ 
+             if ($document->custom_barcode) {
+                 $generate = newBarcodeCustom($document->custom_barcode, $userId);
+             } else {
+                 $generate = generateNewBarcode($inputData['new_category_product']);
+             }
+ 
+             $inputData['new_barcode_product'] = $generate;
+ 
+             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
+ 
+             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
+             $totalDataIn = 1 + $riwayatCheck->total_data_in;
+ 
+             if ($qualityData['lolos'] != null) {
+                 $modelClass = ProductApprove::class;
+                 $riwayatCheck->total_data_lolos += 1;
+ 
+             } else if ($qualityData['damaged'] != null) {
+                 $modelClass = New_product::class;
+                 $riwayatCheck->total_data_damaged += 1;
+ 
+             } else if ($qualityData['abnormal'] != null) {
+                 $modelClass = New_product::class;
+                 $riwayatCheck->total_data_abnormal += 1;
+             }
+ 
+             //redis /data
+             //  if (isset($modelClass)) {
+             //     $redisKey = 'product:' . $generate;
+             //     Redis::set($redisKey, json_encode($inputData));
+ 
+             //     ProcessProductData::dispatch($generate, $modelClass);
+             // }
+ 
+             $redisKey = 'product_batch';
+             $batchSize = 7;
+ 
+             if (isset($modelClass)) {
+                 Redis::rpush($redisKey, json_encode($inputData));
+ 
+                 $listSize = Redis::llen($redisKey);
+ 
+                 if ($listSize >= $batchSize) {
+                     ProductBatch::dispatch($batchSize);
+                 }
+             }
+ 
+             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
+ 
+             $riwayatCheck->update([
+                 'total_data_in' => $totalDataIn,
+                 'total_data_lolos' => $riwayatCheck->total_data_lolos,
+                 'total_data_damaged' => $riwayatCheck->total_data_damaged,
+                 'total_data_abnormal' => $riwayatCheck->total_data_abnormal,
+                 'total_discrepancy' => count($totalDiscrepancy),
+                 'status_approve' => 'pending',
+                 // persentase
+                 'percentage_total_data' => ($document->total_column_in_document / $document->total_column_in_document) * 100,
+                 'percentage_in' => ($totalDataIn / $document->total_column_in_document) * 100,
+                 'percentage_lolos' => ($riwayatCheck->total_data_lolos / $document->total_column_in_document) * 100,
+                 'percentage_damaged' => ($riwayatCheck->total_data_damaged / $document->total_column_in_document) * 100,
+                 'percentage_abnormal' => ($riwayatCheck->total_data_abnormal / $document->total_column_in_document) * 100,
+                 'percentage_discrepancy' => (count($totalDiscrepancy) / $document->total_column_in_document) * 100,
+             ]);
+ 
+             //end data history
+ 
+             $this->updateDocumentStatus($request->input('code_document'));
+ 
+             DB::commit();
+ 
+             return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
+         } catch (\Exception $e) {
+             DB::rollback();
+             return response()->json(['error' => $e->getMessage()], 500);
+         }
+     }
 
     private function prepareQualityData($status, $description)
     {
@@ -222,7 +225,6 @@ class ProductApproveController extends Controller
 
     private function prepareInputData($request, $status, $qualityData)
     {
-
         $inputData = $request->only([
             'code_document',
             'old_barcode_product',
@@ -236,7 +238,7 @@ class ProductApproveController extends Controller
             'new_tag_product',
             'condition',
             'deskripsi',
-
+            'type',
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -245,6 +247,7 @@ class ProductApproveController extends Controller
 
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
         $inputData['new_quality'] = json_encode($qualityData);
+        $inputData['type'] = 'type1';
 
         $inputData['new_discount'] = 0;
         $inputData['display_price'] = $inputData['new_price_product'];
@@ -261,23 +264,18 @@ class ProductApproveController extends Controller
         return $inputData;
     }
 
+    private function deleteOldProduct($code_document, $old_barcode_product)
+    {
+        return DB::statement("DELETE FROM product_olds WHERE code_document = ? AND old_barcode_product = ? LIMIT 1",
+            [$code_document, $old_barcode_product]
+        );
+    }
+
     private function updateDocumentStatus($codeDocument)
     {
         $document = Document::where('code_document', $codeDocument)->firstOrFail();
         if ($document->status_document === 'pending') {
             $document->update(['status_document' => 'in progress']);
-        }
-    }
-
-    private function deleteOldProduct($code_document, $old_barcode_product)
-    {
-        $affectedRows = DB::table('product_olds')->where('code_document', $code_document)
-            ->where('old_barcode_product', $old_barcode_product)->delete();
-
-        if ($affectedRows > 0) {
-            return true;
-        } else {
-            return new ResponseResource(false, "Produk lama dengan barcode tidak ditemukan.", null);
         }
     }
 
@@ -583,6 +581,82 @@ class ProductApproveController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return new ResponseResource(false, "transaksi salah: ", $e->getMessage());
+        }
+    }
+    // public function processRemainingBatch()
+    // {
+    //     $batchSize = 5;
+    //     $redisKey = 'product_batch';
+
+    //     $currentBatchCount = Redis::llen($redisKey);
+
+    //     if ($currentBatchCount > 0 && $currentBatchCount < $batchSize) {
+    //         \Log::info("Processing remaining batch data with size: $currentBatchCount");
+
+    //         ProcessProductData::dispatch($currentBatchCount, \App\Models\ProductApprove::class);
+    //     }
+    // }
+    public function jobBatch(Request $request)
+    {
+        $userId = auth()->id();
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'required',
+            'old_barcode_product' => 'required',
+            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|integer',
+            'new_price_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
+            // 'new_date_in_product' => 'required|date',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+            'condition' => 'required|in:lolos,damaged,abnormal',
+            'new_category_product' => 'nullable|exists:categories,name_category',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
+
+        ], [
+            'new_barcode_product.unique' => 'barcode sudah ada',
+            'old_barcode_product.exists' => 'barcode tidak ada',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $status = $request->input('condition');
+        $description = $request->input('deskripsi', '');
+
+        $qualityData = $this->prepareQualityData($status, $description);
+
+        $inputData = $this->prepareInputData($request, $status, $qualityData);
+
+        $oldBarcode = $request->input('old_barcode_product');
+        $newBarcode = $request->input('new_barcode_product');
+
+        DB::beginTransaction();
+        try {
+
+            $redisKey = 'product_batch';
+            $batchSize = 7;
+
+            // Tambahkan data ke Redis list
+            Redis::rpush($redisKey, json_encode($inputData));
+
+            // Cek panjang list Redis
+            $listSize = Redis::llen($redisKey);
+            \Log::info('Data added to Redis list', ['redis_key' => $redisKey, 'list_size' => $listSize]);
+
+            // Jika panjang list mencapai atau lebih dari batchSize, dispatch job
+            if ($listSize >= $batchSize) {
+                ProductBatch::dispatch($batchSize);
+                \Log::info('Dispatching job for batch processing', ['batch_size' => $batchSize]);
+            }
+
+            DB::commit();
+
+            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

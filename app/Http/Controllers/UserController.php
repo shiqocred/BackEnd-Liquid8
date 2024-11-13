@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ResponseResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -24,15 +24,17 @@ class UserController extends Controller
         return new ResponseResource(true, "List users", $users);
     }
 
-    public function show(Request $request, User $user){
-        if($user){
+    public function show(Request $request, User $user)
+    {
+        if ($user) {
             return new ResponseResource(true, "detail user ", $user);
-        }else{
+        } else {
             return new ResponseResource(false, "data user tidak ada", []);
         }
     }
 
-    public function store(Request $request) {}
+    public function store(Request $request)
+    {}
 
     public function update(Request $request, $id)
     {
@@ -40,34 +42,33 @@ class UserController extends Controller
             'name' => 'required|min:2',
             'username' => 'required|min:2|unique:users,username,' . $id,
             'email' => 'required|min:2|unique:users,email,' . $id,
-            'password' => 'nullable', 
-            'role_id' => 'required|exists:roles,id'
+            'password' => 'nullable',
+            'role_id' => 'required|exists:roles,id',
         ], [
             'username.unique' => 'Username sudah ada',
             'email.unique' => 'Email sudah ada',
-            'role_id.exists' => 'Role tidak ada'
+            'role_id.exists' => 'Role tidak ada',
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(["errors" => $validator->errors()], 422);
         }
-    
+
         $user = User::find($id);
         if (!$user) {
             return new ResponseResource(false, "User not found", null);
         }
-    
+
         $dataToUpdate = $request->only(['name', 'username', 'email', 'role_id']);
-        
+
         if ($request->filled('password')) {
             $dataToUpdate['password'] = $request->input('password');
         }
-    
+
         $user->update($dataToUpdate);
-    
+
         return new ResponseResource(true, "User updated successfully", $user);
     }
-    
 
     public function destroy($id)
     {
@@ -81,8 +82,6 @@ class UserController extends Controller
 
         return new ResponseResource(true, "User deleted successfully", null);
     }
-
-
 
     public function exportUsers()
     {
@@ -99,7 +98,7 @@ class UserController extends Controller
             'username',
             'email',
             'role_id',
-            'role_name'
+            'role_name',
         ];
 
         $columnIndex = 1;
@@ -171,4 +170,77 @@ class UserController extends Controller
             return $response->response()->setStatusCode(401);
         }
     }
+
+    public function addFormatBarcode(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'format_barcode' => 'required|string',
+                'user_id' => 'required|integer|exists:users,id',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(["errors" => $validator->errors()], 422);
+            }
+
+            $formatBarcode = $request->input('format_barcode');
+            $user_id = $request->input('user_id');
+
+            $user = User::find($user_id);
+
+            if (!$user) {
+                return response()->json(['message' => 'User not found'], 404);
+            }
+
+            $user->update([
+                'format_barcode' => $formatBarcode,
+            ]);
+
+            return new ResponseResource(true, "Berhasil menambahkan format barcode", $user->format_barcode);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteFormatBarcode($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+        $user->update([
+            'format_barcode' => null,
+        ]);
+        return new ResponseResource(true, "Berhasil menghapus format barcode", []);
+    }
+
+    public function showFormatBarcode($id)
+    {
+        $user = User::find($id);
+        $formatBarcode = $user->format_barcode;
+        return new ResponseResource(true, "format barcode", [
+            'user_id' => $id, 
+            'format_barcode' => $formatBarcode,
+            'name' => $user->name,
+            'username' => $user->username
+        ]);
+    }
+
+    public function allFormatBarcode(Request $request)
+    {
+        $query = $request->input('q');
+        $users = User::whereNotNull('format_barcode')
+            ->select('id', 'username', 'format_barcode');
+
+        if ($query) {
+            $users->where('username', 'LIKE', '%' . $query . '%')
+                ->orWhere('format_barcode', 'LIKE', '%' . $query . '%');
+        }
+
+        $results = $users->paginate(33);
+
+        return new ResponseResource(true, "list user berformat barcode", $results);
+    }
+
 }

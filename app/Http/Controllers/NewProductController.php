@@ -153,11 +153,13 @@ class NewProductController extends Controller
             'old_price_product',
             'new_status_product',
             'new_category_product',
-            'new_tag_product'
+            'new_tag_product',
+            'type'
         ]);
 
         $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
         $inputData['new_quality'] = json_encode($qualityData);
+        $inputData['type'] = 'type1';
 
         if ($status !== 'lolos') {
             $inputData['new_category_product'] = null;
@@ -477,6 +479,7 @@ class NewProductController extends Controller
 
                     $newProductDataToInsert = array_merge($newProductDataToInsert, [
                         'code_document' => $code_document,
+                        'type' => 'type1',
                         'new_tag_product' => $newProductDataToInsert['new_tag_product'] ?? null,
                         'new_quality' => json_encode(['lolos' => 'lolos']),
                         'new_barcode_product' => newBarcodeScan(),
@@ -788,7 +791,8 @@ class NewProductController extends Controller
                 'new_date_in_product',
                 'new_status_product',
                 'new_category_product',
-                'new_tag_product'
+                'new_tag_product',
+                'type'
             ]);
 
             $indonesiaTime = Carbon::now('Asia/Jakarta');
@@ -937,6 +941,9 @@ class NewProductController extends Controller
                 ->whereNull('new_category_product')
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
                 ->where('new_status_product', 'display')
+                ->where(function ($type){
+                    $type->whereNull('type')->orWhere('type', 'type1');
+                })
                 ->latest();
 
             if ($query) {
@@ -981,8 +988,10 @@ class NewProductController extends Controller
                 ->where(function ($status) {
                     $status->where('new_status_product', 'display')
                         ->orWhere('new_status_product', 'expired');
-                });
-
+                })->where(function ($type){
+                    $type->whereNull('type')
+                    ->orWhere('type', 'type1');
+                });                
 
             $bundleQuery = Bundle::select(
                 'id',
@@ -1197,6 +1206,7 @@ class NewProductController extends Controller
                 'new_category_product',
                 'new_tag_product',
                 'price_discount',
+                'type'
             ]);
 
             $inputData['new_status_product'] = 'display';
@@ -1208,6 +1218,7 @@ class NewProductController extends Controller
                 $inputData['new_category_product'] = null;
             }
             $inputData['new_discount'] = 0;
+            $inputData['type'] = 'type1';
             $inputData['display_price'] = $inputData['new_price_product'];
 
             $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);

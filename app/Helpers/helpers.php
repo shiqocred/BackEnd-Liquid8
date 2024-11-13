@@ -1,20 +1,16 @@
 <?php
 
+use App\Models\Bundle;
 use App\Models\BundleQcd;
-use App\Models\Sale;
-use App\Models\Migrate;
-use App\Models\Document;
-use App\Models\New_product;
-use Illuminate\Support\Str;
-use App\Models\SaleDocument;
-use App\Models\ProductApprove;
 use App\Models\MigrateDocument;
+use App\Models\New_product;
 use App\Models\Repair;
+use App\Models\Sale;
+use App\Models\SaleDocument;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use App\Models\UserLog;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 function codeDocumentMigrate()
 {
@@ -22,7 +18,7 @@ function codeDocumentMigrate()
         ->first();
 
     if ($codeDocumentMigrate->count() > 0) {
-        $n = ((int)$codeDocumentMigrate['code_document_migrate']) + 1;
+        $n = ((int) $codeDocumentMigrate['code_document_migrate']) + 1;
         $no = sprintf("%'.04d", $n);
     } else {
         $no = "0001";
@@ -45,17 +41,17 @@ function codeDocumentSale($userId)
         if ($sales->count() > 0) {
             foreach ($sales as $sale) {
                 if ($userId == $sale->user_id) {
-                    $n = ((int)$sale['code_document_sale']);
+                    $n = ((int) $sale['code_document_sale']);
                     break;
                 } else {
-                    $n = ((int)$codeDocumentSale['code_document_sale']) + 1;
+                    $n = ((int) $codeDocumentSale['code_document_sale']) + 1;
                     if ($sale['code_document_sale'] == $codeDocumentSale['code_document_sale'] + 1) {
                         $n += 1;
                     }
                 }
             }
         } else {
-            $n = ((int)$codeDocumentSale['code_document_sale']) + 1;
+            $n = ((int) $codeDocumentSale['code_document_sale']) + 1;
         }
         $no = sprintf("%'.05d", $n);
     } else {
@@ -80,7 +76,7 @@ function generateNewBarcode($category)
         9 => 'September',
         10 => 'Oktober',
         11 => 'November',
-        12 => 'Desember'
+        12 => 'Desember',
     ];
 
     $categoryInitial = strtoupper(substr($category, 0, 1));
@@ -103,11 +99,11 @@ function generateNewBarcode($category)
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists() ||
-                DB::table('staging_products')
+            DB::table('staging_products')
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists() ||
-                DB::table('new_products')
+            DB::table('new_products')
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists();
@@ -120,8 +116,6 @@ function generateNewBarcode($category)
         throw new \Exception("Terlalu banyak generate, tolong refresh.");
     });
 }
-
-
 
 function barcodeRepair()
 {
@@ -137,7 +131,7 @@ function barcodeRepair()
         $newBarcode = "LR" . $randomString;
 
         $exists = Repair::where('barcode', $newBarcode)->exists();
-        
+
     } while ($exists);
 
     return $newBarcode;
@@ -156,7 +150,26 @@ function barcodeQcd()
         $newBarcode = "QCD" . $randomString;
 
         $exists = BundleQcd::where('barcode_bundle', $newBarcode)->exists();
-        
+
+    } while ($exists);
+
+    return $newBarcode;
+}
+function barcodeBundle()
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
+
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
+        $newBarcode = "LQB" . $randomString;
+
+        $exists = Bundle::where('barcode_bundle', $newBarcode)->exists();
+
     } while ($exists);
 
     return $newBarcode;
@@ -179,11 +192,11 @@ function newBarcodeCustom($init_barcode, $userId)
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists() ||
-                DB::table('staging_products')
+            DB::table('staging_products')
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists() ||
-                DB::table('new_products')
+            DB::table('new_products')
                 ->where('new_barcode_product', $newBarcode)
                 ->sharedLock()
                 ->exists();
@@ -197,9 +210,7 @@ function newBarcodeCustom($init_barcode, $userId)
     });
 }
 
-
-
-if (! function_exists('logUserAction')) {
+if (!function_exists('logUserAction')) {
     function logUserAction($request, $user, $halaman, $pesan)
     {
         UserLog::create([
@@ -218,9 +229,6 @@ function barcodeScan()
     return 'SC/' . now()->format('m/Y');
 }
 
-
-
-
 function newBarcodeScan()
 {
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -235,11 +243,43 @@ function newBarcodeScan()
         $newBarcode = "LSC" . $randomString;
 
         $exists = StagingApprove::where('new_barcode_product', $newBarcode)->exists() ||
-            StagingProduct::where('new_barcode_product', $newBarcode)->exists() ||
-            New_product::where('new_barcode_product', $newBarcode)->exists();
+        StagingProduct::where('new_barcode_product', $newBarcode)->exists() ||
+        New_product::where('new_barcode_product', $newBarcode)->exists();
     } while ($exists);
 
     return $newBarcode;
 }
 
+function barcodeCustomUser($init_barcode, $userId)
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-';
+    $maxRetry = 5;
 
+    return DB::transaction(function () use ($init_barcode, $characters, $maxRetry, $userId) {
+        for ($i = 0; $i < $maxRetry; $i++) {
+            $randomString = '';
+            for ($j = 0; $j < 5; $j++) {
+                $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+            }
+            $newBarcode = $init_barcode . $userId . $randomString;
+            $exists = DB::table('staging_approves')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists() ||
+            DB::table('staging_products')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists() ||
+            DB::table('new_products')
+                ->where('new_barcode_product', $newBarcode)
+                ->sharedLock()
+                ->exists();
+
+            if (!$exists) {
+                return $newBarcode;
+            }
+        }
+
+        throw new \Exception("terlalu banyak generate, tolong refresh");
+    });
+}

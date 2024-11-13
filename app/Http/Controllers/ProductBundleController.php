@@ -33,7 +33,7 @@ class ProductBundleController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     */
+     */ 
     public function store(Request $request)
     {
         DB::beginTransaction();
@@ -49,7 +49,7 @@ class ProductBundleController extends Controller
                 'total_price_bundle' => $request->total_price_bundle,
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
                 'total_product_bundle' => $request->total_product_bundle,
-                'barcode_bundle' => $request->barcode_bundle,
+                'barcode_bundle' => barcodeBundle(),
                 'category' => $request->category,
                 'name_color' => $request->name_color,
             ]);
@@ -73,6 +73,7 @@ class ProductBundleController extends Controller
                     'display_price' => $product->display_price,
                     'created_at' => now(),
                     'updated_at' => now(),
+                    'type' => $product->type
                 ];
             })->toArray();
 
@@ -140,6 +141,7 @@ class ProductBundleController extends Controller
                 'display_price' => $productBundle->display_price,
                 'created_at' => $productBundle->created_at,
                 'updated_at' => $productBundle->updated_at,
+                'type' => $productBundle->type
             ]);
     
             $bundle = Bundle::findOrFail($productBundle->bundle_id);
@@ -187,7 +189,8 @@ class ProductBundleController extends Controller
                 'new_category_product' => $new_product->new_category_product,
                 'new_tag_product' => $new_product->new_tag_product,
                 'new_discount' => $new_product->new_discount,
-                'display_price' => $new_product->display_price
+                'display_price' => $new_product->display_price,
+                'type' => $new_product->type
             ]);
 
             $bundle->update([

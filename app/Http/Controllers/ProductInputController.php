@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ResponseResource;
 use App\Models\ColorTag2;
 use App\Models\FilterProductInput;
+use App\Models\User;
 use App\Models\New_product;
 use App\Models\ProductInput;
 use App\Models\ProductScan;
@@ -89,16 +90,26 @@ class ProductInputController extends Controller
                 'new_status_product',
                 'new_category_product',
                 'new_tag_product',
-                'price_discount',
+                'price_discount', 
+                'type',
+                'image'
             ]);
 
             $inputData['new_quantity_product'] = $inputData['new_quantity_product'] ?? 1;
-
+            $inputData['code_document'] = barcodeScan();
             $inputData['new_status_product'] = 'display';
             $inputData['user_id'] = $userId;
-            $inputData['code_document'] = barcodeScan();
             $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
             $inputData['new_quality'] = json_encode($qualityData);
+            $inputData['type'] = 'type2';
+
+            $user = User::find($userId); 
+
+            if($user && $user->format_barcode !== null){
+                $inputData['new_barcode_product'] = barcodeCustomUser($user->format_barcode, $userId);
+            }else{
+                $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);
+            }
 
             if ($status !== 'lolos') {
                 $inputData['new_category_product'] = null;
@@ -106,11 +117,6 @@ class ProductInputController extends Controller
             $inputData['new_discount'] = 0;
             $inputData['display_price'] = $inputData['new_price_product'];
 
-            if (!empty($inputData['new_barcode_product'])) {
-                $inputData['new_barcode_product'] = $request->input('new_barcode_product');
-            } else {
-                $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);
-            }
 
             $newProduct = ProductInput::create($inputData);
 
@@ -282,6 +288,7 @@ class ProductInputController extends Controller
                             'display_price' => $product->display_price,
                             'created_at' => now(),
                             'updated_at' => now(),
+                            'type' => 'type2'
                         ];
                     }
                 } elseif ($product->old_price_product <= 119000) {
@@ -305,6 +312,7 @@ class ProductInputController extends Controller
                             'display_price' => $product->display_price,
                             'created_at' => now(),
                             'updated_at' => now(),
+                            'type' => 'type2'
                         ];
                     }
                 }

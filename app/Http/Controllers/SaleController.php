@@ -108,6 +108,7 @@ class SaleController extends Controller
                     $newProduct->new_discount,
                     $newProduct->old_price_product,
                     $newProduct->code_document,
+                    $newProduct->type
 
                 ];
             } elseif ($bundle) {
@@ -164,6 +165,7 @@ class SaleController extends Controller
                     'new_discount' => $data[5] ?? null,
                     'display_price' => $data[3],
                     'code_document' => $data[7] ?? null,
+                    'type' => $data[8]
                 ]
             );
 
@@ -197,6 +199,26 @@ class SaleController extends Controller
             if ($checkSale == null) {
                 return response()->json(['status' => false, 'message' => 'sale not found'], 404);
             }
+            New_product::create([
+                'code_document' => $checkSale->code_document,
+                'old_barcode_product' => $checkSale->product_barcode_sale,
+                'new_barcode_product' => $checkSale->product_barcode_sale,
+                'new_name_product' => $checkSale->product_name_sale,
+                'old_price_product' => $checkSale->product_old_price_sale,
+                'new_price_product' => $checkSale->product_price_sale,
+                'new_quantity_product' => 1,
+                'new_date_in_product' => now(),
+                'new_status_product' => 'display',
+                'new_quality' => json_encode(['lolos' => 'lolos']),
+                'new_category_product' => $checkSale->product_category_sale,
+                'new_tag_product' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'new_discount' => 0,
+                'display_price' => $checkSale->product_price_sale,
+                'type' => $checkSale->type
+
+            ]);
             $allSale = Sale::where('code_document_sale', $sale->code_document_sale)
                 ->where('user_id', auth()->id())
                 ->where('status_sale', 'proses')
