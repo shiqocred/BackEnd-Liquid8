@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Bundle;
 use App\Models\BundleQcd;
 use App\Models\MigrateDocument;
 use App\Models\New_product;
@@ -149,6 +150,25 @@ function barcodeQcd()
         $newBarcode = "QCD" . $randomString;
 
         $exists = BundleQcd::where('barcode_bundle', $newBarcode)->exists();
+
+    } while ($exists);
+
+    return $newBarcode;
+}
+function barcodeBundle()
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
+
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
+        $newBarcode = "LQB" . $randomString;
+
+        $exists = Bundle::where('barcode_bundle', $newBarcode)->exists();
 
     } while ($exists);
 

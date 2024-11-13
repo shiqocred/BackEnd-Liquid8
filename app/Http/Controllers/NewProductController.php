@@ -965,8 +965,6 @@ class NewProductController extends Controller
         }
     }
 
-
-
     public function getByCategory(Request $request)
     {
         $query = $request->input('q');
