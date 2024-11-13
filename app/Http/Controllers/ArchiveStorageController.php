@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
 use App\Models\ArchiveStorage;
+use App\Models\New_product;
 use Illuminate\Http\Request;
 
 class ArchiveStorageController extends Controller
@@ -75,5 +76,13 @@ class ArchiveStorageController extends Controller
     public function destroy(ArchiveStorage $archiveStorage)
     {
         //
+    }
+
+    //function untuk check json new_quality lolos, lolos,damaged,abnormal
+    public function checkQuality(Request $request)
+    {
+        $newProduct = New_product::where('new_quality->lolos', '!=', null)->get();
+
+        return $newProduct;
     }
 }

@@ -377,8 +377,10 @@ class DashboardController extends Controller
             ->whereNotNull('new_category_product')
             ->where('new_tag_product', NULL)
             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->where('new_status_product', 'display')
-            ->where('new_status_product', 'expired')
+            ->where(function ($status) {
+                $status->where('new_status_product', 'display')
+                    ->orWhere('new_status_product', 'expired');
+            })
             ->groupBy('category_product');
 
         $categoryBundle = Bundle::selectRaw('
