@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\ResponseResource;
+use App\Models\PaletBrand;
+use App\Models\ProductBrand;
+use App\Models\Warehouse;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -55,7 +58,7 @@ class PaletController extends Controller
         }
 
         $products = $newProductsQuery->unionAll($stagingProductsQuery)
-        ->orderBy('created_at', 'desc')->paginate(33, ['*'], 'page', $page);
+            ->orderBy('created_at', 'desc')->paginate(33, ['*'], 'page', $page);
         return new ResponseResource(true, "Data produk dengan status display.", $products);
     }
 
@@ -108,14 +111,13 @@ class PaletController extends Controller
                 'file_pdf' => 'nullable|mimes:pdf|max:2048',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
-                'warehouse' => 'nullable|string',
-                'condition' => 'nullable|string',
-                'status' => 'nullable|string',
                 'is_sale' => 'boolean',
                 'category_id' => 'nullable|exists:categories,id',
-                'product_status_id' => 'nullable|exists:product_statuses,id',
-                'destination_id' => 'nullable|exists:destinations,id',
-                'product_condition_id' => 'nullable|exists:product_conditions,id',
+                'product_brand_ids' => 'array|nullable',
+                'product_brand_ids.*' => 'exists:product_brands,id',
+                'warehouse_id' => 'required|exists:warehouses,id',
+                'product_condition_id' => 'required|exists:product_conditions,id',
+                'product_status_id' => 'required|exists:product_statuses,id',
             ]);
 
             if ($validator->fails()) {
@@ -131,9 +133,9 @@ class PaletController extends Controller
             }
 
             $category = Category::find($request['category_id']) ?: null;
-            $destination = Destination::find($request['destination_id']) ?: null;
-            $productStatus = ProductStatus::find($request['product_status_id']) ?: null;
-            $productCondition = ProductCondition::find($request['product_condition_id']) ?: null;
+            $warehouse = Warehouse::findOrFail($request['warehouse_id']);
+            $productStatus = ProductStatus::findOrFail($request['product_status_id']);
+            $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
             // Create Palet
             $palet = Palet::create([
@@ -145,14 +147,14 @@ class PaletController extends Controller
                 'file_pdf' => $validatedData['file_pdf'] ?? null,
                 'description' => $request['description'] ?? null,
                 'is_active' => $request['is_active'] ?? false,
-                'warehouse' => $destination->shop_name ?? null,
-                'condition' => $productCondition->condition_slug ?? null,
-                'status' => $productStatus->status_slug ?? null,
+                'warehouse_name' => $warehouse->nama,
+                'product_condition_name' => $productCondition->condition_name,
+                'product_status_name' => $productStatus->status_name,
                 'is_sale' => $request['is_sale'] ?? false,
                 'category_id' => $request['category_id'],
-                'product_status_id' => $request['product_status_id'],
-                'destination_id' => $request['destination_id'],
+                'warehouse_id' => $request['warehouse_id'],
                 'product_condition_id' => $request['product_condition_id'],
+                'product_status_id' => $request['product_status_id'],
             ]);
 
 
@@ -166,6 +168,20 @@ class PaletController extends Controller
                         'palet_id' => $palet->id,
                         'filename' => $imageName
                     ]);
+                }
+            }
+
+            $brands = $request->input('product_brand_ids');
+            if ($brands) {
+                $createdBrands = [];
+                foreach ($brands as $brandId) {
+                    $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
+                    $paletBrand = PaletBrand::create([
+                        'palet_id' => $palet->id,
+                        'brand_id' => $brandId,
+                        'palet_brand_name' => $paletBrandName,
+                    ]);
+                    $createdBrands[] = $paletBrand;
                 }
             }
 
@@ -200,7 +216,7 @@ class PaletController extends Controller
 
             DB::commit();
 
-            return new ResponseResource(true, "Data palet berhasil ditambahkan", $palet);
+            return new ResponseResource(true, "Data palet berhasil ditambahkan", $palet->load(['paletImages', 'paletBrands']));
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to store palet: ' . $e->getMessage());
@@ -254,27 +270,27 @@ class PaletController extends Controller
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
+                'palet_barcode' => 'required|string|unique:palets,palet_barcode',
                 'file_pdf' => 'nullable|mimes:pdf|max:2048',
                 'description' => 'nullable|string',
-                'is_active' => 'nullable|boolean',
-                'warehouse' => 'nullable|string',
-                'condition' => 'nullable|string',
-                'status' => 'nullable|string',
-                'is_sale' => 'nullable|boolean',
+                'is_active' => 'boolean',
+                'is_sale' => 'boolean',
                 'category_id' => 'nullable|exists:categories,id',
-                'product_status_id' => 'nullable|exists:product_statuses,id',
-                'destination_id' => 'nullable|exists:destinations,id',
-                'product_condition_id' => 'nullable|exists:product_conditions,id',
+                'product_brand_ids' => 'array|nullable',
+                'product_brand_ids.*' => 'exists:product_brands,id',
+                'warehouse_id' => 'required|exists:warehouses,id',
+                'product_condition_id' => 'required|exists:product_conditions,id',
+                'product_status_id' => 'required|exists:product_statuses,id',
             ]);
 
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 422);
             }
 
-            $category = Category::where('id', $request['category_id'])->first();
-            $destination = Destination::where('id', $request['destination_id'])->first();
-            $productStatus = ProductStatus::where('id', $request['product_status_id'])->first();
-            $productCondition = ProductCondition::where('id', $request['product_condition_id'])->first();
+            $category = Category::find($request['category_id']) ?: null;
+            $warehouse = Warehouse::findOrFail($request['warehouse_id']);
+            $productStatus = ProductStatus::findOrFail($request['product_status_id']);
+            $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
             // if (!$category) {
             //     return new ResponseResource(false, "Category ID tidak ditemukan", $request['category_id']);
@@ -305,20 +321,21 @@ class PaletController extends Controller
 
             $palet->update([
                 'name_palet' => $request['name_palet'],
-                'category_palet' => $category->name_category,
+                'category_palet' => $category->name_category ?? '',
                 'total_price_palet' => $request['total_price_palet'],
                 'total_product_palet' => $request['total_product_palet'],
-                'file_pdf' => $request['file_pdf'] ?? null,
+                'palet_barcode' => $request['palet_barcode'],
+                'file_pdf' => $validatedData['file_pdf'] ?? null,
                 'description' => $request['description'] ?? null,
-                'is_active' => $request['is_active'],
-                'warehouse' => $destination->shop_name,
-                'condition' => $productCondition->condition_slug,
-                'status' => $productStatus->status_slug,
-                'is_sale' => $request['is_sale'],
+                'is_active' => $request['is_active'] ?? false,
+                'warehouse_name' => $warehouse->nama,
+                'product_condition_name' => $productCondition->condition_name,
+                'product_status_name' => $productStatus->status_name,
+                'is_sale' => $request['is_sale'] ?? false,
                 'category_id' => $request['category_id'],
-                'product_status_id' => $request['product_status_id'],
-                'destination_id' => $request['destination_id'],
+                'warehouse_id' => $request['warehouse_id'],
                 'product_condition_id' => $request['product_condition_id'],
+                'product_status_id' => $request['product_status_id'],
             ]);
 
             // Handle multiple image uploads
@@ -341,9 +358,26 @@ class PaletController extends Controller
                 }
             }
 
+            $brands = $request->input('product_brand_ids');
+            if ($brands) {
+                $updatedBrands = [];
+
+                foreach ($brands as $brandId) {
+                    $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
+
+                    // Gunakan updateOrCreate untuk memperbarui atau membuat data baru jika belum ada
+                    $paletBrand = PaletBrand::updateOrCreate(
+                        ['palet_id' => $palet->id, 'brand_id' => $brandId],
+                        ['palet_brand_name' => $paletBrandName]
+                    );
+
+                    $updatedBrands[] = $paletBrand;
+                }
+            }
+
             DB::commit();
 
-            return new ResponseResource(true, "Data palet berhasil diperbarui", $palet);
+            return new ResponseResource(true, "Data palet berhasil diperbarui", $palet->load(['paletImages', 'paletBrands']));
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update palet: ' . $e->getMessage());
@@ -387,6 +421,12 @@ class PaletController extends Controller
                 Storage::disk('public')->delete('product-images/' . $oldImage->filename);
                 $oldImage->delete();
             }
+
+            $paletBrands = PaletBrand::where('palet_id', $palet->id)->get();
+            foreach ($paletBrands as $paletBrand) {
+                $paletBrand->delete();
+            }
+
             $palet->delete();
 
             DB::commit();
