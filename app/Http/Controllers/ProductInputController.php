@@ -90,8 +90,9 @@ class ProductInputController extends Controller
                 'new_status_product',
                 'new_category_product',
                 'new_tag_product',
-                'price_discount',
-                'type'
+                'price_discount', 
+                'type',
+                'image'
             ]);
 
             $inputData['new_quantity_product'] = $inputData['new_quantity_product'] ?? 1;
