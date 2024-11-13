@@ -12,7 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('batch:processRemaining')->everyMinute();
+        $schedule->command('batch:processRemaining')->everyTenMinutes();
         
         $schedule->command('cron:expiredProduct')->everyTwoHours();
 
@@ -20,7 +20,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('end-of-month:task')->when(function () {
             return now()->isLastOfMonth();
         })->dailyAt('23:59');
-
 
     }
 

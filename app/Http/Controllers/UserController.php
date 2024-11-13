@@ -212,7 +212,7 @@ class UserController extends Controller
         $user->update([
             'format_barcode' => null,
         ]);
-        return new ResponseResource(true, "Berhasil menambahkan format barcode", []);
+        return new ResponseResource(true, "Berhasil menghapus format barcode", []);
     }
 
     public function showFormatBarcode($id)

@@ -71,6 +71,7 @@ class ProductQcdController extends Controller
                     'display_price' => $product->display_price,
                     'created_at' => now(),  
                     'updated_at' => now(),
+                    'type' => $product->type
                 ];
             })->toArray();
 

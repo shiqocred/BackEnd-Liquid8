@@ -108,6 +108,7 @@ class SaleController extends Controller
                     $newProduct->new_discount,
                     $newProduct->old_price_product,
                     $newProduct->code_document,
+                    $newProduct->type
 
                 ];
             } elseif ($bundle) {
@@ -164,6 +165,7 @@ class SaleController extends Controller
                     'new_discount' => $data[5] ?? null,
                     'display_price' => $data[3],
                     'code_document' => $data[7] ?? null,
+                    'type' => $data[8]
                 ]
             );
 
@@ -213,7 +215,8 @@ class SaleController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
                 'new_discount' => 0,
-                'display_price' => $checkSale->product_price_sale
+                'display_price' => $checkSale->product_price_sale,
+                'type' => $checkSale->type
 
             ]);
             $allSale = Sale::where('code_document_sale', $sale->code_document_sale)

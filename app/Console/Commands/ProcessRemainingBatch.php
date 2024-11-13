@@ -29,9 +29,6 @@ class ProcessRemainingBatch extends Command
 
             Redis::ltrim($redisKey, $batchSize, -1);
 
-            \Log::info("Processed batch of size: " . count($batchData));
-        } else {
-            \Log::info("No data to process in Redis.");
         }
     }
 }
