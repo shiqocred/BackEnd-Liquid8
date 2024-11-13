@@ -190,6 +190,16 @@ class CategoryFactory extends Factory
             ];
         });
     }
+    public function cat17()
+    {
+        return $this->state(function (array $attributes){
+            return [
+                'name_category' => 'TOOLS',
+                'discount_category' => 50,
+                'max_price_category' => 2000000
+            ];
+        });
+    }
 
    
 

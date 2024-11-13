@@ -43,6 +43,8 @@ class DatabaseSeeder extends Seeder
         Category::factory()->cat14()->create();
         Category::factory()->cat15()->create();
         Category::factory()->cat16()->create();
+        Category::factory()->cat17()->create();
+
         Color_tag::factory()->merah()->create();
         Color_tag::factory()->biru()->create();
 
