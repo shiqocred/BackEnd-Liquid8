@@ -155,6 +155,25 @@ function barcodeQcd()
 
     return $newBarcode;
 }
+function barcodeBundleScan()
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    $newBarcode = '';
+
+    do {
+        $randomString = '';
+        for ($i = 0; $i < 5; $i++) {
+            $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+        }
+
+        $newBarcode = "LBS" . $randomString;
+
+        $exists = Bundle::where('barcode_bundle', $newBarcode)->exists();
+
+    } while ($exists);
+
+    return $newBarcode;
+}
 function barcodeBundle()
 {
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -174,7 +193,6 @@ function barcodeBundle()
 
     return $newBarcode;
 }
-
 function newBarcodeCustom($init_barcode, $userId)
 {
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-';
