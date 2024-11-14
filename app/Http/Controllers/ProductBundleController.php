@@ -225,7 +225,7 @@ class ProductBundleController extends Controller
     }
 
     //mtc
-    public function addBundleScan(Request $request)
+    public function createBundleScan(Request $request)
     {
         DB::beginTransaction();
         $userId = auth()->id();
@@ -255,6 +255,7 @@ class ProductBundleController extends Controller
                 'barcode_bundle' => barcodeBundleScan(),
                 'category' => $request->category ?? null,
                 'name_color' => $request->name_color ?? null,
+                'type' => 'type2'
             ]);
     
             if ($product_filters->isNotEmpty()) {

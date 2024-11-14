@@ -23,10 +23,11 @@ class BundleController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-
-        $bundles = Bundle::latest()
-            ->with('product_bundles')
-            ->where(function ($queryBuilder) use ($query) {
+    
+        $bundles = Bundle::whereNull('type')->orWhere('type', 'type1')->latest()->with('product_bundles');
+    
+        if ($query) {
+            $bundles->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name_bundle', 'LIKE', '%' . $query . '%')
                     ->orWhereHas('product_bundles', function ($subQueryBuilder) use ($query) {
                         $subQueryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
@@ -35,13 +36,14 @@ class BundleController extends Controller
                             ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
                             ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
                     });
-            })
-            ->paginate(50);
-
-
-        return new ResponseResource(true, "list bundle", $bundles);
+            });
+        }
+    
+        $paginatedBundles = $bundles->paginate(50);
+    
+        return new ResponseResource(true, "list bundle", $paginatedBundles);
     }
-
+    
     /**
      * Show the form for creating a new resource. 
      */
@@ -199,6 +201,30 @@ class BundleController extends Controller
             DB::rollback();
             return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
         }
+    }
+
+    public function listBundleScan(Request $request)
+    {
+        $query = $request->input('q');
+    
+        $bundles = Bundle::Where('type', 'type2')->latest()->with('product_bundles');
+    
+        if ($query) {
+            $bundles->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('name_bundle', 'LIKE', '%' . $query . '%')
+                    ->orWhereHas('product_bundles', function ($subQueryBuilder) use ($query) {
+                        $subQueryBuilder->where('new_name_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
+                    });
+            });
+        }
+    
+        $paginatedBundles = $bundles->paginate(50);
+    
+        return new ResponseResource(true, "list bundle", $paginatedBundles);
     }
 
     public function exportBundles()
