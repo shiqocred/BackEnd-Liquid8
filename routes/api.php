@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BarcodeAbnormalController;
 use App\Http\Controllers\BklController;
 use App\Http\Controllers\BundleController;
 use App\Http\Controllers\BundleQcdController;
@@ -479,7 +478,6 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('dataSelection', [BarcodeAbnormalController::class, 'dataSelection']);
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
 Route::get('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
