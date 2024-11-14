@@ -47,7 +47,7 @@ class ProductBundleController extends Controller
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
             $validator = Validator::make($request->all(), [
-                'name_bundle' => 'required|unique:bundles,name_bundle',
+                'name_bundle' => 'required',
                 'total_price_bundle' => 'nullable',
                 'total_price_custom_bundle' => 'nullable',
                 'total_product_bundle' => 'nullable',
@@ -233,7 +233,7 @@ class ProductBundleController extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'name_bundle' => 'required|unique:bundles,name_bundle',
+                'name_bundle' => 'required',
                 'total_price_bundle' => 'nullable',
                 'total_price_custom_bundle' => 'nullable',
                 'total_product_bundle' => 'nullable',
