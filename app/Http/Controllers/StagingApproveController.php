@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
+use Carbon\Carbon;
+use App\Models\Sale;
+use App\Models\User;
+use App\Models\Bundle;
 use App\Models\New_product;
-use App\Models\ProductApprove;
 use App\Models\Product_old;
+use App\Models\RepairFilter;
+use Illuminate\Http\Request;
+use App\Models\FilterStaging;
+use App\Models\RepairProduct;
+use App\Models\Product_Bundle;
+use App\Models\ProductApprove;
+
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Jobs\DeleteDuplicateProductsJob;
-
 use Illuminate\Support\Facades\Redis;
+use App\Http\Resources\ResponseResource;
+use App\Jobs\DeleteDuplicateProductsJob;
 
 
 class StagingApproveController extends Controller
@@ -160,54 +166,54 @@ class StagingApproveController extends Controller
         }
     }
 
-    public function countBast(Request $request)
-    {
-        // Memperpanjang waktu eksekusi dan batas memori
-        set_time_limit(600);
-        ini_set('memory_limit', '1024M');
-        $inventory = New_product::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    // public function countBast(Request $request)
+    // {
+    //     // Memperpanjang waktu eksekusi dan batas memori
+    //     set_time_limit(600);
+    //     ini_set('memory_limit', '1024M');
+    //     $inventory = New_product::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $stagings = StagingProduct::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $stagings = StagingProduct::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $stagingApproves = StagingApprove::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $stagingApproves = StagingApprove::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $filterStagings = FilterStaging::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $filterStagings = FilterStaging::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $productBundle = Product_Bundle::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $productBundle = Product_Bundle::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $sales = Sale::where('code_document', '0130/10/2024')->select('code_document')->get();
+    //     $sales = Sale::where('code_document', '0130/10/2024')->select('code_document')->get();
 
-        $productApprove = ProductApprove::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $productApprove = ProductApprove::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $repairFilter = RepairFilter::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $repairFilter = RepairFilter::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $repairProduct = RepairProduct::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
+    //     $repairProduct = RepairProduct::where('code_document', '0130/10/2024')
+    //         ->select('old_barcode_product')->get();
 
-        $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
-         + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
+    //     $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
+    //      + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
 
-        // Cek duplikasi di dalam $combined dan $product_all
-        $duplicates_combined = $combined->duplicates();
-        $duplicates_product_all = $product_all->duplicates();
+    //     // Cek duplikasi di dalam $combined dan $product_all
+    //     $duplicates_combined = $combined->duplicates();
+    //     $duplicates_product_all = $product_all->duplicates();
 
-        // Menampilkan hasil debugging
-        return [
-            'total_product_all' => count($product_all),
-            // 'total_combined' => count($combined),
-            'totaldiff' => count($product_all->diff($combined)),
-            // 'duplicates_combined' => count($duplicates_combined),
-            // 'duplicates_product_all' => count($duplicates_product_all),
-            'unique_barcodes' => $product_all->diff($combined),
-        ];
-    }
+    //     // Menampilkan hasil debugging
+    //     return [
+    //         'total_product_all' => count($product_all),
+    //         // 'total_combined' => count($combined),
+    //         'totaldiff' => count($product_all->diff($combined)),
+    //         // 'duplicates_combined' => count($duplicates_combined),
+    //         // 'duplicates_product_all' => count($duplicates_product_all),
+    //         'unique_barcodes' => $product_all->diff($combined),
+    //     ];
+    // }
 
     public function dataSelection()
     {
@@ -248,15 +254,7 @@ class StagingApproveController extends Controller
         //     ->pluck('new_barcode_product');
 
         // $sales = Sale::latest()->pluck('product_barcode_sale');
-
-        $product_olds = Product_old::where('code_document', '0002/11/2024')->pluck('old_barcode_product');
-
-        // Menggabungkan data $lolos dan $sales
-        // $combined = $lolos->merge($sales);
-
-        // Memeriksa barcode yang duplikat
-        $duplicateBarcodes = $product_olds->duplicates();
-
+        
         // $stagings = StagingProduct::where('code_document', '0068/09/2024')
         //     ->pluck('new_name_product');
 
@@ -272,14 +270,26 @@ class StagingApproveController extends Controller
         // $combined = $lolos->merge($stagings)->merge($product_olds2)->merge($sales)->merge($approve);
 
         // Menggabungkan dua koleksi ($lolos dan $sales)
+             // Menggabungkan data $lolos dan $sales
+        // $combined = $lolos->merge($sales);
 
+        $product_olds = Product_old::where('code_document', '0002/11/2024')->pluck('old_barcode_product');
+
+        // Menghitung jumlah kemunculan setiap barcode
+        $barcodeCounts = array_count_values($product_olds->toArray());
+        
+        // Memfilter barcode yang memiliki lebih dari satu kemunculan (duplikat)
+        $duplicateBarcodes = array_filter($barcodeCounts, function($count) {
+            return $count > 1;
+        });
+        
         // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
-        if ($duplicateBarcodes->isNotEmpty()) {
-            return count($duplicateBarcodes);
-            // return response()->json($duplicateBarcodes);
+        if (!empty($duplicateBarcodes)) {
+            return response()->json($duplicateBarcodes);
         } else {
             return response()->json("Tidak ada data duplikat.");
         }
+        
     }
 
     public function cacheProductBarcodes()

@@ -57,7 +57,7 @@ class ProductInputController extends Controller
             'new_status_product' => 'nullable|in:display,expired,promo,bundle,palet,dump',
             'condition' => 'nullable|in:lolos,damaged,abnormal',
             'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable',
+            'new_tag_product' => 'nullable|exists:color_tag2s,name_color',
             'image' => 'nullable|url',
         ], [
             'new_barcode_product.unique' => 'barcode sudah ada',
