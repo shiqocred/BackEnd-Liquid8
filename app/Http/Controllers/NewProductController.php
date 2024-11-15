@@ -18,6 +18,7 @@ use App\Models\ExcelOldColor;
 use App\Models\FilterStaging;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use App\Exports\ProductByColor;
 use Illuminate\Support\Facades\DB;
 use App\Exports\ProductExpiredSLMP;
 use Illuminate\Support\Facades\Log;
@@ -941,7 +942,7 @@ class NewProductController extends Controller
                 ->whereNull('new_category_product')
                 ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
                 ->where('new_status_product', 'display')
-                ->where(function ($type){
+                ->where(function ($type) {
                     $type->whereNull('type')->orWhere('type', 'type1');
                 })
                 ->latest();
@@ -988,10 +989,10 @@ class NewProductController extends Controller
                 ->where(function ($status) {
                     $status->where('new_status_product', 'display')
                         ->orWhere('new_status_product', 'expired');
-                })->where(function ($type){
+                })->where(function ($type) {
                     $type->whereNull('type')
-                    ->orWhere('type', 'type1');
-                });                
+                        ->orWhere('type', 'type1');
+                });
 
             $bundleQuery = Bundle::select(
                 'id',
@@ -1028,8 +1029,7 @@ class NewProductController extends Controller
             }
 
             $mergedQuery = $productQuery->unionAll($bundleQuery)->orderBy('created_at', 'desc')
-            ->paginate(33, ['*'], 'page', $page);
-
+                ->paginate(33, ['*'], 'page', $page);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(404);
         }
@@ -1251,8 +1251,10 @@ class NewProductController extends Controller
 
     public function totalPerColor(Request $request)
     {
-
-        $new_product = New_product::whereNotNull('new_tag_product')->where('new_status_product', 'display')->pluck('new_tag_product');
+        $new_product = New_product::whereNotNull('new_tag_product')
+            ->where('new_category_product', null)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->where('new_status_product', 'display')->pluck('new_tag_product');
         $countByColor = $new_product->countBy(function ($item) {
             return $item;
         });
@@ -1262,6 +1264,32 @@ class NewProductController extends Controller
         }
         return new ResponseResource(true, "list data product by color2", $countByColor);
     }
+
+    public function exportProductByColor(Request $request)
+    {
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
+
+        try {
+            $fileName = 'product-by-color.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+
+            // Buat direktori jika belum ada
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+
+            Excel::store(new ProductByColor($request), $publicPath . '/' . $fileName, 'public');
+
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+
+            return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
+        } catch (\Exception $e) {
+            return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
+        }
+    }
+
 
     public function exportProductByCategory(Request $request)
     {
