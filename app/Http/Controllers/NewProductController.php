@@ -1142,7 +1142,6 @@ class NewProductController extends Controller
         return new ResponseResource(true, "File siap diunduh.", $downloadUrl);
     }
 
-
     public function getLatestPrice(Request $request)
     {
         $category = null;
