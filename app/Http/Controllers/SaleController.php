@@ -204,10 +204,12 @@ class SaleController extends Controller
                 ->where('user_id', auth()->id())
                 ->where('status_sale', 'proses')
                 ->get();
+
             if ($allSale->count() <= 1) {
                 $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->where('user_id', auth()->id())->first();
                 $saleDocument->delete();
             }
+            
             $sale->delete();
             $resource = new ResponseResource(true, "data berhasil di hapus", $sale);
         } catch (\Exception $e) {
