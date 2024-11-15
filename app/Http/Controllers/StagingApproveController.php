@@ -249,7 +249,7 @@ class StagingApproveController extends Controller
 
         // $sales = Sale::latest()->pluck('product_barcode_sale');
 
-        $product_olds = Product_old::where('code_document', '0002/11/2024')->pluck('old_barcode_product');
+        $product_olds = Product_old::where('code_document', '0003/11/2024')->pluck('old_barcode_product');
 
         // Menggabungkan data $lolos dan $sales
         // $combined = $lolos->merge($sales);
@@ -275,8 +275,8 @@ class StagingApproveController extends Controller
 
         // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
         if ($duplicateBarcodes->isNotEmpty()) {
-            return count($duplicateBarcodes);
-            // return response()->json($duplicateBarcodes);
+           
+            return response()->json($duplicateBarcodes);
         } else {
             return response()->json("Tidak ada data duplikat.");
         }
