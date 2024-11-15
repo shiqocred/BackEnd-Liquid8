@@ -11,10 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('summary_scans', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->nullable()->constrained();
-            $table->timestamps();
+        Schema::table('bundles', function (Blueprint $table) {
+            $table->enum('type', ['type1', 'type2'])->nullable();
         });
     }
 
@@ -23,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('summary_scans');
+        Schema::table('bundles', function (Blueprint $table) {
+            $table->dropColumn('type');
+        });
     }
 };

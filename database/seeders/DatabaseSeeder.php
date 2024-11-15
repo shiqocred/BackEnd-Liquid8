@@ -8,6 +8,7 @@ use App\Models\Buyer;
 use App\Models\User;
 use App\Models\Category;
 use App\Models\Color_tag;
+use App\Models\ColorTag2;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
 
@@ -47,6 +48,9 @@ class DatabaseSeeder extends Seeder
 
         Color_tag::factory()->merah()->create();
         Color_tag::factory()->biru()->create();
+
+        ColorTag2::factory()->merah()->create();
+        ColorTag2::factory()->biru()->create();
 
 
         $users = Role::factory();

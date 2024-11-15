@@ -233,26 +233,39 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
-    //filters product bundle
-    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
-    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
-    Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
+   //filters product bundle
+   Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
+   Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
+   Route::delete('bundle/filter_product/destroy/{id}', [ProductFilterController::class, 'destroy']);
 
-    //bundle
-    Route::get('bundle', [BundleController::class, 'index']);
-    Route::get('bundle/{bundle}', [BundleController::class, 'show']);
-    Route::put('bundle/{bundle}', [BundleController::class, 'update']);
-    Route::post('bundle', [ProductBundleController::class, 'store']);
-    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
-    Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
-    Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
+   //bundle
+   Route::get('bundle', [BundleController::class, 'index']);
+   Route::get('bundle/{bundle}', [BundleController::class, 'show']);
+   Route::put('bundle/{bundle}', [BundleController::class, 'update']);
+   Route::post('bundle', [ProductBundleController::class, 'store']);
+   Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
+   Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
+   Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
+   
+   Route::get('bundle/product', [ProductBundleController::class, 'index']);
+   Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
+   
+   //filter product bundle - mtc 
+   Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
+   Route::post('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'addFilterScan']);
+   Route::delete('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'destroyFilterScan']);
+   
+   //bundle-scans
+   Route::get('bundle-scans', [BundleController::class, 'listBundleScan']);
+   Route::post('bundle-scans', [ProductBundleController::class, 'createBundleScan']);
+   Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
+   Route::post('bundle-scans/product/{product}/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
+   Route::delete('bundle-scans/product/{productBundle}', [ProductBundleController::class, 'destroyProductBundle']);
+   Route::get('bundle/{bundle}', [BundleController::class, 'show']);
+   Route::put('bundle/{bundle}', [BundleController::class, 'update']);
 
-    Route::get('bundle/product', [ProductBundleController::class, 'index']);
-    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
-
-    //warehouse
-    Route::resource('warehouses', WarehouseController::class);
-
+   //warehouse
+   Route::resource('warehouses', WarehouseController::class);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
@@ -274,16 +287,15 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
-    //colortags dan category
-    Route::resource('categories', CategoryController::class)->except(['destroy']);
-    //colortags diskon
-    Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
-    Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
-    Route::post('panel-spv', [UserController::class, 'addFormatBarcode']);
-    Route::delete('panel-spv/{id}', [UserController::class, 'deleteFormatBarcode']);
-    Route::get('panel-spv/{id}', [UserController::class, 'showFormatBarcode']);
-    Route::get('panel-spv', [UserController::class, 'allFormatBarcode']);
-
+   //colortags dan category
+   Route::resource('categories', CategoryController::class)->except(['destroy']);
+   //colortags diskon
+   Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
+   Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
+   Route::post('panel-spv', [UserController::class, 'addFormatBarcode']);
+   Route::delete('panel-spv/{id}', [UserController::class, 'deleteFormatBarcode']);
+   Route::get('panel-spv/{id}', [UserController::class, 'showFormatBarcode']);
+   Route::get('panel-spv', [UserController::class, 'allFormatBarcode']);
 });
 
 //end inventory=========================================== Inventory ==========================================================
@@ -466,8 +478,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('dataSelection', [StagingApproveController::class, 'dataSelection']);
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+Route::get('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
 Route::get('selectionDataRedis', [StagingApproveController::class, 'dataSelectionRedis']);

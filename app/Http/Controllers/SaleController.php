@@ -199,7 +199,7 @@ class SaleController extends Controller
             if ($checkSale == null) {
                 return response()->json(['status' => false, 'message' => 'sale not found'], 404);
             }
-           
+        
             $allSale = Sale::where('code_document_sale', $sale->code_document_sale)
                 ->where('user_id', auth()->id())
                 ->where('status_sale', 'proses')
