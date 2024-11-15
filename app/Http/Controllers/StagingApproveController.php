@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Redis;
 use App\Http\Resources\ResponseResource;
 use App\Jobs\DeleteDuplicateProductsJob;
 use App\Models\BarcodeAbnormal;
+use App\Models\BarcodeDamaged;
 
 class StagingApproveController extends Controller
 {
@@ -164,102 +165,98 @@ class StagingApproveController extends Controller
         }
     }
 
-    public function countBast(Request $request)
+    public function findSimilarTabel(Request $request)
     {
         // Memperpanjang waktu eksekusi dan batas memori
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
-        $inventory = New_product::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $stagings = StagingProduct::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $stagingApproves = StagingApprove::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $filterStagings = FilterStaging::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $productBundle = Product_Bundle::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $sales = Sale::where('code_document', '0130/10/2024')->select('code_document')->get();
-
-        $productApprove = ProductApprove::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $repairFilter = RepairFilter::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $repairProduct = RepairProduct::where('code_document', '0130/10/2024')
-            ->select('old_barcode_product')->get();
-
-        $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
-            + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
-
-        // Cek duplikasi di dalam $combined dan $product_all
-        // $duplicates_combined = $combined->duplicates();
-        // $duplicates_product_all = $product_all->duplicates();
-
-        // Menampilkan hasil debugging
-        return [
-            'total_product_all' => $allData,
-
-        ];
-    }
-
-
-    public function findSimilarTabel(Request $request)
-    {
-        $product_olds = Product_old::where('code_document', '0003/11/2024')->pluck('old_barcode_product');
-
-        // Menghitung jumlah kemunculan setiap barcode
-        $barcodeCounts = array_count_values($product_olds->toArray());
-
-        // Mencari barcode yang memiliki duplikat (kemunculan lebih dari 1)
-        $duplicateBarcodes = array_filter($barcodeCounts, function ($count) {
-            return $count > 1;
-        });
-
-        // Memasukkan setiap barcode yang memiliki duplikat ke tabel BarcodeAbnormal
-        foreach ($duplicateBarcodes as $barcode => $count) {
-            BarcodeAbnormal::create([
-                'code_document' => '0001/11/2024',
-                'old_barcode_product' => $barcode
-            ]);
-        }
-
-        // Mengembalikan respon sesuai dengan hasil
-        if (!empty($duplicateBarcodes)) {
-            return response()->json($duplicateBarcodes); // Anda dapat mengembalikan data barcode yang memiliki duplikat
-        } else {
-            return response()->json("Tidak ada data duplikat.");
-        }
-    }
-
-    function deleteDuplicateOldBarcodes()
-    {
-        // Dapatkan semua old_barcode_product yang ada di kode dokumen tertentu
-        $productOlds = Product_old::where('code_document', '0002/11/2024')
-            ->select('id', 'old_barcode_product')
-            ->orderBy('id')
-            ->get();
-
-        // Simpan barcode yang sudah ditemukan
-        $uniqueBarcodes = [];
-        $count = 0;
-        // Loop data untuk menghapus yang duplikat
-        foreach ($productOlds as $productOld) {
-            if (in_array($productOld->old_barcode_product, $uniqueBarcodes)) {
-                // Jika barcode sudah ada di array, hapus datanya
-                Product_old::where('id', $productOld->id)->delete();
-                $count += 1;
-            } else {
-                // Jika barcode belum ada, tambahkan ke array
-                $uniqueBarcodes[] = $productOld->old_barcode_product;
+    
+        try {
+            // Mengambil semua data barcode berdasarkan kode dokumen
+            $documents = ['0001/11/2024', '0002/11/2024', '0003/11/2024'];
+    
+            $barcodes = Product_old::whereIn('code_document', $documents)
+                ->pluck('old_barcode_product');
+    
+            // Menghitung jumlah kemunculan setiap barcode
+            $barcodeCounts = array_count_values($barcodes->toArray());
+    
+            // Filter barcode yang duplikat (lebih dari 1 kemunculan)
+            $duplicateBarcodes = array_filter($barcodeCounts, function ($count) {
+                return $count > 1;
+            });
+    
+            // Jika ada barcode duplikat, simpan ke dalam tabel BarcodeDamaged
+            if (!empty($duplicateBarcodes)) {
+                foreach ($duplicateBarcodes as $barcode => $count) {
+                    BarcodeDamaged::updateOrCreate(
+                        [
+                            'code_document' => '0001/11/2024',
+                            'old_barcode_product' => $barcode,
+                        ],
+                        [
+                            'occurrences' => $count, // Kolom tambahan jika Anda ingin menyimpan jumlah duplikat
+                        ]
+                    );
+                }
+    
+                // Mengembalikan respon dengan data barcode duplikat
+                return response()->json($duplicateBarcodes );
             }
+    
+            // Jika tidak ada barcode duplikat
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Tidak ada barcode duplikat.',
+                'data' => [],
+            ]);
+        } catch (\Exception $e) {
+            // Menangkap error dan mengembalikan respon error
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat memproses data.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-        return new ResponseResource(true, "berhasil dihapus", $count);
     }
+    
+    public function deleteDuplicateOldBarcodes()
+    {
+        try {
+            // Ambil semua barcode dari BarcodeDamaged berdasarkan kode dokumen tertentu
+            $barcodes = BarcodeDamaged::where('code_document', '0001/11/2024')
+                ->pluck('old_barcode_product');
+    
+            // Daftar tabel yang akan dicek
+            $tables = [
+                New_product::class,
+                ProductApprove::class,
+                StagingProduct::class,
+                StagingApprove::class,
+                FilterStaging::class,
+            ];
+    
+            $deletedCount = 0; // Variabel untuk menghitung jumlah record yang dihapus
+    
+            // Loop melalui setiap tabel
+            foreach ($tables as $table) {
+                // Hapus record yang memiliki barcode yang sama
+                $deletedCount += $table::whereIn('old_barcode_product', $barcodes)->delete();
+            }
+    
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Berhasil menghapus data duplikat.',
+                'deleted_count' => $deletedCount,
+            ]);
+        } catch (\Exception $e) {
+            // Tangkap error dan kembalikan respon error
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Terjadi kesalahan saat menghapus data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
 }
