@@ -267,7 +267,7 @@ class NewProductController extends Controller
             $inputData['new_tag_product'] = null;
         }
 
-        if ($request->input('old_price_product') <= 100000) {
+        if ($request->input('old_price_product') < 100000) {
             $tagwarna = Color_tag::where('min_price_color', '<=', $request->input('old_price_product'))
                 ->where('max_price_color', '>=', $request->input('old_price_product'))
                 ->select('fixed_price_color', 'name_color')->first();
