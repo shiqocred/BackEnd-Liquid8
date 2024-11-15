@@ -14,14 +14,13 @@ use App\Models\FilterStaging;
 use App\Models\RepairProduct;
 use App\Models\Product_Bundle;
 use App\Models\ProductApprove;
-
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\Http\Resources\ResponseResource;
 use App\Jobs\DeleteDuplicateProductsJob;
-
+use App\Models\BarcodeAbnormal;
 
 class StagingApproveController extends Controller
 {
@@ -54,8 +53,7 @@ class StagingApproveController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {}
+    public function store(Request $request) {}
 
     /**
      * Display the specified resource.
@@ -166,159 +164,100 @@ class StagingApproveController extends Controller
         }
     }
 
-    // public function countBast(Request $request)
-    // {
-    //     // Memperpanjang waktu eksekusi dan batas memori
-    //     set_time_limit(600);
-    //     ini_set('memory_limit', '1024M');
-    //     $inventory = New_product::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $stagings = StagingProduct::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $stagingApproves = StagingApprove::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $filterStagings = FilterStaging::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $productBundle = Product_Bundle::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $sales = Sale::where('code_document', '0130/10/2024')->select('code_document')->get();
-
-    //     $productApprove = ProductApprove::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $repairFilter = RepairFilter::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $repairProduct = RepairProduct::where('code_document', '0130/10/2024')
-    //         ->select('old_barcode_product')->get();
-
-    //     $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
-    //      + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
-
-    //     // Cek duplikasi di dalam $combined dan $product_all
-    //     $duplicates_combined = $combined->duplicates();
-    //     $duplicates_product_all = $product_all->duplicates();
-
-    //     // Menampilkan hasil debugging
-    //     return [
-    //         'total_product_all' => count($product_all),
-    //         // 'total_combined' => count($combined),
-    //         'totaldiff' => count($product_all->diff($combined)),
-    //         // 'duplicates_combined' => count($duplicates_combined),
-    //         // 'duplicates_product_all' => count($duplicates_product_all),
-    //         'unique_barcodes' => $product_all->diff($combined),
-    //     ];
-    // }
-
-    public function dataSelection()
+    public function countBast(Request $request)
     {
+        // Memperpanjang waktu eksekusi dan batas memori
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
+        $inventory = New_product::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        // Ambil semua barcode dari `code_document` = '0001/11/2024' sebagai acuan
-        $productOldInit = Product_old::where('code_document', '0001/11/2024')
-            ->pluck('old_barcode_product')
-            ->toArray();
+        $stagings = StagingProduct::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        // Jalankan proses penghapusan pada data dengan `code_document` = '0003/11/2024'
-        $data = Product_old::where('code_document', '0004/11/2024')->cursor()->each(function ($product) use (&$productOldInit) {
-            // Jika barcode di data '0003/11/2024' ada di daftar '0001/11/2024', hapus dari kedua code_document
-            if (in_array($product->old_barcode_product, $productOldInit)) {
-                $product->delete(); // Hapus dari '0003/11/2024'
+        $stagingApproves = StagingApprove::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-                // Cari indeks barcode yang cocok di '0001/11/2024' dan hapus
-                $index = array_search($product->old_barcode_product, $productOldInit);
-                if ($index !== false) {
-                    // Hapus data yang ditemukan di `code_document` '0001/11/2024'
-                    Product_old::where('code_document', '0001/11/2024')
-                        ->where('old_barcode_product', $product->old_barcode_product)
-                        ->delete();
+        $filterStagings = FilterStaging::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-                    // Hapus barcode dari array untuk menghindari pengecekan ulang
-                    unset($productOldInit[$index]);
-                }
-            }
-        });
+        $productBundle = Product_Bundle::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
 
-        return new ResponseResource(true, "Berhasil melakukan seleksi dan penghapusan data duplikat", $data);
+        $sales = Sale::where('code_document', '0130/10/2024')->select('code_document')->get();
+
+        $productApprove = ProductApprove::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
+
+        $repairFilter = RepairFilter::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
+
+        $repairProduct = RepairProduct::where('code_document', '0130/10/2024')
+            ->select('old_barcode_product')->get();
+
+        $allData = count($inventory) + count($stagings) + count($filterStagings) + count($productBundle)
+            + count($productApprove) + count($repairFilter) + count($repairProduct) + count($sales) + count($stagingApproves);
+
+        // Cek duplikasi di dalam $combined dan $product_all
+        // $duplicates_combined = $combined->duplicates();
+        // $duplicates_product_all = $product_all->duplicates();
+
+        // Menampilkan hasil debugging
+        return [
+            'total_product_all' => $allData,
+
+        ];
     }
+
 
     public function findSimilarTabel(Request $request)
     {
-        // $lolos = New_product::where('code_document', '0068/09/2024')
-        //     ->pluck('new_barcode_product');
-
-        // $sales = Sale::latest()->pluck('product_barcode_sale');
-        
-        // $stagings = StagingProduct::where('code_document', '0068/09/2024')
-        //     ->pluck('new_name_product');
-
-        // $approve = StagingApprove::where('code_document', '0068/09/2024')
-        //     ->pluck('old_barcode_product');
-
-        // $product_olds2 = Product_old::where('code_document', '0068/09/2024')
-        //     ->pluck('old_name_product');
-
-        // $approve = Product_Bundle::where('code_document', '0068/09/2024')
-        //     ->pluck('new_name_product');
-
-        // $combined = $lolos->merge($stagings)->merge($product_olds2)->merge($sales)->merge($approve);
-
-        // Menggabungkan dua koleksi ($lolos dan $sales)
-             // Menggabungkan data $lolos dan $sales
-        // $combined = $lolos->merge($sales);
-
-        $product_olds = Product_old::where('code_document', '0002/11/2024')->pluck('old_barcode_product');
+        $product_olds = Product_old::where('code_document', '0001/11/2024')->pluck('old_barcode_product');
 
         // Menghitung jumlah kemunculan setiap barcode
         $barcodeCounts = array_count_values($product_olds->toArray());
-        
-        // Memfilter barcode yang memiliki lebih dari satu kemunculan (duplikat)
-        $duplicateBarcodes = array_filter($barcodeCounts, function($count) {
+
+        // Mencari barcode yang memiliki duplikat (kemunculan lebih dari 1)
+        $duplicateBarcodes = array_filter($barcodeCounts, function ($count) {
             return $count > 1;
         });
-        
-        // Mengembalikan data duplikat jika ada, atau pesan jika tidak ada
+
+        // Memasukkan setiap barcode yang memiliki duplikat ke tabel BarcodeAbnormal
+        // foreach ($duplicateBarcodes as $barcode => $count) {
+        //     BarcodeAbnormal::create([
+        //         'code_document' => '0001/11/2024',
+        //         'old_barcode_product' => $barcode
+        //     ]);
+        // }
+
+        // Mengembalikan respon sesuai dengan hasil
         if (!empty($duplicateBarcodes)) {
-            return response()->json($duplicateBarcodes);
+            return response()->json($duplicateBarcodes); // Anda dapat mengembalikan data barcode yang memiliki duplikat
         } else {
             return response()->json("Tidak ada data duplikat.");
         }
-        
     }
 
-    public function cacheProductBarcodes()
+    function deleteDuplicateOldBarcodes()
     {
-        // Cache barcodes dari '0001/11/2024' di Redis
-        $productOldInit = Product_old::where('code_document', '0001/11/2024')
-            ->pluck('old_barcode_product')
-            ->toArray();
+        // Dapatkan semua old_barcode_product yang ada di kode dokumen tertentu
+        $productOlds = Product_old::where('code_document', '0001/11/2024')
+            ->select('id', 'old_barcode_product')
+            ->orderBy('id')
+            ->get();
 
-        // Simpan data di Redis dengan TTL, misalnya 10 menit
-        Redis::set('product_old:code_document:0001', json_encode($productOldInit), 'EX', 600);
+        // Simpan barcode yang sudah ditemukan
+        $uniqueBarcodes = [];
 
-        return new ResponseResource(true, "Data berhasil di-cache di Redis", []);
+        // Loop data untuk menghapus yang duplikat
+        foreach ($productOlds as $productOld) {
+            if (in_array($productOld->old_barcode_product, $uniqueBarcodes)) {
+                // Jika barcode sudah ada di array, hapus datanya
+                Product_old::where('id', $productOld->id)->delete();
+            } else {
+                // Jika barcode belum ada, tambahkan ke array
+                $uniqueBarcodes[] = $productOld->old_barcode_product;
+            }
+        }
     }
-
-    public function dataSelectionRedis()
-    {
-        set_time_limit(600);
-        ini_set('memory_limit', '1024M');
-    
-        // Menyimpan barcode di Redis sebelum menjalankan job
-        $barcodes = Product_old::pluck('old_barcode_product')->toArray();
-        Redis::set('product_old:code_document:0001', json_encode($barcodes), 'EX', 600);
-    
-        // Jalankan job untuk menghapus duplikat
-        DeleteDuplicateProductsJob::dispatch(Product_old::class);
-    
-        return new ResponseResource(true, "Proses penghapusan duplikat sedang berjalan di background", []);
-    }
-    
-
 }

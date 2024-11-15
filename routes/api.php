@@ -478,8 +478,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::get('countBast', [StagingApproveController::class, 'countBast']);
-Route::get('dataSelection', [StagingApproveController::class, 'dataSelection']);
 Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+Route::get('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
 Route::get('selectionDataRedis', [StagingApproveController::class, 'dataSelectionRedis']);
