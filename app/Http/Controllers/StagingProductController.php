@@ -542,15 +542,20 @@ class StagingProductController extends Controller
             if ($document) {
 
                 $productApprovesTags = ProductApprove::where('code_document', $code_document)
-                    ->whereNotNull('new_tag_product')
+                    ->whereNotNull('new_tag_product')->where('new_quality->lolos', '!=', null)
                     ->get();
 
                 $productApprovesCategories = ProductApprove::where('code_document', $code_document)
-                    ->whereNull('new_tag_product')
+                    ->whereNull('new_tag_product')->where('new_quality->lolos', '!=', null)
                     ->get();
 
+                $productApprovesAD = ProductApprove::where('code_document', $code_document)
+                    ->where('new_quality->abnormal', '!=', null)->orWhere('new_quality->damaged', '!=', null)
+                    ->get();
+                    
                 DB::beginTransaction();
 
+                $this->processProductApproves($productApprovesAD, New_product::class, 100);
                 $this->processProductApproves($productApprovesTags, New_product::class, 100);
                 $this->processProductApproves($productApprovesCategories, StagingProduct::class, 200);
 
@@ -602,7 +607,7 @@ class StagingProductController extends Controller
 
     public function export()
     {
-        set_time_limit(600); 
+        set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
         try {
@@ -653,7 +658,7 @@ class StagingProductController extends Controller
 
             $productFilter = New_product::create($product->toArray());
             $product->delete();
- 
+
             DB::commit();
             return new ResponseResource(true, "berhasil menambah list product staging", $productFilter);
         } catch (\Exception $e) {
@@ -667,7 +672,7 @@ class StagingProductController extends Controller
         return [
             'lolos' => $status === 'lolos' ? 'lolos' : null,
             'damaged' => $status === 'damaged' ? $description : null,
-            'abnormal' => $status === 'abnormal' ? $description : null
+            'abnormal' => $status === 'abnormal' ? $description : null,
         ];
     }
 
