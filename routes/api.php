@@ -261,8 +261,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
    Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
    Route::post('bundle-scans/product/{product}/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
    Route::delete('bundle-scans/product/{productBundle}', [ProductBundleController::class, 'destroyProductBundle']);
-   Route::get('bundle/{bundle}', [BundleController::class, 'show']);
-   Route::put('bundle/{bundle}', [BundleController::class, 'update']);
 
    //warehouse
    Route::resource('warehouses', WarehouseController::class);
@@ -403,6 +401,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 
    //export data by menu
    Route::post('export_product_byCategory', [NewProductController::class, 'exportProductByCategory']);
+   // Route::post('export_product_byColor', [NewProductController::class, 'exportProductByColor']);
    Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
    Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
    Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
@@ -493,6 +492,7 @@ Route::get('exportSale', [SaleController::class, 'exportSale']);
 
 //excel
 Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
+Route::post('export_product_byColor', [NewProductController::class, 'exportProductByColor']);
 
 //api urgent-> persamaan data check history
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);

@@ -96,7 +96,7 @@ class BundleController extends Controller
             'category' => 'nullable',
             'total_price_bundle' => 'required|numeric',
             'total_price_custom_bundle' => 'required|numeric',
-            'total_product_bundle' => 'required',
+            'total_product_bundle' => 'nullable',
             'name_color' => 'nullable'
         ]);
     
@@ -107,13 +107,22 @@ class BundleController extends Controller
     
         DB::beginTransaction();
         try {
+            $productBundle = Product_Bundle::where('bundle_id', $bundle->id)->get();
+
+            if ($productBundle) {
+                $qty = $request->total_product_bundle ?? count($productBundle);
+            } else {
+                $qty = $request->total_product_bundle ?? 0;
+            }
+            
+            // Melakukan update pada data bundle
             $bundle->update([
                 'name_bundle' => $request->name_bundle,
                 'category' => $request->has('category') ? $request->category : null,
                 'total_price_bundle' => $request->total_price_bundle,
                 'total_price_custom_bundle' => $request->total_price_custom_bundle,
-                'total_product_bundle' => $request->total_product_bundle,
-                'name_color' => $request->has('name_color') ? $request->name_color : null
+                'total_product_bundle' => $qty, 
+                'name_color' => $request->has('name_color') ? $request->name_color : null 
             ]);
     
             DB::commit();

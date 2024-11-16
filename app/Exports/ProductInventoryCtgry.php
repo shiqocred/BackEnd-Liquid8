@@ -35,7 +35,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'new_quantity_product',
             'new_price_product',
             'old_price_product',
-            'new_date_in_product',
             'new_status_product',
             'new_quality',
             'new_category_product',
@@ -45,9 +44,15 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'display_price',
             DB::raw('DATEDIFF(CURRENT_DATE, created_at) as days_since_created')
         )->whereNotNull('new_category_product')
-            ->where('new_tag_product', NULL)
-            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
-            ->where('new_status_product', 'display');
+        ->where('new_tag_product', NULL)
+        ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+        ->where(function ($status) {
+            $status->where('new_status_product', 'display')
+                ->orWhere('new_status_product', 'expired');
+        })->where(function ($type){
+            $type->whereNull('type')
+            ->orWhere('type', 'type1');
+        });                
 
         $bundleQuery = Bundle::select(
             DB::raw('NULL as code_document'),
@@ -57,7 +62,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             DB::raw('NULL as new_quantity_product'),
             'total_price_custom_bundle as new_price_product',
             DB::raw('NULL as old_price_product'),
-            'created_at as new_date_in_product',
             DB::raw("CASE WHEN product_status = 'not sale' THEN 'display' ELSE product_status END as new_status_product"),
             DB::raw('NULL as new_quality'),
             'category as new_category_product',
@@ -82,7 +86,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             'New Quantity Product',
             'New Price Product',
             'Old Price Product',
-            'New Date In Product',
             'New Status Product',
             'New Quality',
             'New Category Product',
@@ -104,7 +107,6 @@ class ProductInventoryCtgry implements FromQuery, WithHeadings, WithMapping, Wit
             $product->new_quantity_product,
             $product->new_price_product,
             $product->old_price_product,
-            $product->new_date_in_product,
             $product->new_status_product,
             $product->new_quality,
             $product->new_category_product,

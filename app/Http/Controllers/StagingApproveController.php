@@ -212,7 +212,7 @@ class StagingApproveController extends Controller
 
     public function findSimilarTabel(Request $request)
     {
-        $product_olds = Product_old::where('code_document', '0001/11/2024')->pluck('old_barcode_product');
+        $product_olds = Product_old::where('code_document', '0003/11/2024')->pluck('old_barcode_product');
 
         // Menghitung jumlah kemunculan setiap barcode
         $barcodeCounts = array_count_values($product_olds->toArray());
@@ -223,12 +223,12 @@ class StagingApproveController extends Controller
         });
 
         // Memasukkan setiap barcode yang memiliki duplikat ke tabel BarcodeAbnormal
-        // foreach ($duplicateBarcodes as $barcode => $count) {
-        //     BarcodeAbnormal::create([
-        //         'code_document' => '0001/11/2024',
-        //         'old_barcode_product' => $barcode
-        //     ]);
-        // }
+        foreach ($duplicateBarcodes as $barcode => $count) {
+            BarcodeAbnormal::create([
+                'code_document' => '0001/11/2024',
+                'old_barcode_product' => $barcode
+            ]);
+        }
 
         // Mengembalikan respon sesuai dengan hasil
         if (!empty($duplicateBarcodes)) {
@@ -241,23 +241,25 @@ class StagingApproveController extends Controller
     function deleteDuplicateOldBarcodes()
     {
         // Dapatkan semua old_barcode_product yang ada di kode dokumen tertentu
-        $productOlds = Product_old::where('code_document', '0001/11/2024')
+        $productOlds = Product_old::where('code_document', '0002/11/2024')
             ->select('id', 'old_barcode_product')
             ->orderBy('id')
             ->get();
 
         // Simpan barcode yang sudah ditemukan
         $uniqueBarcodes = [];
-
+        $count = 0;
         // Loop data untuk menghapus yang duplikat
         foreach ($productOlds as $productOld) {
             if (in_array($productOld->old_barcode_product, $uniqueBarcodes)) {
                 // Jika barcode sudah ada di array, hapus datanya
                 Product_old::where('id', $productOld->id)->delete();
+                $count += 1;
             } else {
                 // Jika barcode belum ada, tambahkan ke array
                 $uniqueBarcodes[] = $productOld->old_barcode_product;
             }
         }
+        return new ResponseResource(true, "berhasil dihapus", $count);
     }
 }
