@@ -261,8 +261,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
    Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
    Route::post('bundle-scans/product/{product}/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
    Route::delete('bundle-scans/product/{productBundle}', [ProductBundleController::class, 'destroyProductBundle']);
-   Route::get('bundle/{bundle}', [BundleController::class, 'show']);
-   Route::put('bundle/{bundle}', [BundleController::class, 'update']);
 
    //warehouse
    Route::resource('warehouses', WarehouseController::class);
