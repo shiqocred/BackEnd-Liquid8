@@ -476,8 +476,8 @@ Route::get('updateCategoryPalet', [PaletController::class, 'updateCategoryPalet'
 Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingWithImage']);
 
 //oret2an debug
-Route::get('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
-Route::get('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
+Route::post('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+Route::delete('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
 Route::get('selectionDataRedis', [StagingApproveController::class, 'dataSelectionRedis']);
