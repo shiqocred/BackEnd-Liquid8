@@ -2,26 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\Sale;
-use App\Models\User;
-use App\Models\Bundle;
-use App\Models\New_product;
-use App\Models\Product_old;
-use App\Models\RepairFilter;
-use Illuminate\Http\Request;
+use App\Http\Resources\ResponseResource;
+use App\Models\BarcodeDamaged;
 use App\Models\FilterStaging;
-use App\Models\RepairProduct;
-use App\Models\Product_Bundle;
+use App\Models\New_product;
 use App\Models\ProductApprove;
+use App\Models\Product_old;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
-use App\Http\Resources\ResponseResource;
-use App\Jobs\DeleteDuplicateProductsJob;
-use App\Models\BarcodeAbnormal;
-use App\Models\BarcodeDamaged;
 
 class StagingApproveController extends Controller
 {
@@ -54,7 +46,8 @@ class StagingApproveController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request) {}
+    public function store(Request $request)
+    {}
 
     /**
      * Display the specified resource.
@@ -167,16 +160,33 @@ class StagingApproveController extends Controller
 
     public function findSimilarTabel(Request $request)
     {
+        // Validasi input dokumen dari request
+        $documents = $request->input('documents'); // Mengambil array dokumen dari request
+    
+        if (is_null($documents) || !is_array($documents)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Parameter documents harus berupa array.',
+            ], 400);
+        }
+    
         // Memperpanjang waktu eksekusi dan batas memori
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
     
         try {
             // Mengambil semua data barcode berdasarkan kode dokumen
-            $documents = ['0001/11/2024', '0002/11/2024', '0003/11/2024'];
-    
             $barcodes = Product_old::whereIn('code_document', $documents)
                 ->pluck('old_barcode_product');
+    
+            // Jika tidak ada barcode ditemukan
+            if ($barcodes->isEmpty()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Tidak ada barcode yang ditemukan untuk dokumen yang diberikan.',
+                    'data' => [],
+                ]);
+            }
     
             // Menghitung jumlah kemunculan setiap barcode
             $barcodeCounts = array_count_values($barcodes->toArray());
@@ -189,29 +199,43 @@ class StagingApproveController extends Controller
             // Jika ada barcode duplikat, simpan ke dalam tabel BarcodeDamaged
             if (!empty($duplicateBarcodes)) {
                 foreach ($duplicateBarcodes as $barcode => $count) {
-                    BarcodeDamaged::updateOrCreate(
-                        [
-                            'code_document' => '0001/11/2024',
-                            'old_barcode_product' => $barcode,
-                        ],
-                        [
-                            'occurrences' => $count, // Kolom tambahan jika Anda ingin menyimpan jumlah duplikat
-                        ]
-                    );
+                    // Cari dokumen mana saja yang memiliki barcode tersebut
+                    foreach ($documents as $document) {
+                        $existsInDocument = Product_old::where('code_document', $document)
+                            ->where('old_barcode_product', $barcode)
+                            ->exists();
+    
+                        if ($existsInDocument) {
+                            BarcodeDamaged::updateOrCreate(
+                                [
+                                    'code_document' => $document, // Simpan dokumen terkait barcode
+                                    'old_barcode_product' => $barcode,
+                                ],
+                                [
+                                    'occurrences' => $count, // Menyimpan jumlah duplikasi
+                                ]
+                            );
+                        }
+                    }
                 }
     
                 // Mengembalikan respon dengan data barcode duplikat
-                return response()->json($duplicateBarcodes );
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Barcode duplikat berhasil diproses.',
+                    'data' => $duplicateBarcodes,
+                ]);
             }
     
             // Jika tidak ada barcode duplikat
             return response()->json([
                 'status' => 'success',
-                'message' => 'Tidak ada barcode duplikat.',
+                'message' => 'Tidak ada barcode duplikat yang ditemukan.',
                 'data' => [],
             ]);
         } catch (\Exception $e) {
-            // Menangkap error dan mengembalikan respon error
+          
+            // Mengembalikan respon error
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan saat memproses data.',
@@ -220,13 +244,14 @@ class StagingApproveController extends Controller
         }
     }
     
-    public function deleteDuplicateOldBarcodes()
+
+    public function deleteDuplicateOldBarcodes(Request $request)
     {
         try {
             // Ambil semua barcode dari BarcodeDamaged berdasarkan kode dokumen tertentu
-            $barcodes = BarcodeDamaged::where('code_document', '0001/11/2024')
+            $barcodes = BarcodeDamaged::where('code_document', $request->input('code_document'))
                 ->pluck('old_barcode_product');
-    
+
             // Daftar tabel yang akan dicek
             $tables = [
                 New_product::class,
@@ -235,18 +260,32 @@ class StagingApproveController extends Controller
                 StagingApprove::class,
                 FilterStaging::class,
             ];
-    
+
             $deletedCount = 0; // Variabel untuk menghitung jumlah record yang dihapus
-    
+
             // Loop melalui setiap tabel
             foreach ($tables as $table) {
-                // Hapus record yang memiliki barcode yang sama
-                $deletedCount += $table::whereIn('old_barcode_product', $barcodes)->delete();
+                foreach ($barcodes as $barcode) {
+                    // Ambil ID dari satu record dengan ID terkecil (jika ada)
+                    $recordToKeep = $table::where('old_barcode_product', $barcode)
+                        ->orderBy('created_at', 'asc') // Urutkan ID untuk mendapatkan ID terkecil
+                        ->value('id');
+
+                    if ($recordToKeep) {
+                        // Hapus semua record, termasuk yang hanya satu, kecuali jika ada data untuk disisakan
+                        $deletedCount += $table::where('old_barcode_product', $barcode)
+                            ->where('created_at', '!=', $recordToKeep) // Jika ada ID untuk disisakan
+                            ->delete();
+
+                        // Tetap hapus yang terakhir jika cuma satu
+                        $deletedCount += $table::where('id', $recordToKeep)->delete();
+                    }
+                }
             }
-    
+
             return response()->json([
                 'status' => 'success',
-                'message' => 'Berhasil menghapus data duplikat.',
+                'message' => 'Berhasil menghapus semua data duplikat untuk setiap barcode.',
                 'deleted_count' => $deletedCount,
             ]);
         } catch (\Exception $e) {
@@ -258,5 +297,5 @@ class StagingApproveController extends Controller
             ], 500);
         }
     }
-    
+
 }

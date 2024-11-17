@@ -53,7 +53,7 @@ class RepairProductController extends Controller
 
             $validator = Validator::make($request->all(), [ 
                 'repair_name' => 'required|unique:repairs,repair_name',
-                'barcode' => 'required|unique:repairs,barcode',
+                'barcode' => 'nullable|unique:repairs,barcode',
             ]);
 
             if ($validator->fails()) {
