@@ -11,6 +11,8 @@ use App\Models\Category;
 use App\Models\Color_tag;
 use App\Models\ColorTag2;
 use App\Models\ProductInput;
+use Illuminate\Support\Facades\Validator;
+
 
 class ProductFilterController extends Controller
 {
@@ -175,22 +177,7 @@ class ProductFilterController extends Controller
         ]);
     }
 
-    public function addFilterScan($id)
-    { 
-        DB::beginTransaction();
-        $userId = auth()->id();
-        try {
-            $product = ProductInput::findOrFail($id);
-            $product->user_id = $userId;
-            $productFilter = Product_Filter::create($product->toArray());
-            $product->delete();
-            DB::commit();
-            return new ResponseResource(true, "berhasil menambah list product bundle", $productFilter);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => $e->getMessage()], 500);
-        }
-    }
+    
 
     public function destroyFilterScan($id)
     {
