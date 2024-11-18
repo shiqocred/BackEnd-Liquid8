@@ -233,6 +233,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
+   
    //filters product bundle
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
@@ -252,7 +253,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
    
    //filter product bundle - mtc 
    Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
-   Route::post('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'addFilterScan']);
+   Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
    Route::delete('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'destroyFilterScan']);
    
    //bundle-scans

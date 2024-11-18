@@ -300,7 +300,10 @@ class ProductBundleController extends Controller
                 'total_price_custom_bundle' => 'nullable',
                 'total_product_bundle' => 'nullable',
                 'category' => 'nullable|exists:categories,name_category',
-                'name_color' => 'nullable|exists:color_tags,name_color'
+                'name_color' => 'nullable|exists:color_tags,name_color',
+                'ids' => 'nullable|array|min:1', 
+                'ids.*' => 'integer|exists:product_inputs,id'
+                
             ]);
 
             if ($validator->fails()) {
@@ -320,34 +323,44 @@ class ProductBundleController extends Controller
                 'type' => 'type2'
             ]);
 
-            if ($product_filters->isNotEmpty()) {
-                $insertData = $product_filters->map(function ($product) use ($bundle) {
-                    return [
-                        'bundle_id' => $bundle->id,
-                        'code_document' => $product->code_document,
-                        'old_barcode_product' => $product->old_barcode_product,
-                        'new_barcode_product' => $product->new_barcode_product,
-                        'new_name_product' => $product->new_name_product,
-                        'new_quantity_product' => $product->new_quantity_product,
-                        'new_price_product' => $product->new_price_product,
-                        'old_price_product' => $product->old_price_product,
-                        'new_date_in_product' => $product->new_date_in_product,
-                        'new_status_product' => 'bundle',
-                        'new_quality' => $product->new_quality,
-                        'new_category_product' => $product->new_category_product,
-                        'new_tag_product' => $product->new_tag_product,
-                        'new_discount' => $product->new_discount,
-                        'display_price' => $product->display_price,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                        'type' => $product->type
-                    ];
-                })->toArray();
-
-                Product_Bundle::insert($insertData);
-
-                Product_Filter::where('user_id', $userId)->delete();
-            }
+             // Ambil array IDs yang telah divalidasi
+             $ids = $request->input('ids');
+    
+             // Ambil data produk berdasarkan array IDs
+             $products = ProductInput::whereIn('id', $ids)->get();
+     
+             if ($products->isEmpty()) {
+                 return response()->json(['message' => 'No products found for the given IDs'], 404);
+             }
+     
+             $productFilters = [];
+     
+             foreach ($products as $product) {
+                 // Buat entri di Product_Bundle
+                 $productBundle = Product_Bundle::create([
+                     'bundle_id' => $bundle->id,
+                     'code_document' => $product->code_document,
+                     'old_barcode_product' => $product->old_barcode_product,
+                     'new_barcode_product' => $product->new_barcode_product,
+                     'new_name_product' => $product->new_name_product,
+                     'new_quantity_product' => $product->new_quantity_product,
+                     'new_price_product' => $product->new_price_product,
+                     'old_price_product' => $product->old_price_product,
+                     'new_date_in_product' => $product->new_date_in_product,
+                     'new_status_product' => 'bundle',
+                     'new_quality' => $product->new_quality,
+                     'new_category_product' => $product->new_category_product,
+                     'new_tag_product' => $product->new_tag_product,
+                     'new_discount' => $product->new_discount,
+                     'display_price' => $product->display_price,
+                     'type' => $product->type,
+                 ]);
+    
+                 $productFilters[] = $productBundle;
+     
+                 // Hapus produk asli
+                 $product->delete();
+             }
 
             logUserAction($request, $request->user(), "storage/moving_product/create_bundle", "Create bundle scans");
 
@@ -361,6 +374,77 @@ class ProductBundleController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke bundle', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function addFilterScan(Request $request, $id)
+    {
+        DB::beginTransaction();
+        $userId = auth()->id();
+    
+        try {
+            // Validasi request menggunakan Laravel Validator
+            $validator = Validator::make($request->all(), [
+                'ids' => 'required|array|min:1', // Pastikan 'ids' adalah array yang tidak kosong
+                'ids.*' => 'integer|exists:product_inputs,id' // Setiap elemen harus integer dan ada di tabel product_inputs
+            ]);
+    
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 400);
+            }
+    
+            // Ambil array IDs yang telah divalidasi
+            $ids = $request->input('ids');
+    
+            // Ambil data produk berdasarkan array IDs
+            $products = ProductInput::whereIn('id', $ids)->get();
+    
+            if ($products->isEmpty()) {
+                return response()->json(['message' => 'No products found for the given IDs'], 404);
+            }
+    
+            $productFilters = [];
+    
+            foreach ($products as $product) {
+                // Buat entri di Product_Bundle
+                $productBundle = Product_Bundle::create([
+                    'bundle_id' => $id,
+                    'code_document' => $product->code_document,
+                    'old_barcode_product' => $product->old_barcode_product,
+                    'new_barcode_product' => $product->new_barcode_product,
+                    'new_name_product' => $product->new_name_product,
+                    'new_quantity_product' => $product->new_quantity_product,
+                    'new_price_product' => $product->new_price_product,
+                    'old_price_product' => $product->old_price_product,
+                    'new_date_in_product' => $product->new_date_in_product,
+                    'new_status_product' => 'bundle',
+                    'new_quality' => $product->new_quality,
+                    'new_category_product' => $product->new_category_product,
+                    'new_tag_product' => $product->new_tag_product,
+                    'new_discount' => $product->new_discount,
+                    'display_price' => $product->display_price,
+                    'type' => $product->type,
+                    'user_id' => $userId, // Tambahkan user_id untuk melacak siapa yang menambahkan
+                ]);
+    
+                $productFilters[] = $productBundle;
+    
+                // Hapus produk asli
+                $product->delete();
+            }
+    
+            DB::commit();
+    
+            return new ResponseResource(true, "Successfully added products to the bundle list", $productFilters);
+        } catch (\Exception $e) {
+            DB::rollBack();
+    
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+    
+    
 
     public function addProductInBundle(ProductInput $product, Bundle $bundle)
     {
