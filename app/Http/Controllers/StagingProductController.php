@@ -38,7 +38,6 @@ class StagingProductController extends Controller
                 ->whereNull('new_tag_product')
                 ->latest();
 
-            // Jika ada query pencarian, abaikan sementara parameter `page`
             if ($searchQuery) {
                 $newProductsQuery->where(function ($queryBuilder) use ($searchQuery) {
                     $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
@@ -47,7 +46,6 @@ class StagingProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
                 });
 
-                // // Paksa hasil pencarian di halaman pertama
                 $page = 1;
             }
 
