@@ -808,5 +808,46 @@ class StagingProductController extends Controller
             return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
         }
     }
+
+    public function batchToLpr(Request $request)
+    {
+
+        $totalProcessed = 0; 
+     
+        StagingProduct::whereNotNull('new_quality->abnormal')
+            ->orWhereNotNull('new_quality->damaged')
+            ->chunk(1000, function ($products) use (&$totalProcessed) {
+                $newProducts = [];
+    
+                foreach ($products as $product) {
+                    $newProducts[] = [
+                        'code_document' => $product->code_document,
+                        'old_barcode_product' => $product->old_barcode_product,
+                        'new_barcode_product' => $product->new_barcode_product,
+                        'new_name_product' => $product->new_name_product,
+                        'new_quantity_product' => $product->new_quantity_product,
+                        'old_price_product' => $product->old_price_product,
+                        'new_price_product' => $product->new_price_product,
+                        'new_date_in_product' => $product->new_date_in_product,
+                        'new_status_product' => 'display',
+                        'new_quality' => $product->new_quality,
+                        'new_category_product' => $product->new_category_product,
+                        'new_tag_product' => $product->new_tag_product,
+                        'new_discount' => $product->new_discount,
+                        'display_price' => $product->display_price,
+                        'created_at' => $product->created_at,
+                        'updated_at' => $product->updated_at,
+                        'type' => $product->type ?? null,
+                    ];
+                }
+    
+                if (!empty($newProducts)) {
+                    DB::table('new_products')->insert($newProducts);
+                    $totalProcessed += count($newProducts); 
+                }
+            });
+    
+        return new ResponseResource(true, "Berhasil dipindahkan", $totalProcessed);
+    }
     
 }

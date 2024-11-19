@@ -142,8 +142,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 //inbound bulking
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //bulking
-   // Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
-   Route::post('/excelOld', [StagingProductController::class, 'importProductApprove']);
+   Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
+   // Route::post('/excelOld', [StagingProductController::class, 'importProductApprove']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
    // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
@@ -163,6 +163,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
+
+   Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
+
+   
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
@@ -440,6 +444,10 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    //get
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
+
+   Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
+
+
 
    //================================================product-collab======================================================
 
