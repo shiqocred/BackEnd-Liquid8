@@ -785,11 +785,11 @@ class StagingProductController extends Controller
                 }
     
                 if (!empty($newProductsToInsert)) {
-                    New_product::insert($newProductsToInsert);
+                    ProductApprove::insert($newProductsToInsert);
                 }
             }
             Document::create([
-                'code_document' => '0000/00/0000',
+                'code_document' => '0000/12/2024',
                 'base_document' => $fileName,
                 'status_document' => 'done',
                 'total_column_document' => count($headerMappings),
