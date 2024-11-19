@@ -441,6 +441,10 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
 
+   Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
+
+
+
    //================================================product-collab======================================================
 
    //product input
