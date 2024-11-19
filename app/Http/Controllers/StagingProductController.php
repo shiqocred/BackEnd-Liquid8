@@ -811,9 +811,7 @@ class StagingProductController extends Controller
 
     public function batchToLpr(Request $request)
     {
-
         $totalProcessed = 0; 
-     
         StagingProduct::whereNotNull('new_quality->abnormal')
             ->orWhereNotNull('new_quality->damaged')
             ->chunk(1000, function ($products) use (&$totalProcessed) {
@@ -849,5 +847,38 @@ class StagingProductController extends Controller
     
         return new ResponseResource(true, "Berhasil dipindahkan", $totalProcessed);
     }
+
+    public function deleteToLprBatch()
+    {
+        try {
+            // Inisialisasi variabel untuk menghitung total data yang dihapus
+            $totalDeleted = 0;
+    
+            // Gunakan chunk untuk memproses data dalam kelompok
+            StagingProduct::whereNotNull('new_quality->abnormal')
+                ->orWhereNotNull('new_quality->damaged')
+                ->chunk(1000, function ($products) use (&$totalDeleted) {
+                    // Loop melalui setiap produk dalam chunk dan hapus
+                    foreach ($products as $product) {
+                        $product->delete();
+                        $totalDeleted++;
+                    }
+                });
+    
+            // Kembalikan respons berhasil
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$totalDeleted} products."
+            ]);
+        } catch (\Exception $e) {
+            // Tangani error dan kembalikan respons gagal
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete products.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
     
 }
