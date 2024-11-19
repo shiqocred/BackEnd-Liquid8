@@ -13,6 +13,7 @@ use App\Models\ProductApprove;
 use App\Models\RiwayatCheck;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
+use App\Models\Color_tag;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -552,7 +553,7 @@ class StagingProductController extends Controller
                 $productApprovesAD = ProductApprove::where('code_document', $code_document)
                     ->where('new_quality->abnormal', '!=', null)->orWhere('new_quality->damaged', '!=', null)
                     ->get();
-                    
+
                 DB::beginTransaction();
 
                 $this->processProductApproves($productApprovesAD, New_product::class, 100);
@@ -676,4 +677,138 @@ class StagingProductController extends Controller
         ];
     }
 
+    public function importProductApprove(Request $request)
+    {
+        $user_id = auth()->id();
+        set_time_limit(600);
+        ini_set('memory_limit', '1024M');
+    
+        // Validate input file
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls',
+        ], [
+            'file.required' => 'File harus diunggah.',
+            'file.file' => 'File yang diunggah tidak valid.',
+            'file.mimes' => 'File harus berupa file Excel dengan ekstensi .xlsx atau .xls.',
+        ]);
+    
+        $file = $request->file('file');
+        $filePath = $file->getPathname();
+        $fileName = $file->getClientOriginalName();
+        $file->storeAs('public/ekspedisis', $fileName);
+    
+        DB::beginTransaction();
+        try {
+            $spreadsheet = IOFactory::load($filePath);
+            $sheet = $spreadsheet->getActiveSheet();
+            $ekspedisiData = $sheet->toArray(null, true, true, true);
+            $chunkSize = 500;
+            $count = 0;
+    
+            $headerMappings = [
+                'code_document' => 'Code Document',
+                'old_barcode_product' => 'Old Barcode',
+                'new_barcode_product' => 'New Barcode',
+                'new_name_product' => 'Name Product',
+                'new_category_product' => 'Category',
+                'new_quantity_product' => 'Qty',
+                'new_price_product' => 'After Diskon',
+                'old_price_product' => 'Unit Price',
+                'new_date_in_product' => 'Date',
+                'display_price' => 'After Diskon',
+                'new_quality' => 'Keterangan',
+            ];
+    
+            for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
+                $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
+                $newProductsToInsert = [];
+    
+                foreach ($chunkData as $dataItem) {
+                    $newProductDataToInsert = [];
+    
+                    foreach ($headerMappings as $key => $headerName) {
+                        $columnKey = array_search($headerName, $ekspedisiData[1]);
+                        if ($columnKey !== false) {
+                            $value = trim($dataItem[$columnKey]);
+    
+                            if ($key === 'new_quantity_product') {
+                                $quantity = $value !== '' ? (int)$value : 0;
+                                $newProductDataToInsert[$key] = $quantity;
+                            } elseif (in_array($key, ['old_price_product', 'display_price', 'new_price_product'])) {
+                                $cleanedValue = str_replace(',', '', $value);
+                                $newProductDataToInsert[$key] = (float)$cleanedValue;
+                            } elseif ($key === 'new_category_product') {
+                                $category = $value === null ? null : $value;
+                                $newProductDataToInsert[$key] = $category;
+                            } else {
+                                $newProductDataToInsert[$key] = $value;
+                            }
+                        }
+                    }
+
+                    // **Validasi dan manipulasi sebelum insert**
+                    if (isset($newProductDataToInsert['new_quality'])) {
+                        if ($newProductDataToInsert['new_quality'] !== 'lolos') {
+                            $newProductDataToInsert['new_quality'] = json_encode(['damaged' => $newProductDataToInsert['new_quality']]);
+                        } else {
+                            $newProductDataToInsert['new_quality'] = json_encode(['lolos' => 'lolos']);
+                        }
+                    } else {
+                        $newProductDataToInsert['new_quality'] = json_encode(['unknown' => 'unknown']);
+                    }
+    
+                    if (isset($newProductDataToInsert['old_price_product']) && $newProductDataToInsert['old_price_product'] < 100000) {
+                        $tagwarna = Color_tag::where('min_price_color', '<=', $newProductDataToInsert['old_price_product'])
+                            ->where('max_price_color', '>=', $newProductDataToInsert['old_price_product'])
+                            ->select('fixed_price_color', 'name_color', 'hexa_code_color')
+                            ->first();
+    
+                        if ($tagwarna) {
+                            $newProductDataToInsert['new_tag_product'] = $tagwarna->name_color;
+                        } else {
+                            $newProductDataToInsert['new_tag_product'] = null;
+                        }
+                    } else {
+                        $newProductDataToInsert['new_tag_product'] = null;
+                    }
+    
+                    if (!empty($newProductDataToInsert['old_barcode_product']) && !empty($newProductDataToInsert['new_name_product'])) {
+                        $newProductsToInsert[] = array_merge($newProductDataToInsert, [
+                            'new_discount' => 0,
+                            'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                            'type' => 'type1',
+                            'created_at' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
+                            'updated_at' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
+                        ]);
+                        $count++;
+                    }
+                }
+    
+                if (!empty($newProductsToInsert)) {
+                    New_product::insert($newProductsToInsert);
+                }
+            }
+            Document::create([
+                'code_document' => '0000/00/0000',
+                'base_document' => $fileName,
+                'status_document' => 'done',
+                'total_column_document' => count($headerMappings),
+                'total_column_in_document' => count($ekspedisiData) - 1, // Subtract 1 for header
+                'date_document' => Carbon::now('Asia/Jakarta')->toDateString(),
+            ]);
+    
+            DB::commit();
+    
+            return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
+                'code_document' => $newProductDataToInsert['code_document'] ?? null,
+                'file_name' => $fileName,
+                'total_column_count' => count($headerMappings),
+                'total_row_count' => count($ekspedisiData) - 1,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
+        }
+    }
+    
 }
