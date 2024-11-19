@@ -142,7 +142,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 //inbound bulking
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //bulking
-   Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
+   // Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
+   Route::post('/excelOld', [StagingProductController::class, 'importProductApprove']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
    // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
@@ -402,7 +403,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 
    //export data by menu
    Route::post('export_product_byCategory', [NewProductController::class, 'exportProductByCategory']);
-   // Route::post('export_product_byColor', [NewProductController::class, 'exportProductByColor']);
+   Route::post('export_product_byColor', [NewProductController::class, 'exportProductByColor']);
    Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
    Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
    Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
@@ -478,6 +479,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::post('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+Route::post('findDifferenceTable', [StagingApproveController::class, 'findDifferenceTable']);
+Route::post('findSimilarTabel2', [StagingApproveController::class, 'findSimilarTabel2']);
 Route::delete('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
