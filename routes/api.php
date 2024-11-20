@@ -164,7 +164,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
 
-   Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
+   // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
+   Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
 
    
 });
