@@ -323,10 +323,8 @@ class ProductBundleController extends Controller
                 'type' => 'type2'
             ]);
 
-             // Ambil array IDs yang telah divalidasi
              $ids = $request->input('ids');
     
-             // Ambil data produk berdasarkan array IDs
              $products = ProductInput::whereIn('id', $ids)->get();
      
              if ($products->isEmpty()) {
@@ -446,140 +444,207 @@ class ProductBundleController extends Controller
     
     
 
-    public function addProductInBundle(ProductInput $product, Bundle $bundle)
+    public function addProductInBundle(Request $request, Bundle $bundle)
     {
-
         DB::beginTransaction();
         try {
-
-            $productBundle = Product_Bundle::create([
-                'bundle_id' => $bundle->id,
-                'code_document' => $product->code_document,
-                'old_barcode_product' => $product->old_barcode_product,
-                'new_barcode_product' => $product->new_barcode_product,
-                'new_name_product' => $product->new_name_product,
-                'new_quantity_product' => $product->new_quantity_product,
-                'new_price_product' => $product->new_price_product,
-                'old_price_product' => $product->old_price_product,
-                'new_date_in_product' => $product->new_date_in_product,
-                'new_status_product' => 'bundle',
-                'new_quality' => $product->new_quality,
-                'new_category_product' => $product->new_category_product,
-                'new_tag_product' => $product->new_tag_product,
-                'new_discount' => $product->new_discount,
-                'display_price' => $product->display_price,
-                'type' => $product->type
+            // Validasi input
+            $validator = Validator::make($request->all(), [
+                'productId' => 'required|array',
+                'productId.*' => 'integer|exists:product_inputs,id'
             ]);
-
-            //calculate
-            $old_price_product = $product->old_price_product;
-            $totalPrice = $bundle->total_price_bundle + $old_price_product;
-
-            if ($bundle->total_price_bundle >= 120000 || $totalPrice >= 120000) {
-                $discount = Category::where('name_category', $bundle->category)->pluck('discount_category')->first();
-                if (!empty($discount)) {
-                    $priceDiscount = $totalPrice * ($discount / 100);
-
-                    // Mengupdate harga bundle dan produk
-                    $bundle->update([
-                        'total_price_bundle' => $totalPrice,
-                        'total_price_custom_bundle' => $priceDiscount,
-                        'total_product_bundle' => $bundle->total_product_bundle + 1,
-                        'name_color' => null
-                    ]);
-                }
-            } else if ($totalPrice < 120000) {
-                $tagwarna = ColorTag2::where('min_price_color', '<=',  $totalPrice)
-                    ->where('max_price_color', '>=', $totalPrice)
-                    ->select('fixed_price_color', 'name_color', 'hexa_code_color')->first();
-                $bundle->update([
-                    'total_price_bundle' => $totalPrice,
-                    'total_price_custom_bundle' => $tagwarna->fixed_price_color,
-                    'total_product_bundle' => $bundle->total_product_bundle + 1,
-                    'name_color' => $tagwarna->name_color,
-                    'category' => null
-                ]);
-            }
-
-            $product->delete();
-
+    
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }    
+            $productIds = $request->input('productId');
+    
+            // Hitung total harga dan total produk dalam bundle saat ini
+            $totalPrice = Product_Bundle::where('bundle_id', $bundle->id)
+                ->sum('old_price_product');
+            $totalProduct = Product_Bundle::where('bundle_id', $bundle->id)->count();
+            $totalIn = 0;
+    
+            // Proses data menggunakan chunk
+            ProductInput::whereIn('id', $productIds) // Ganti 'where' dengan 'whereIn'
+                ->chunk(100, function ($products) use ($bundle, &$totalPrice, &$totalProduct, &$totalIn) {
+                    foreach ($products as $product) {
+                        // Tambahkan produk ke bundle
+                        Product_Bundle::create([
+                            'bundle_id' => $bundle->id,
+                            'code_document' => $product->code_document,
+                            'old_barcode_product' => $product->old_barcode_product,
+                            'new_barcode_product' => $product->new_barcode_product,
+                            'new_name_product' => $product->new_name_product,
+                            'new_quantity_product' => $product->new_quantity_product,
+                            'new_price_product' => $product->new_price_product,
+                            'old_price_product' => $product->old_price_product,
+                            'new_date_in_product' => $product->new_date_in_product,
+                            'new_status_product' => 'bundle',
+                            'new_quality' => $product->new_quality,
+                            'new_category_product' => $product->new_category_product,
+                            'new_tag_product' => $product->new_tag_product,
+                            'new_discount' => $product->new_discount,
+                            'display_price' => $product->display_price,
+                            'type' => $product->type
+                        ]);
+    
+                        // Perbarui total harga dan total produk
+                        $totalPrice += $product->old_price_product;
+                        $totalProduct++;
+                        $totalIn++;
+    
+                        // Hapus produk dari tabel asal
+                        $product->delete();
+                    }
+    
+                    // Hitung ulang bundle jika perlu
+                    if ($totalPrice >= 120000) {
+                        $discount = Category::where('name_category', $bundle->category)
+                            ->pluck('discount_category')->first();
+    
+                        if (!empty($discount)) {
+                            $priceDiscount = $totalPrice * ($discount / 100);
+    
+                            $bundle->update([
+                                'total_price_bundle' => $totalPrice,
+                                'total_price_custom_bundle' => $priceDiscount,
+                                'total_product_bundle' => $totalProduct,
+                                'name_color' => null,
+                            ]);
+                        }
+                    } else {
+                        $tagwarna = ColorTag2::where('min_price_color', '<=', $totalPrice)
+                            ->where('max_price_color', '>=', $totalPrice)
+                            ->select('fixed_price_color', 'name_color', 'hexa_code_color')->first();
+    
+                        if ($tagwarna) {
+                            $bundle->update([
+                                'total_price_bundle' => $totalPrice,
+                                'total_price_custom_bundle' => $tagwarna->fixed_price_color,
+                                'total_product_bundle' => $totalProduct,
+                                'name_color' => $tagwarna->name_color,
+                                'category' => null,
+                            ]);
+                        }
+                    }
+                });
+    
+            // Commit transaksi
             DB::commit();
-            return new ResponseResource(true, "Product bundle berhasil di tambahkan", $productBundle);
+    
+            return new ResponseResource(true, "Product bundle berhasil di tambahkan", $totalIn);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal membuat bundle: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Gagal memindahkan product ke bundle', 'error' => $e->getMessage()], 500);
+    
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memindahkan product ke bundle',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
+    
 
-    public function destroyProductBundle(Product_Bundle $productBundle)
+    public function destroyProductBundle(Request $request, Bundle $bundle)
     {
-        DB::beginTransaction();
+        DB::beginTransaction(); // Hapus duplikasi transaksi
         try {
-            ProductInput::create([
-                'code_document' => $productBundle->code_document,
-                'old_barcode_product' => $productBundle->old_barcode_product,
-                'new_barcode_product' => $productBundle->new_barcode_product,
-                'new_name_product' => $productBundle->new_name_product,
-                'new_quantity_product' => $productBundle->new_quantity_product,
-                'old_price_product' => $productBundle->old_price_product,
-                'new_price_product' => $productBundle->new_price_product,
-                'new_date_in_product' => $productBundle->new_date_in_product,
-                'new_status_product' => 'display',
-                'new_quality' => $productBundle->new_quality,
-                'new_category_product' => $productBundle->new_category_product,
-                'new_tag_product' => $productBundle->new_tag_product,
-                'new_discount' => $productBundle->new_discount,
-                'display_price' => $productBundle->display_price,
-                'created_at' => $productBundle->created_at,
-                'updated_at' => $productBundle->updated_at,
-                'type' => $productBundle->type
+            // Validasi input untuk produk yang ada dalam bundle
+            $validator = Validator::make($request->all(), [
+                'productId' => 'required|array',
+                'productId.*' => 'integer|exists:product__bundles,id' 
             ]);
-
-            $bundle = Bundle::findOrFail($productBundle->bundle_id);
-            $productBundle->delete();
-            $remainingProductBundles = Product_Bundle::where('bundle_id', $productBundle->bundle_id)->count();
-
-            if ($remainingProductBundles == 0) {
+    
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+    
+            $productIds = $request->input('productId');
+    
+            // Inisialisasi total harga dan total produk bundle
+            $totalPrice = Product_Bundle::where('bundle_id', $bundle->id)->sum('old_price_product');
+            $totalProduct = Product_Bundle::where('bundle_id', $bundle->id)->count();
+            $totalOut = 0;
+            $productBundle = Product_Bundle::where('id', 4)->get();
+            // Proses data menggunakan chunk
+            Product_Bundle::whereIn('id', $productIds)
+                ->chunk(100, function ($products) use ($bundle, &$totalPrice, &$totalProduct, &$totalOut) {
+                    foreach ($products as $product) {
+                        ProductInput::create([
+                            'code_document' => $product->code_document,
+                            'old_barcode_product' => $product->old_barcode_product,
+                            'new_barcode_product' => $product->new_barcode_product,
+                            'new_name_product' => $product->new_name_product,
+                            'new_quantity_product' => $product->new_quantity_product,
+                            'new_price_product' => $product->new_price_product,
+                            'old_price_product' => $product->old_price_product,
+                            'new_date_in_product' => $product->new_date_in_product,
+                            'new_status_product' => 'bundle',
+                            'new_quality' => $product->new_quality,
+                            'new_category_product' => $product->new_category_product,
+                            'new_tag_product' => $product->new_tag_product,
+                            'new_discount' => $product->new_discount,
+                            'display_price' => $product->display_price,
+                            'type' => $product->type
+                        ]);
+    
+                        $totalPrice -= $product->old_price_product;
+                        $totalProduct--;
+                        $totalOut++;
+    
+                        $product->delete();
+                    }
+                });
+    
+            // Periksa apakah bundle harus dihapus
+            if ($totalProduct <= 0) {
                 $bundle->delete();
             } else {
-                //calculate
-                $old_price_product = $productBundle->old_price_product;
-                $totalPrice = $bundle->total_price_bundle - $old_price_product;
-
+                // Update bundle jika masih ada produk
                 if ($totalPrice >= 120000) {
-                    $discount = Category::where('name_category', $bundle->category)->pluck('discount_category')->first();
+                    $discount = Category::where('name_category', $bundle->category)
+                        ->pluck('discount_category')->first();
+    
                     if (!empty($discount)) {
                         $priceDiscount = $totalPrice * ($discount / 100);
-
-                        // Mengupdate harga bundle dan produk
                         $bundle->update([
                             'total_price_bundle' => $totalPrice,
                             'total_price_custom_bundle' => $priceDiscount,
-                            'total_product_bundle' => $bundle->total_product_bundle - 1,
-                            'name_color' => null
+                            'total_product_bundle' => $totalProduct,
+                            'name_color' => null,
                         ]);
                     }
-                } else if ($totalPrice < 120000) {
-                    $tagwarna = Color_tag::where('min_price_color', '<=',  $totalPrice)
+                } else {
+                    $tagwarna = ColorTag2::where('min_price_color', '<=', $totalPrice)
                         ->where('max_price_color', '>=', $totalPrice)
                         ->select('fixed_price_color', 'name_color', 'hexa_code_color')->first();
-                    $bundle->update([
-                        'total_price_bundle' => $totalPrice,
-                        'total_price_custom_bundle' => $tagwarna->fixed_price_color,
-                        'total_product_bundle' => $bundle->total_product_bundle - 1,
-                        'name_color' => $tagwarna->name_color,
-                        'category' => null
-                    ]);
+    
+                    if ($tagwarna) {
+                        $bundle->update([
+                            'total_price_bundle' => $totalPrice,
+                            'total_price_custom_bundle' => $tagwarna->fixed_price_color,
+                            'total_product_bundle' => $totalProduct,
+                            'name_color' => $tagwarna->name_color,
+                            'category' => null,
+                        ]);
+                    }
                 }
             }
-
+    
             DB::commit();
-            return new ResponseResource(true, "Produk bundle berhasil dihapus", null);
+    
+            return new ResponseResource(true, "Produk bundle berhasil dihapus",$totalOut);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Gagal menghapus bundle: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Gagal menghapus bundle', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus bundle',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
+    
 }
