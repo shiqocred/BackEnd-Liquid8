@@ -145,7 +145,7 @@ class RepairProductController extends Controller
             'new_quantity_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
             'new_category_product' => 'nullable',
-            'new_tag_product' => 'nullable,'
+            'new_tag_product' => 'nullable'
         ]);
 
         if ($validator->fails()) {
