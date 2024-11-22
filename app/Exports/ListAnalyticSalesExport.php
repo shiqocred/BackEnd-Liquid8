@@ -5,25 +5,25 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class ProductExpiredExport implements FromCollection, WithHeadings
+class ListAnalyticSalesExport implements FromCollection, WithHeadings
 {
-    protected $products;
+    protected $listAnalyticSales;
 
     // Konstruktor untuk menerima data produk
-    public function __construct($products)
+    public function __construct($listAnalyticSales)
     {
-        $this->products = $products;
+        $this->listAnalyticSales = $listAnalyticSales;
     }
 
     // Mengembalikan collection data yang akan diekspor
     public function collection()
     {
-        return collect($this->products);
+        return collect($this->listAnalyticSales);
     }
 
     public function headings(): array
     {
 
-        return ["Barcode", "Nama Produk", "Harga", "Qty", "Lama Expired"];
+        return ["Category Name", "Qty", "Display Price", "Sale Price"];
     }
 }
