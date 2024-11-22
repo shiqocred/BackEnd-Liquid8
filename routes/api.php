@@ -363,11 +363,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    //update history
    Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
 
-   Route::resource('bkls', BklController::class);
-   Route::get('bkl/filter_product', [FilterBklController::class, 'index']);
-   Route::post('bkl/filter_product/{id}/add', [FilterBklController::class, 'store']);
-   Route::delete('bkl/filter_product/destroy/{id}', [FilterBklController::class, 'destroy']);
-   Route::get('export-bkl', [BklController::class, 'exportProduct']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
