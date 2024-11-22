@@ -145,6 +145,7 @@ class RepairProductController extends Controller
             'new_quantity_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
             'new_category_product' => 'nullable',
+            'new_tag_product' => 'nullable'
         ]);
 
         if ($validator->fails()) {
@@ -159,6 +160,7 @@ class RepairProductController extends Controller
                 'new_quantity_product' => $request->new_quantity_product,
                 'old_price_product' => $request->old_price_product,
                 'new_category_product' => $request->new_category_product,
+                'new_tag_product' => $request->new_tag_product
             ]);
 
             $resource = new ResponseResource(true, "Data berhasil di ganti!", $repairProduct);
@@ -184,7 +186,7 @@ class RepairProductController extends Controller
             ];
     
             // Insert ke New_product
-            New_product::create([
+           $np =  New_product::create([
                 'code_document' => $repairProduct->code_document,
                 'old_barcode_product' => $repairProduct->old_barcode_product,
                 'new_barcode_product' => $repairProduct->new_barcode_product,
@@ -224,7 +226,7 @@ class RepairProductController extends Controller
             DB::commit();
     
             // Return respons berhasil
-            return new ResponseResource(true, "Produk repair berhasil dihapus", $repairProduct);
+            return new ResponseResource(true, "Produk repair berhasil dihapus", $np);
     
         } catch (\Exception $e) {
             // Rollback transaksi jika ada kesalahan

@@ -528,6 +528,7 @@ class NewProductController extends Controller
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
 
+        // Validate input file
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
         ], [
@@ -542,13 +543,11 @@ class NewProductController extends Controller
         $file->storeAs('public/ekspedisis', $fileName);
 
         DB::beginTransaction();
-
         try {
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $ekspedisiData = $sheet->toArray(null, true, true, true);
-
-            $chunkSize = 100;
+            $chunkSize = 500;
             $count = 0;
             $headerMappings = [
                 'old_barcode_product' => 'Barcode',
@@ -562,13 +561,33 @@ class NewProductController extends Controller
                 'display_price' => 'Price After Discount',
             ];
 
+            $initBarcode = collect($ekspedisiData)->pluck('A');
+            $duplicateInitBarcode = $initBarcode->duplicates();
+            $barcodesOnly = $duplicateInitBarcode->values();
+
+            if ($duplicateInitBarcode->isNotEmpty()) {
+                $response = new ResponseResource(false, "barcode duplikat dari excel", $barcodesOnly);
+                return $response->response()->setStatusCode(422);
+            }
+
+            $categoryAtExcel = collect($ekspedisiData)->pluck('C')->slice(1);
+            $category = Category::latest()->pluck('name_category');
+            $uniqueCategory = $categoryAtExcel->diff($category);
+            $categoryOnly = $uniqueCategory->values();
+
+            if ($uniqueCategory->isNotEmpty()) {
+                $response = new ResponseResource(false, "category ada yang beda", $categoryOnly);
+                return $response->response()->setStatusCode(422);
+            }
+
+            // Generate document code
             $code_document = $this->generateDocumentCode();
             while (Document::where('code_document', $code_document)->exists()) {
                 $code_document = $this->generateDocumentCode();
             }
 
             $duplicateBarcodes = collect();
-
+            // Process in chunks
             for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
                 $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
                 $newProductsToInsert = [];
@@ -582,18 +601,17 @@ class NewProductController extends Controller
                             $value = trim($dataItem[$columnKey]);
 
                             if ($key === 'new_quantity_product') {
-                                $quantity = $value !== '' ? (int)$value : 0;
+                                $quantity = $value !== '' ? (int) $value : 0;
                                 $newProductDataToInsert[$key] = $quantity;
                             } elseif (in_array($key, ['old_price_product', 'display_price', 'new_price_product'])) {
-                                $cleanedValue = str_replace(',', '', $value); // Remove commas
-                                $newProductDataToInsert[$key] = (float)$cleanedValue;
+                                $cleanedValue = str_replace(',', '', $value);
+                                $newProductDataToInsert[$key] = (float) $cleanedValue;
                             } else {
                                 $newProductDataToInsert[$key] = $value;
                             }
                         }
                     }
 
-                    // Check for duplicate barcodes in various sources
                     if (isset($newProductDataToInsert['new_barcode_product'])) {
                         $barcodeToCheck = $newProductDataToInsert['new_barcode_product'];
                         $sources = $this->checkDuplicateBarcode($barcodeToCheck);
@@ -603,13 +621,13 @@ class NewProductController extends Controller
                         }
                     }
 
-
                     if (isset($newProductDataToInsert['old_barcode_product'], $newProductDataToInsert['new_name_product'])) {
                         $newProductsToInsert[] = array_merge($newProductDataToInsert, [
                             'code_document' => $code_document,
                             'new_discount' => 0,
                             'new_tag_product' => null,
                             'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                            'type' => 'type1',
                             'new_quality' => json_encode(['lolos' => 'lolos']),
                             'created_at' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'updated_at' => Carbon::now('Asia/Jakarta')->toDateString(),
@@ -619,7 +637,8 @@ class NewProductController extends Controller
                 }
 
                 if ($duplicateBarcodes->isNotEmpty()) {
-                    return new ResponseResource(false, "Barcode duplikat ditemukan", $duplicateBarcodes);
+                    $response = new ResponseResource(false, "List data barcode yang duplikat", $duplicateBarcodes);
+                    return $response->response()->setStatusCode(422);
                 }
 
                 // Insert new product data in chunks
@@ -628,17 +647,15 @@ class NewProductController extends Controller
                 }
             }
 
-            // Insert document record after processing is done
             Document::create([
                 'code_document' => $code_document,
                 'base_document' => $fileName,
                 'status_document' => 'done',
                 'total_column_document' => count($headerMappings),
                 'total_column_in_document' => count($ekspedisiData) - 1, // Subtract 1 for header
-                'date_document' => Carbon::now('Asia/Jakarta')->toDateString()
+                'date_document' => Carbon::now('Asia/Jakarta')->toDateString(),
             ]);
 
-            // Save to history
             $history = RiwayatCheck::create([
                 'user_id' => $user_id,
                 'code_document' => $code_document,
@@ -656,30 +673,29 @@ class NewProductController extends Controller
                 'percentage_damaged' => 0,
                 'percentage_abnormal' => 0,
                 'percentage_discrepancy' => 0,
-                'total_price' => 0
+                'total_price' => 0,
             ]);
 
-            // Create notification
             Notification::create([
                 'user_id' => $user_id,
-                'notification_name' => 'bulking category display',
+                'notification_name' => 'bulking category staging',
                 'role' => 'Spv',
                 'read_at' => Carbon::now('Asia/Jakarta'),
                 'riwayat_check_id' => $history->id,
                 'repair_id' => null,
-                'status' => 'display'
+                'status' => 'display',
             ]);
 
-            DB::commit(); // Commit transaction
+            DB::commit();
 
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => $code_document,
                 'file_name' => $fileName,
                 'total_column_count' => count($headerMappings),
-                'total_row_count' => count($ekspedisiData) - 1, // Subtract header
+                'total_row_count' => count($ekspedisiData) - 1,
             ]);
         } catch (\Exception $e) {
-            DB::rollBack(); // Rollback if an error occurs
+            DB::rollBack();
             return response()->json(['error' => 'Error importing data: ' . $e->getMessage()], 500);
         }
     }

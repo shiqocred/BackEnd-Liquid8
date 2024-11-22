@@ -39,9 +39,6 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
             'New Quality',
             'New Category Product',
             'New Tag Product',
-            'New Discount',
-            'Display Price',
-            'Days Since Created',
         ];
     }
 
@@ -60,9 +57,7 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
             $product->new_quality,
             $product->new_category_product,
             $product->new_tag_product,
-            $product->new_discount,
-            $product->display_price,
-            $product->days_since_created,
+
         ];
     }
 
@@ -71,6 +66,6 @@ class ProductsExportCategory implements FromQuery, WithHeadings, WithMapping, Wi
      */
     public function chunkSize(): int
     {
-        return 1000;
+        return 1500;
     }
 }

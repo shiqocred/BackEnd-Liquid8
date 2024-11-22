@@ -145,6 +145,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //bulking
    Route::post('/excelOld', [StagingProductController::class, 'processExcelFilesCategoryStaging']);
+   // Route::post('/excelOld', [StagingProductController::class, 'importProductApprove']);
    Route::post('/bulkingInventory', [NewProductController::class, 'processExcelFilesCategory']);
    // Route::post('/excelOld/merge', [NewProductController::class, 'mapAndMergeHeadersCategory']);
    Route::post('/bulking_tag_warna', [NewProductController::class, 'processExcelFilesTagColor']);
@@ -164,6 +165,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    Route::delete('staging/filter_product/destroy/{id}', [FilterStagingController::class, 'destroy']);
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
+
+   // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
+   Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
+
+   
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
@@ -235,6 +241,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
+   
    //filters product bundle
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
@@ -254,15 +261,15 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
 
    //filter product bundle - mtc 
    Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
-   Route::post('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'addFilterScan']);
+   Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
    Route::delete('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'destroyFilterScan']);
 
    //bundle-scans
    Route::get('bundle-scans', [BundleController::class, 'listBundleScan']);
    Route::post('bundle-scans', [ProductBundleController::class, 'createBundleScan']);
    Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
-   Route::post('bundle-scans/product/{product}/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
-   Route::delete('bundle-scans/product/{productBundle}', [ProductBundleController::class, 'destroyProductBundle']);
+   Route::post('bundle-scans/product/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
+   Route::delete('bundle-scans/product/{bundle}', [ProductBundleController::class, 'destroyProductBundle']);
 
    //warehouse
    Route::resource('warehouses', WarehouseController::class);
@@ -403,7 +410,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 
    //export data by menu
    Route::post('export_product_byCategory', [NewProductController::class, 'exportProductByCategory']);
-   // Route::post('export_product_byColor', [NewProductController::class, 'exportProductByColor']);
+   Route::post('export_product_byColor', [NewProductController::class, 'exportProductByColor']);
    Route::post('exportCategory', [CategoryController::class, 'exportCategory']);
    Route::post('exportBundlesDetail/{id}', [BundleController::class, 'exportBundlesDetail']);
    Route::post('exportProductExpired', [NewProductController::class, 'export_product_expired']);
@@ -440,6 +447,10 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    //get
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
+
+   Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
+
+
 
    //================================================product-collab======================================================
 
@@ -479,6 +490,8 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 
 //oret2an debug
 Route::post('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
+Route::post('findDifferenceTable', [StagingApproveController::class, 'findDifferenceTable']);
+Route::post('findSimilarTabel2', [StagingApproveController::class, 'findSimilarTabel2']);
 Route::delete('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
