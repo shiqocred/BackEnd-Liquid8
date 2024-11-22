@@ -175,7 +175,7 @@ class UserController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'format_barcode' => 'required|string',
+                'format_barcode_id' => 'required|exists:format_barcodes,id',
                 'user_id' => 'required|integer|exists:users,id',
             ]);
 
@@ -183,7 +183,7 @@ class UserController extends Controller
                 return response()->json(["errors" => $validator->errors()], 422);
             }
 
-            $formatBarcode = $request->input('format_barcode');
+            $formatBarcodeId = $request->input('format_barcode_id');
             $user_id = $request->input('user_id');
 
             $user = User::find($user_id);
@@ -193,10 +193,10 @@ class UserController extends Controller
             }
 
             $user->update([
-                'format_barcode' => $formatBarcode,
+                'format_barcode_id' => $formatBarcodeId,
             ]);
 
-            return new ResponseResource(true, "Berhasil menambahkan format barcode", $user->format_barcode);
+            return new ResponseResource(true, "Berhasil menambahkan format barcode", $formatBarcodeId);
 
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
@@ -210,32 +210,30 @@ class UserController extends Controller
             return response()->json(['message' => 'User not found'], 404);
         }
         $user->update([
-            'format_barcode' => null,
+            'format_barcode_id' => null,
         ]);
         return new ResponseResource(true, "Berhasil menghapus format barcode", []);
     }
 
-    public function showFormatBarcode($id)
+    public function showFormatBarcode(User $user)
     {
-        $user = User::find($id);
-        $formatBarcode = $user->format_barcode;
-        return new ResponseResource(true, "format barcode", [
-            'user_id' => $id, 
-            'format_barcode' => $formatBarcode,
-            'name' => $user->name,
-            'username' => $user->username
-        ]);
+        if($user){
+            $show = $user->load('format_barcode');
+            return new ResponseResource(true, "format barcode", $show);
+        }else{
+            return new ResponseResource(false, "id tidak ada", $user);
+        }
     }
+
 
     public function allFormatBarcode(Request $request)
     {
         $query = $request->input('q');
-        $users = User::whereNotNull('format_barcode')
-            ->select('id', 'username', 'format_barcode');
+        $users = User::whereNotNull('format_barcode_id')->with('format_barcode');
 
         if ($query) {
             $users->where('username', 'LIKE', '%' . $query . '%')
-                ->orWhere('format_barcode', 'LIKE', '%' . $query . '%');
+                ->orWhere('format_barcode_id', 'LIKE', '%' . $query . '%');
         }
 
         $results = $users->paginate(33);

@@ -41,4 +41,8 @@ class User extends Authenticatable
         $this->save();
         return $this->api_key;
     }
+
+    public function format_barcode(){
+        return $this->belongsTo(FormatBarcode::class);
+    }
 }

@@ -155,6 +155,7 @@ class BklController extends Controller
             'new_tag_product',
             'new_discount',
             'display_price',
+            'type'
         ]);
 
         $indonesiaTime = Carbon::now('Asia/Jakarta');

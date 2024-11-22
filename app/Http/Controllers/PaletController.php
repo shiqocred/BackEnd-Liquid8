@@ -551,4 +551,20 @@ class PaletController extends Controller
         }
         return new ResponseResource(true, "berhasil di update", []);
     }
+
+    public function palet_select(Request $request){
+        $categories = Category::latest()->get();
+        $warehouses= Warehouse::latest()->get();
+        $productBrands = ProductBrand::latest()->get();
+        $productConditions = ProductCondition::latest()->get();
+        $productStatus = ProductStatus::latest()->get();
+
+        return new ResponseResource(true, "list select", [
+            'categories' => $categories,
+            'warehouses' => $warehouses,
+            'product_brands' => $productBrands,
+            'product_conditions' => $productConditions,
+            'product_status' => $productStatus
+        ]);
+    }
 }
