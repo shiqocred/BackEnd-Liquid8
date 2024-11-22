@@ -69,7 +69,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
    Route::get('dashboard/storage-report', [DashboardController::class, 'storageReport']);
    Route::get('dashboard/monthly-analytic-sales', [DashboardController::class, 'monthlyAnalyticSales']);
+   Route::get('dashboard/monthly-analytic-sales/export', [DashboardController::class, 'exportMonthlyAnalyticSales']);
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
+   Route::get('dashboard/yearly-analytic-sales/export', [DashboardController::class, 'exportYearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
    Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
    Route::get('dashboard/analytic-slow-moving', [DashboardController::class, 'analyticSlowMoving']);
@@ -164,7 +166,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    Route::get('export-staging', [StagingProductController::class, 'export']);
    Route::resource('staging_approves', StagingApproveController::class);
 
-   Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
+   // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
+   Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
 
    
 });
@@ -252,21 +255,21 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
    Route::delete('bundle/{bundle}', [BundleController::class, 'destroy']);
    Route::get('product-bundle/{new_product}/{bundle}/add', [ProductBundleController::class, 'addProductBundle']);
    Route::delete('product-bundle/{productBundle}', [ProductBundleController::class, 'destroy']);
-   
+
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
-   
+
    //filter product bundle - mtc 
    Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
    Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
    Route::delete('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'destroyFilterScan']);
-   
+
    //bundle-scans
    Route::get('bundle-scans', [BundleController::class, 'listBundleScan']);
    Route::post('bundle-scans', [ProductBundleController::class, 'createBundleScan']);
    Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
-   Route::post('bundle-scans/product/{product}/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
-   Route::delete('bundle-scans/product/{productBundle}', [ProductBundleController::class, 'destroyProductBundle']);
+   Route::post('bundle-scans/product/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
+   Route::delete('bundle-scans/product/{bundle}', [ProductBundleController::class, 'destroyProductBundle']);
 
    //warehouse
    Route::resource('warehouses', WarehouseController::class);

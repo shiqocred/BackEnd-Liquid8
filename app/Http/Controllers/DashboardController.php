@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ListAnalyticSalesExport;
 use App\Exports\ProductExpiredExport;
 use App\Http\Resources\ResponseResource;
 use App\Models\Bundle;
@@ -447,11 +448,11 @@ class DashboardController extends Controller
         $toInput = $request->input('to');
 
         $fromDate = $fromInput
-        ? Carbon::parse($fromInput)->startOfDay()
-        : Carbon::now()->startOfMonth()->startOfDay();
+            ? Carbon::parse($fromInput)->startOfDay()
+            : Carbon::now()->startOfMonth()->startOfDay();
         $toDate = $toInput
-        ? Carbon::parse($toInput)->endOfDay()
-        : Carbon::now()->endOfMonth()->endOfDay();
+            ? Carbon::parse($toInput)->endOfDay()
+            : Carbon::now()->endOfMonth()->endOfDay();
 
         //tanggal sekarang
         $currentDate = Carbon::now();
@@ -535,11 +536,11 @@ class DashboardController extends Controller
         $toInput = $request->input('to');
 
         $fromDate = $fromInput
-        ? Carbon::parse($fromInput)->startOfDay()
-        : Carbon::now()->startOfMonth()->startOfDay();
+            ? Carbon::parse($fromInput)->startOfDay()
+            : Carbon::now()->startOfMonth()->startOfDay();
         $toDate = $toInput
-        ? Carbon::parse($toInput)->endOfDay()
-        : Carbon::now()->endOfMonth()->endOfDay();
+            ? Carbon::parse($toInput)->endOfDay()
+            : Carbon::now()->endOfMonth()->endOfDay();
 
         //tanggal sekarang
         $currentDate = Carbon::now();
@@ -616,6 +617,29 @@ class DashboardController extends Controller
         );
 
         return $resource->response();
+    }
+
+    public function exportMonthlyAnalyticSales(Request $request)
+    {
+        $dataExport = $this->monthlyAnalyticSales($request);
+        $dataExport = $dataExport->getData(true);
+
+        if (!empty($dataExport['error'])) {
+            return response()->json($dataExport, 422);
+        }
+
+        $listAnalyticSale = $dataExport['data']['resource']['list_analytic_sale'];
+
+        $customDataExport = array_map(function ($data) {
+            return [
+                'Category Name' => $data['product_category_sale'],
+                'Qty'           => $data['total_category'],
+                'Display Price' => $data['display_price_sale'],
+                'Sale Price'    => $data['purchase'],
+            ];
+        }, $listAnalyticSale);
+
+        return Excel::download(new ListAnalyticSalesExport($customDataExport), 'list-monthly-analytic-sales.xlsx');
     }
 
     public function yearlyAnalyticSales(Request $request)
@@ -732,6 +756,29 @@ class DashboardController extends Controller
         );
 
         return $resource->response();
+    }
+
+    public function exportYearlyAnalyticSales(Request $request)
+    {
+        $dataExport = $this->yearlyAnalyticSales($request);
+        $dataExport = $dataExport->getData(true);
+
+        if (!empty($dataExport['error'])) {
+            return response()->json($dataExport, 422);
+        }
+
+        $listAnalyticSale = $dataExport['data']['resource']['list_analytic_sale'];
+
+        $customDataExport = array_map(function ($data) {
+            return [
+                'Category Name' => $data['product_category_sale'],
+                'Qty'           => $data['total_category'],
+                'Display Price' => $data['display_price_sale'],
+                'Sale Price'    => $data['purchase'],
+            ];
+        }, $listAnalyticSale);
+
+        return Excel::download(new ListAnalyticSalesExport($customDataExport), 'list-yearly-analytic-sales.xlsx');
     }
 
     public function analyticSlowMoving(Request $request)
