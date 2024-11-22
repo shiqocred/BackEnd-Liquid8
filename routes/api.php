@@ -16,6 +16,7 @@ use App\Http\Controllers\FilterBklController;
 use App\Http\Controllers\FilterProductInputController;
 use App\Http\Controllers\FilterQcdController;
 use App\Http\Controllers\FilterStagingController;
+use App\Http\Controllers\FormatBarcodeController;
 use App\Http\Controllers\GenerateController;
 use App\Http\Controllers\MigrateBulkyController;
 use App\Http\Controllers\MigrateBulkyProductController;
@@ -168,8 +169,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
 
    // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
    Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
-
-   
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
@@ -241,7 +240,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
-   
+
    //filters product bundle
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
    Route::post('bundle/filter_product/{id}/add', [ProductFilterController::class, 'store']);
@@ -291,6 +290,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
 
    Route::get('product-palet/{new_product}/{palet}/add', [PaletProductController::class, 'addProductPalet']);
    Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
+
+   Route::get('palet-select', [PaletController::class, 'palet_select']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
@@ -299,10 +300,14 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //colortags diskon
    Route::resource('color_tags', ColorTagController::class)->except(['destroy']);
    Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
-   Route::post('panel-spv', [UserController::class, 'addFormatBarcode']);
-   Route::delete('panel-spv/{id}', [UserController::class, 'deleteFormatBarcode']);
-   Route::get('panel-spv/{id}', [UserController::class, 'showFormatBarcode']);
-   Route::get('panel-spv', [UserController::class, 'allFormatBarcode']);
+
+   //spv panel
+   Route::resource('format-barcodes', FormatBarcodeController::class);
+
+   Route::post('panel-spv/add-barcode', [UserController::class, 'addFormatBarcode']);
+   Route::delete('panel-spv/format-delete/{id}', [UserController::class, 'deleteFormatBarcode']);
+   Route::get('panel-spv/format-barcode', [UserController::class, 'allFormatBarcode']);
+   Route::get('panel-spv/detail/{user}', [UserController::class, 'showFormatBarcode']);
 });
 
 //end inventory=========================================== Inventory ==========================================================
@@ -365,7 +370,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 
    //update history
    Route::get('findDataDocs/{code_document}', [DocumentController::class, 'findDataDocs'])->where('code_document', '.*');;
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
