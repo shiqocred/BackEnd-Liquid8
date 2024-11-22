@@ -63,13 +63,23 @@ class SaleController extends Controller
         DB::beginTransaction();
         $userId = auth()->id();
 
+        $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
+
         $validator = Validator::make(
             $request->all(),
             [
+                'new_discount_sale' => 'nullable|numeric',
                 'sale_barcode' => 'required',
                 'buyer_id' => 'required|numeric',
             ]
         );
+
+        if ($saleDocument) {
+            $request['new_discount_sale'] = (float) $request->new_discount_sale;
+            $validator->sometimes('new_discount_sale', ['required', 'numeric', 'in:' . $saleDocument->new_discount_sale], function () use ($saleDocument) {
+                return $saleDocument && !is_null($saleDocument->new_discount_sale);
+            });
+        }
 
         if ($validator->fails()) {
             return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
@@ -123,8 +133,6 @@ class SaleController extends Controller
                 return (new ResponseResource(false, "Barcode tidak ditemukan!", []))->response()->setStatusCode(404);
             }
 
-            $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
-
             if (!$saleDocument) {
                 $saleDocumentRequest = [
                     'code_document_sale' => codeDocumentSale($userId),
@@ -132,6 +140,7 @@ class SaleController extends Controller
                     'buyer_name_document_sale' => $buyer->name_buyer,
                     'buyer_phone_document_sale' => $buyer->phone_buyer,
                     'buyer_address_document_sale' => $buyer->address_buyer,
+                    'new_discount_sale' => $request->new_discount_sale,
                     'total_product_document_sale' => 0,
                     'total_old_price_document_sale' => 0,
                     'total_price_document_sale' => 0,
@@ -150,6 +159,20 @@ class SaleController extends Controller
                 $saleDocument = $createSaleDocument->getData()->data->resource;
             }
 
+            //kondisin jika terdapat inputan diskon
+            if ($saleDocument->new_discount_sale != null) {
+                $newDiscountSale = $saleDocument->new_discount_sale;
+                $discountWithPercent = $newDiscountSale / 100;
+                $productPriceSale = $data[6] - $data[6] * $discountWithPercent ?? $data[4] - $data[4] * $discountWithPercent;
+                $displayPrice = $productPriceSale;
+                $totalDiscountSale = $data[6] * $discountWithPercent ?? $data[4] * $discountWithPercent;
+            } else {
+                $newDiscountSale = $data[5] ?? null;
+                $productPriceSale = $data[3];
+                $totalDiscountSale = $data[4] - $data[3];
+                $displayPrice = $data[3];
+            }
+
             $sale = Sale::create(
                 [
                     'user_id' => auth()->id(),
@@ -158,12 +181,12 @@ class SaleController extends Controller
                     'product_category_sale' => $data[1],
                     'product_barcode_sale' => $data[2],
                     'product_old_price_sale' => $data[6] ?? $data[4],
-                    'product_price_sale' => $data[3],
+                    'product_price_sale' => $productPriceSale,
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses',
-                    'total_discount_sale' => $data[4] - $data[3],
-                    'new_discount' => $data[5] ?? null,
-                    'display_price' => $data[3],
+                    'total_discount_sale' => $totalDiscountSale,
+                    'new_discount_sale' => $newDiscountSale,
+                    'display_price' => $displayPrice,
                     'code_document' => $data[7] ?? null,
                     'type' => $data[8]
                 ]
@@ -186,8 +209,7 @@ class SaleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Sale $sale)
-    {}
+    public function update(Request $request, Sale $sale) {}
 
     /**
      * Remove the specified resource from storage.
@@ -199,7 +221,7 @@ class SaleController extends Controller
             if ($checkSale == null) {
                 return response()->json(['status' => false, 'message' => 'sale not found'], 404);
             }
-        
+
             $allSale = Sale::where('code_document_sale', $sale->code_document_sale)
                 ->where('user_id', auth()->id())
                 ->where('status_sale', 'proses')
@@ -209,7 +231,7 @@ class SaleController extends Controller
                 $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->where('user_id', auth()->id())->first();
                 $saleDocument->delete();
             }
-            
+
             $sale->delete();
             $resource = new ResponseResource(true, "data berhasil di hapus", $sale);
         } catch (\Exception $e) {
