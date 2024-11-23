@@ -97,7 +97,7 @@ class PaletController extends Controller
     public function store(Request $request)
     {
         DB::beginTransaction();
-
+        $userId = auth()->id();
         try {
             // Validasi request
             $validator = Validator::make($request->all(), [
@@ -107,7 +107,6 @@ class PaletController extends Controller
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
-                'palet_barcode' => 'required|string|unique:palets,palet_barcode',
                 'file_pdf' => 'nullable|mimes:pdf|max:2048',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
@@ -143,7 +142,7 @@ class PaletController extends Controller
                 'category_palet' => $category->name_category ?? '',
                 'total_price_palet' => $request['total_price_palet'],
                 'total_product_palet' => $request['total_product_palet'],
-                'palet_barcode' => $request['palet_barcode'],
+                'palet_barcode' => barcodePalet($userId),
                 'file_pdf' => $validatedData['file_pdf'] ?? null,
                 'description' => $request['description'] ?? null,
                 'is_active' => $request['is_active'] ?? false,
