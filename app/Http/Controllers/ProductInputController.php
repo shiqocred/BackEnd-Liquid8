@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ResponseResource;
 use App\Models\ColorTag2;
 use App\Models\FilterProductInput;
+use App\Models\FormatBarcode;
 use App\Models\User;
 use App\Models\New_product;
 use App\Models\ProductInput;
 use App\Models\ProductScan;
 use App\Models\StagingProduct;
+use App\Models\StagingApprove;
+use App\Models\UserScan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -49,8 +52,10 @@ class ProductInputController extends Controller
     public function store(Request $request)
     {
         $userId = auth()->id();
+    
+        // Validasi
         $validator = Validator::make($request->all(), [
-            'new_barcode_product' => 'nullable|unique:new_products,new_barcode_product',
+            'new_barcode_product' => 'nullable',
             'new_name_product' => 'required',
             'new_quantity_product' => 'nullable',
             'new_price_product' => 'required|numeric',
@@ -59,82 +64,97 @@ class ProductInputController extends Controller
             'new_category_product' => 'nullable|exists:categories,name_category',
             'new_tag_product' => 'nullable|exists:color_tag2s,name_color',
             'image' => 'nullable|url',
-        ], [
-            'new_barcode_product.unique' => 'barcode sudah ada',
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
+    
+        $newBarcode = $request->input('new_barcode_product');
+        $tables = [
+            New_product::class,
+            StagingProduct::class,
+            StagingApprove::class,
+        ];
+    
+        // Cek barcode
+        foreach ($tables as $table) {
+            if ($table::where('new_barcode_product', $newBarcode)->exists()) {
+                return new ResponseResource(false, "The new barcode already exists", $newBarcode);
+            }
+        }
+    
         DB::beginTransaction();
-
+    
         try {
-            $imageUrl = $request->input('image');
-
-            $status = $request->input('condition');
-            $description = $request->input('description', '');
-
-            $qualityData = [
-                'lolos' => $status === 'lolos' ? 'lolos' : null,
-                'damaged' => $status === 'damaged' ? $description : null,
-                'abnormal' => $status === 'abnormal' ? $description : null,
-            ];
-
+            $user = User::with('format_barcode')->find($userId);
+    
+            if (!$user || !$user->format_barcode_id) {
+                return new ResponseResource(false, "User belum memiliki format barcode", $user->format_barcode_id);
+            }
+    
+            UserScan::updateOrCreateDailyScan($userId, $user->format_barcode_id);
+    
+            $barcodeCustom = barcodeCustomUser($user->format_barcode->format, $userId);
+    
+            // Input Data
             $inputData = $request->only([
                 'old_price_product',
-                'new_barcode_product',
                 'new_name_product',
                 'new_quantity_product',
                 'new_price_product',
                 'new_status_product',
                 'new_category_product',
                 'new_tag_product',
-                'price_discount', 
+                'price_discount',
                 'type',
-                'image'
+                'image',
             ]);
-
-            $inputData['new_quantity_product'] = $inputData['new_quantity_product'] ?? 1;
-            $inputData['code_document'] = barcodeScan();
-            $inputData['new_status_product'] = 'display';
-            $inputData['user_id'] = $userId;
-            $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
-            $inputData['new_quality'] = json_encode($qualityData);
-            $inputData['type'] = 'type2';
-
-            $user = User::find($userId); 
-
-            if($user && $user->format_barcode !== null){
-                $inputData['new_barcode_product'] = barcodeCustomUser($user->format_barcode, $userId);
-            }else{
-                $inputData['new_barcode_product'] = generateNewBarcode($inputData['new_category_product']);
-            }
-
-            if ($status !== 'lolos') {
+    
+            $inputData = array_merge($inputData, [
+                'new_barcode_product' => $barcodeCustom,
+                'new_quantity_product' => $inputData['new_quantity_product'] ?? 1,
+                'code_document' => barcodeScan(),
+                'new_status_product' => 'display',
+                'user_id' => $userId,
+                'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
+                'new_quality' => json_encode([
+                    'lolos' => $request->input('condition') === 'lolos' ? 'lolos' : null,
+                    'damaged' => $request->input('condition') === 'damaged' ? $request->input('description') : null,
+                    'abnormal' => $request->input('condition') === 'abnormal' ? $request->input('description') : null,
+                ]),
+                'type' => 'type2',
+            ]);
+    
+            if ($request->input('condition') !== 'lolos') {
                 $inputData['new_category_product'] = null;
             }
+    
             $inputData['new_discount'] = 0;
             $inputData['display_price'] = $inputData['new_price_product'];
-
-
+    
             $newProduct = ProductInput::create($inputData);
-
+    
             ProductScan::create([
                 'user_id' => $userId,
                 'product_name' => $inputData['new_name_product'],
                 'product_price' => $inputData['old_price_product'],
-                'image' => $imageUrl,
+                'image' => $request->input('image'),
             ]);
 
+            $format = FormatBarcode::where('id', $user->format_barcode_id)->first();
+            $format->update([
+                'total_scan' => $format->total_scan + 1
+            ]);
             DB::commit();
-
-            return new ResponseResource(true, "berhasil menambah data", $newProduct);
+    
+            return new ResponseResource(true, "Berhasil menambah data", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+    
 
     /**
      * Display the specified resource.
@@ -269,7 +289,6 @@ class ProductInputController extends Controller
                         $categorywrong[] = $product->new_barcode_product;
                     } elseif ($product->new_tag_product !== null) {
                         $categorywrong = $product->new_barcode_product;
-
                     } else {
                         $stagings[] = [
                             'code_document' => $product->code_document,
@@ -338,5 +357,4 @@ class ProductInputController extends Controller
             return response()->json(['success' => false, 'message' => 'Gagal memindahkan produk ke approve', 'error' => $e->getMessage()], 500);
         }
     }
-
 }

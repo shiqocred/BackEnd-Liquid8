@@ -45,4 +45,8 @@ class User extends Authenticatable
     public function format_barcode(){
         return $this->belongsTo(FormatBarcode::class);
     }
+
+    public function user_scans(){
+        return $this->hasMany(UserScan::class);
+    }
 }
