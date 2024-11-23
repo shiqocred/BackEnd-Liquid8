@@ -108,7 +108,6 @@ class ProductApproveController extends Controller
             ProductApprove::class,
             StagingProduct::class,
             StagingApprove::class,
-            FilterStaging::class,
         ];
 
         $oldBarcodeExists = false;

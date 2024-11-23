@@ -6,6 +6,8 @@ use App\Http\Resources\ResponseResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\UserFormatResource;
+use App\Models\FormatBarcode;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -33,8 +35,7 @@ class UserController extends Controller
         }
     }
 
-    public function store(Request $request)
-    {}
+    public function store(Request $request) {}
 
     public function update(Request $request, $id)
     {
@@ -195,9 +196,12 @@ class UserController extends Controller
             $user->update([
                 'format_barcode_id' => $formatBarcodeId,
             ]);
+            $format = FormatBarcode::where('id', $user->format_barcode_id)->first();
+            $format->update([
+                'total_user' => $format->total_user + 1
+            ]);
 
             return new ResponseResource(true, "Berhasil menambahkan format barcode", $formatBarcodeId);
-
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
@@ -217,10 +221,10 @@ class UserController extends Controller
 
     public function showFormatBarcode(User $user)
     {
-        if($user){
+        if ($user) {
             $show = $user->load('format_barcode');
             return new ResponseResource(true, "format barcode", $show);
-        }else{
+        } else {
             return new ResponseResource(false, "id tidak ada", $user);
         }
     }
@@ -229,7 +233,9 @@ class UserController extends Controller
     public function allFormatBarcode(Request $request)
     {
         $query = $request->input('q');
-        $users = User::whereNotNull('format_barcode_id')->with('format_barcode');
+
+        $users = User::whereNotNull('format_barcode_id')
+            ->with(['user_scans.formatBarcode']);
 
         if ($query) {
             $users->where('username', 'LIKE', '%' . $query . '%')
@@ -238,7 +244,7 @@ class UserController extends Controller
 
         $results = $users->paginate(33);
 
-        return new ResponseResource(true, "list user berformat barcode", $results);
+        // Gunakan resource untuk memformat data
+        return new ResponseResource(true, "list user berformat barcode", UserFormatResource::collection($results));
     }
-
 }
