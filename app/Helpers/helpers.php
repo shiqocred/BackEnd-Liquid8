@@ -301,3 +301,31 @@ function barcodeCustomUser($init_barcode, $userId)
         throw new \Exception("terlalu banyak generate, tolong refresh");
     });
 }
+
+function barcodePalet($userId)
+{
+    $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-';
+    $maxRetry = 5;
+
+    return DB::transaction(function () use ($characters, $maxRetry, $userId) {
+        for ($i = 0; $i < $maxRetry; $i++) {
+            $randomString = '';
+            for ($j = 0; $j < 5; $j++) {
+                $randomString .= $characters[mt_rand(0, strlen($characters) - 1)];
+            }
+
+            $newBarcode = 'LP' . $userId . $randomString;
+
+            $exists = DB::table('palets')
+                ->where('palet_barcode', $newBarcode)
+                ->exists();
+
+            if (!$exists) {
+                return $newBarcode;
+            }
+        }
+
+        throw new \Exception("Terlalu banyak percobaan, tolong refresh.");
+    });
+}
+
