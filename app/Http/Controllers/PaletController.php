@@ -68,7 +68,6 @@ class PaletController extends Controller
 
         $query = $request->input('q');
         $palets = Palet::latest()
-            ->with('paletProducts', 'paletImages', 'paletBrands')
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name_palet', 'LIKE', '%' . $query . '%')
                     ->orWhere('category_palet', 'LIKE', '%' . $query . '%')
@@ -230,7 +229,7 @@ class PaletController extends Controller
     public function show(Request $request, Palet $palet)
     {
         $query = $request->input('q');
-        $palet->load(['paletImages', 'paletProducts' => function ($productPalet) use ($query) {
+        $palet->load(['paletImages', 'paletProducts', 'paletBrands' => function ($productPalet) use ($query) {
             if (!empty($query)) {
                 $productPalet->where('new_name_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
@@ -269,7 +268,7 @@ class PaletController extends Controller
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
-                'palet_barcode' => 'required|string|unique:palets,palet_barcode',
+                'palet_barcode' => 'required|string|unique:palets,palet_barcode,' . $palet->id,
                 'file_pdf' => 'nullable|mimes:pdf|max:2048',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',

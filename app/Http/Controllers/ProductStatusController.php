@@ -15,10 +15,9 @@ class ProductStatusController extends Controller
      */
     public function index()
     {
-        $productStatuses = ProductStatus::all();
-        $resource = new ResponseResource(true, "list status", $productStatuses);
+        $productStatuses = ProductStatus::paginate(33);
+        return new ResponseResource(true, "list status", $productStatuses);
 
-        return $resource->response();
     }
 
     /**
