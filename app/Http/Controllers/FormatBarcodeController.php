@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\FormatBarcodeResource;
 use App\Http\Resources\ResponseResource;
 use App\Models\FormatBarcode;
 use Illuminate\Http\Request;
@@ -88,9 +89,9 @@ class FormatBarcodeController extends Controller
                 ->setStatusCode(404);
         }
 
-        $formatBarcode->load('user');
+        $formatBarcode->load(['users.user_scans']);
         
-        return new ResponseResource(true, "detail format barcode", $formatBarcode);
+        return new ResponseResource(true, "detail format barcode", new FormatBarcodeResource($formatBarcode));
     }
 
     /**

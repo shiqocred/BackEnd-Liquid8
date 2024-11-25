@@ -196,6 +196,7 @@ class UserController extends Controller
             $user->update([
                 'format_barcode_id' => $formatBarcodeId,
             ]);
+            
             $format = FormatBarcode::where('id', $user->format_barcode_id)->first();
             $format->update([
                 'total_user' => $format->total_user + 1
