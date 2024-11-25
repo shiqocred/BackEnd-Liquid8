@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -26,7 +27,12 @@ class FormatBarcodeResource extends JsonResource
                     'id' => $user->id,
                     'username' => $user->username,
                     'email' => $user->email,
-                    'role_id'  => $user->role_id,
+                    'role_name'  => $user->role->role_name,
+                    'total_scan' => $user->user_scans->sum('total_scans'),
+                    'scan_today' => $user->user_scans
+                    ->filter(function($scan){
+                        return Carbon::parse($scan->scan_date)->isToday();
+                    })->sum('total_scans'),
                     'user_scans' => $user->user_scans->map(function ($scan) {
                         return [
                             'id' => $scan->id,

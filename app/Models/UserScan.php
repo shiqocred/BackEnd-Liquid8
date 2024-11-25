@@ -14,7 +14,7 @@ class UserScan extends Model
 
     public static function updateOrCreateDailyScan($userId, $formatBarcodeId)
 {
-    $scanDate = '2024-11-24'; 
+    $scanDate = Carbon::now('Asia/Jakarta')->toDateString();
 
     $userScan = self::where('user_id', $userId)
         ->where('format_barcode_id', $formatBarcodeId)

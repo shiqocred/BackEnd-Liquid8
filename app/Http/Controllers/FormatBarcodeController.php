@@ -18,7 +18,7 @@ class FormatBarcodeController extends Controller
         $search = $request->input('q');
         $page = $request->input('page', 1);
         try {
-            $formatBarcodes = FormatBarcode::latest()->with('user');
+            $formatBarcodes = FormatBarcode::latest();
 
             if ($search) {
                 $formatBarcodes->where(function ($query) use ($search) {
