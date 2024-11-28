@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('format_barcodes', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->softDeletes();
         });
     }
 
@@ -22,9 +22,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('format_barcodes', function (Blueprint $table) {
-            // Hapus foreign key terlebih dahulu sebelum drop column
-            $table->dropForeign(['user_id']);
-            $table->dropColumn('user_id');
+            $table->dropSoftDeletes();
+
         });
     }
 };

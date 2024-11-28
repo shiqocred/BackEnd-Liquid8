@@ -8,9 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\UserFormatResource;
 use App\Models\FormatBarcode;
+use App\Models\UserScan;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\DB;
+
 
 class UserController extends Controller
 {
@@ -175,6 +178,7 @@ class UserController extends Controller
     public function addFormatBarcode(Request $request)
     {
         try {
+            // Validasi input
             $validator = Validator::make($request->all(), [
                 'format_barcode_id' => 'required|exists:format_barcodes,id',
                 'user_id' => 'required|integer|exists:users,id',
@@ -183,30 +187,51 @@ class UserController extends Controller
             if ($validator->fails()) {
                 return response()->json(["errors" => $validator->errors()], 422);
             }
+            DB::beginTransaction();
 
             $formatBarcodeId = $request->input('format_barcode_id');
-            $user_id = $request->input('user_id');
+            $userId = $request->input('user_id');
 
-            $user = User::find($user_id);
+            // Temukan user berdasarkan ID
+            $user = User::find($userId);
+            $format = FormatBarcode::find($formatBarcodeId);
+
 
             if (!$user) {
-                return response()->json(['message' => 'User not found'], 404);
+                $response = new ResponseResource(false, "user tidak ada", []);
+                return $response->response()->setStatusCode(404);
             }
 
-            $user->update([
-                'format_barcode_id' => $formatBarcodeId,
-            ]);
-            
-            $format = FormatBarcode::where('id', $user->format_barcode_id)->first();
-            $format->update([
-                'total_user' => $format->total_user + 1
-            ]);
+            $userScan = UserScan::where('user_id', $user->id)->where('format_barcode_id', $format->id)->first();
+            if ($userScan) {
+                $user->update([
+                    'format_barcode_id' => $formatBarcodeId,
+                ]);
+            } else {
+                $user->update([
+                    'format_barcode_id' => $formatBarcodeId,
+                ]);
 
+                if ($format) {
+                    $format->increment('total_user');
+                }
+
+                UserScan::create([
+                    'format_barcode_id' => $formatBarcodeId,
+                    'user_id' => $userId,
+                    'total_scans' => 0,
+                ]);
+            }
+
+
+            DB::commit();
             return new ResponseResource(true, "Berhasil menambahkan format barcode", $formatBarcodeId);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
         }
     }
+
 
     public function deleteFormatBarcode($id)
     {
@@ -217,6 +242,7 @@ class UserController extends Controller
         $user->update([
             'format_barcode_id' => null,
         ]);
+
         return new ResponseResource(true, "Berhasil menghapus format barcode", []);
     }
 
