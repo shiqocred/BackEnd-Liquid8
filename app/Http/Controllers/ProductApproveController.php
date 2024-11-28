@@ -77,7 +77,6 @@ class ProductApproveController extends Controller
         $redisKey = 'user:' . $userId . ':ip:' . $ipAddress . ':barcode:' . $oldBarcode;
 
         if (Redis::exists($redisKey)) {
-            // Jika key sudah ada, kembalikan response dengan status 429
            return new DuplicateRequestResource(false, "barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
         }
 
@@ -129,7 +128,7 @@ class ProductApproveController extends Controller
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
-            $inputData['new_barcode_product'] = $generate;
+            $inputData['new_barcode_product'] = 'L1ONJ1BKY';
 
             $tables = [
                 New_product::class,
