@@ -304,6 +304,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    //spv panel
    Route::resource('format-barcodes', FormatBarcodeController::class);
 
+   Route::resource('users', UserController::class)->except(['store']);
+
    Route::post('panel-spv/add-barcode', [UserController::class, 'addFormatBarcode']);
    Route::delete('panel-spv/format-delete/{id}', [UserController::class, 'deleteFormatBarcode']);
    Route::get('panel-spv/format-barcode', [UserController::class, 'allFormatBarcode']);
@@ -374,7 +376,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 
 Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::post('register', [AuthController::class, 'register']);
-   Route::resource('users', UserController::class)->except(['store']);
+   // Route::resource('users', UserController::class)->except(['store']);
    Route::resource('roles', RoleController::class);
    Route::post('sale-document/add-product', [SaleDocumentController::class, 'addProductSaleInDocument']);
    Route::delete('sale-document/{sale_document}/{sale}/delete-product', [SaleDocumentController::class, 'deleteProductSaleInDocument']);
