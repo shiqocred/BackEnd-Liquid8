@@ -77,7 +77,6 @@ class FormatBarcodeController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      */
@@ -89,11 +88,14 @@ class FormatBarcodeController extends Controller
                 ->setStatusCode(404);
         }
 
-        $formatBarcode->load(['users.user_scans']);
-        
-        return new ResponseResource(true, "detail format barcode", new FormatBarcodeResource($formatBarcode));
-    }
+        // $formatBarcode->load(['users.user_scans']);
+        $formatBarcode->load(['user_scans.user']);
 
+        return new ResponseResource(true, "detail format barcode", new FormatBarcodeResource($formatBarcode));
+        // return new ResponseResource(true, "detail format barcode", $formatBarcode);
+
+    }
+ 
     /**
      * Show the form for editing the specified resource.
      */

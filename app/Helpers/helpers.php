@@ -174,6 +174,7 @@ function barcodeBundleScan()
 
     return $newBarcode;
 }
+
 function barcodeBundle()
 {
     $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

@@ -449,8 +449,6 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
 
    Route::resource('color_tags2', ColorTag2Controller::class)->except(['destroy']);
 
-
-
    //================================================product-collab======================================================
 
    //product input

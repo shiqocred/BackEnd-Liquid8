@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
-use App\Http\Resources\ResponseResource; // Tambahkan ini
+use App\Http\Resources\ResponseResource; 
+use App\Http\Resources\DuplicateRequestResource; 
 use App\Jobs\ProductBatch;
 use App\Models\Document;
 use App\Models\FilterStaging;
@@ -70,6 +71,19 @@ class ProductApproveController extends Controller
     public function store(Request $request)
     {
         $userId = auth()->id();
+        $ipAddress = request()->ip();
+
+        $oldBarcode = $request->input('old_barcode_product');
+        $redisKey = 'user:' . $userId . ':ip:' . $ipAddress . ':barcode:' . $oldBarcode;
+
+        if (Redis::exists($redisKey)) {
+            // Jika key sudah ada, kembalikan response dengan status 429
+           return new DuplicateRequestResource(false, "barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
+        }
+
+        Redis::setex($redisKey, 2, 'processing');
+
+
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
             'old_barcode_product' => 'required',
@@ -85,7 +99,6 @@ class ProductApproveController extends Controller
             'new_tag_product' => 'nullable|exists:color_tags,name_color',
 
         ], [
-            'new_barcode_product.unique' => 'barcode sudah ada',
             'old_barcode_product.exists' => 'barcode tidak ada',
         ]);
 
@@ -101,34 +114,7 @@ class ProductApproveController extends Controller
         $inputData = $this->prepareInputData($request, $status, $qualityData);
 
         $oldBarcode = $request->input('old_barcode_product');
-        $newBarcode = $request->input('new_barcode_product');
 
-        $tables = [
-            New_product::class,
-            ProductApprove::class,
-            StagingProduct::class,
-            StagingApprove::class,
-        ];
-
-        $oldBarcodeExists = false;
-        $newBarcodeExists = false;
-
-        foreach ($tables as $table) {
-            if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
-                $oldBarcodeExists = true;
-            }
-            if ($table::where('new_barcode_product', $newBarcode)->exists()) {
-                $newBarcodeExists = true;
-            }
-        }
-
-        if ($oldBarcodeExists) {
-            return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
-        }
-
-        if ($newBarcodeExists) {
-            return new ResponseResource(false, "The new barcode already exists", $inputData);
-        }
 
         DB::beginTransaction();
         try {
@@ -142,7 +128,36 @@ class ProductApproveController extends Controller
             }
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
+
             $inputData['new_barcode_product'] = $generate;
+
+            $tables = [
+                New_product::class,
+                ProductApprove::class,
+                StagingProduct::class,
+                StagingApprove::class,
+            ];
+
+            $oldBarcodeExists = false;
+            $newBarcodeExists = false;
+
+            foreach ($tables as $table) {
+                if ($table::where('old_barcode_product', $oldBarcode)->exists()) {
+                    $oldBarcodeExists = true;
+                }
+                if ($table::where('new_barcode_product', $inputData['new_barcode_product'])->exists()) {
+                    $newBarcodeExists = true;
+                }
+            }
+
+            if ($oldBarcodeExists) {
+                return new ProductapproveResource(false, false, "The old barcode already exists", $inputData);
+            }
+
+            if ($newBarcodeExists) {
+                return new ResponseResource(false, "The new barcode already exists", $inputData);
+            }
+
 
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
