@@ -160,7 +160,7 @@ class SaleController extends Controller
             }
 
             //kondisin jika terdapat inputan diskon
-            if ($saleDocument->new_discount_sale != null) {
+            if ($saleDocument->new_discount_sale != null || $saleDocument->new_discount_sale != 0) {
                 $newDiscountSale = $saleDocument->new_discount_sale;
                 $discountWithPercent = $newDiscountSale / 100;
                 $productPriceSale = $data[6] - $data[6] * $discountWithPercent ?? $data[4] - $data[4] * $discountWithPercent;
