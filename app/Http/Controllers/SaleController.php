@@ -118,7 +118,8 @@ class SaleController extends Controller
                     $newProduct->new_discount,
                     $newProduct->old_price_product,
                     $newProduct->code_document,
-                    $newProduct->type
+                    $newProduct->type,
+                    $newProduct->old_barcode_product
 
                 ];
             } elseif ($bundle) {
@@ -188,7 +189,8 @@ class SaleController extends Controller
                     'new_discount_sale' => $newDiscountSale,
                     'display_price' => $displayPrice,
                     'code_document' => $data[7] ?? null,
-                    'type' => $data[8]
+                    'type' => $data[8],
+                    'old_barcode_product' => $data[9] ?? null
                 ]
             );
 
