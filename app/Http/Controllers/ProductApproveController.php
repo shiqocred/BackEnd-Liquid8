@@ -128,7 +128,7 @@ class ProductApproveController extends Controller
 
             $this->deleteOldProduct($inputData['code_document'], $request->input('old_barcode_product'));
 
-            $inputData['new_barcode_product'] = 'L1ONJ1BKY';
+            $inputData['new_barcode_product'] = $generate;
 
             $tables = [
                 New_product::class,
