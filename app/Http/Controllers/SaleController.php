@@ -95,6 +95,7 @@ class SaleController extends Controller
             // }
 
             $productSale = Sale::where('product_barcode_sale', $request->input('sale_barcode'))->first();
+
             if ($productSale) {
                 $resource = new ResponseResource(false, "Data sudah dimasukkan!", $productSale);
                 return $resource->response()->setStatusCode(422);
@@ -180,8 +181,8 @@ class SaleController extends Controller
                     'product_name_sale' => $data[0],
                     'product_category_sale' => $data[1],
                     'product_barcode_sale' => $data[2],
-                    'product_old_price_sale' => $data[6] ?? $data[4],
-                    'product_price_sale' => $productPriceSale,
+                    'product_old_price_sale' => $data[6],
+                    'product_price_sale' => $data[3],
                     'product_qty_sale' => 1,
                     'status_sale' => 'proses',
                     'total_discount_sale' => $totalDiscountSale,

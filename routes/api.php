@@ -425,10 +425,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team leader'])->group(function () {
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
+   Route::get('notif_widget', [NotificationController::class, 'notifWidget']);
+   
 });
 
 //collab mtc
-
 Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(function () {
    //=========================================== Api For Bulky ==========================================================
    Route::resource('product-brands', ProductBrandController::class);
