@@ -9,6 +9,7 @@ use App\Models\New_product;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
 use App\Models\StagingProduct;
+use Illuminate\Support\Facades\Auth;
 
 class FilterStagingController extends Controller
 {
@@ -18,7 +19,7 @@ class FilterStagingController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        $product_filtersByuser = FilterStaging::where('user_id', $userId)->get();
+        $product_filtersByuser = StagingProduct::where('user_id', $userId)->where('stage', 'process')->get();
 
         $totalNewPriceWithCategory = $product_filtersByuser->whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = $product_filtersByuser->whereNull('new_category_product')->sum('old_price_product');
@@ -29,7 +30,7 @@ class FilterStagingController extends Controller
 
 
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory + $totalNewPriceWithoutCtgrTagColor + $totalOldPriceWithoutCtgrTagColor;
-        $product_filters = FilterStaging::where('user_id', $userId)->paginate(50);
+        $product_filters = StagingProduct::where('user_id', $userId)->where('stage', 'process')->paginate(50);
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'data' => $product_filters,
@@ -60,10 +61,14 @@ class FilterStagingController extends Controller
                 return new ResponseResource(false, "barcode product di inventory sudah ada : " . $product->new_barcode_product, null);
             }
 
-            $productFilter = FilterStaging::create($product->toArray());
-            $product->delete();
+            $product->update([
+                'stage' => 'process',
+                'user_id' => $userId
+            ]);
+            // $productFilter = FilterStaging::create($product->toArray());
+            // $product->delete();
             DB::commit();
-            return new ResponseResource(true, "berhasil menambah list product staging", $productFilter);
+            return new ResponseResource(true, "berhasil menambah list product staging", $product);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => $e->getMessage()], 500);
@@ -100,10 +105,15 @@ class FilterStagingController extends Controller
     public function destroy($id)
     {
         DB::beginTransaction();
+        $userId = auth()->id();
         try {
-            $product_filter = FilterStaging::findOrFail($id);
-            StagingProduct::create($product_filter->toArray());
-            $product_filter->delete();
+            $product_filter = StagingProduct::findOrFail($id);
+            $product_filter->update([
+                'user_id' => $userId,
+                'stage' => null
+            ]);
+            // StagingProduct::create($product_filter->toArray());
+            // $product_filter->delete();
             DB::commit();
             return new ResponseResource(true, "berhasil menghapus list product filter", $product_filter);
         } catch (\Exception $e) {
