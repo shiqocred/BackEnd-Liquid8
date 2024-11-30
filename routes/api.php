@@ -173,7 +173,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
    //untuk spv me approve staging ke inventory
-   Route::get('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
+   Route::post('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 });
 
 //end staging =========================================== Staging ==========================================================
