@@ -157,7 +157,6 @@ class ProductApproveController extends Controller
                 return new ResponseResource(false, "The new barcode already exists", $inputData);
             }
 
-
             $riwayatCheck = RiwayatCheck::where('code_document', $request->input('code_document'))->first();
             $totalDataIn = 1 + $riwayatCheck->total_data_in;
 

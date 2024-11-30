@@ -22,18 +22,33 @@ class StagingApproveController extends Controller
      */
     public function index(Request $request)
     {
-        $query = $request->input('q');
+        $searchQuery = $request->input('q');
+        $page = $request->input('page', 1);
+        try {
+            // Buat query dasar untuk StagingProduct
+            $newProductsQuery = StagingProduct::query()
+                ->where('stage', 'approve')
+                ->latest();
 
-        $newProducts = StagingApprove::latest()->where(function ($queryBuilder) use ($query) {
-            $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_category_product', 'LIKE', '%' . $query . '%')
-                ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-        })->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])->paginate(100);
+            if ($searchQuery) {
+                $newProductsQuery->where(function ($queryBuilder) use ($searchQuery) {
+                    $queryBuilder->where('old_barcode_product', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('new_category_product', 'LIKE', '%' . $searchQuery . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
+                });
 
-        return new ResponseResource(true, "list new product", $newProducts);
+                $page = 1;
+            }
+
+            // Terapkan pagination setelah pencarian selesai
+            $paginatedProducts = $newProductsQuery->paginate(33, ['*'], 'page', $page);
+            return new ResponseResource(true, "List of new products", $paginatedProducts);
+        } catch (\Exception $e) {
+            return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
+        }
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -94,28 +109,34 @@ class StagingApproveController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
+        
         $user = User::with('role')->find(auth()->id());
         DB::beginTransaction();
+        
         try {
             if ($user) {
                 if ($user->role && ($user->role->role_name == 'Kasir leader' || $user->role->role_name == 'Admin' || $user->role->role_name == 'Spv')) {
-
-                    $productApproves = StagingApprove::get();
-
-                    foreach ($productApproves as $productApprove) {
-                        $duplicate = New_product::where('new_barcode_product', $productApprove->new_barcode_product)->exists();
-                        if ($duplicate) {
-                            return new ResponseResource(false, "barcoede product di inventory sudah ada : " . $productApprove->new_barcode_product, null);
-                        }
+    
+                    $productApproves = StagingProduct::query()
+                        ->where('stage', 'approve')
+                        ->get();
+    
+                    $barcodesInInventory = New_product::whereIn('new_barcode_product', $productApproves->pluck('new_barcode_product'))->pluck('new_barcode_product');
+                    $duplicates = $productApproves->filter(function ($productApprove) use ($barcodesInInventory) {
+                        return $barcodesInInventory->contains($productApprove->new_barcode_product);
+                    });
+    
+                    if ($duplicates->isNotEmpty()) {
+                        return new ResponseResource(false, "Barcode product di inventory sudah ada: " . $duplicates->pluck('new_barcode_product')->implode(', '), null);
                     }
-
+    
+                    // Batasi pengolahan data dalam chunk 100 produk
                     $chunkedProductApproves = $productApproves->chunk(100);
-
+    
                     foreach ($chunkedProductApproves as $chunk) {
-                        $dataToInsert = [];
-
-                        foreach ($chunk as $productApprove) {
-                            $dataToInsert[] = [
+                        // Siapkan data untuk insert ke New_product
+                        $dataToInsert = $chunk->map(function ($productApprove) {
+                            return [
                                 'code_document' => $productApprove->code_document,
                                 'old_barcode_product' => $productApprove->old_barcode_product,
                                 'new_barcode_product' => $productApprove->new_barcode_product,
@@ -134,28 +155,30 @@ class StagingApproveController extends Controller
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ];
-
-                            // Hapus data dari StagingApprove
-                            $productApprove->delete();
-                        }
-
-                        // Masukkan data ke New_product
+                        })->toArray();
+    
+                        // Insert data ke tabel New_product
                         New_product::insert($dataToInsert);
+    
+                        StagingProduct::whereIn('id', $chunk->pluck('id'))->delete();
                     }
-
+    
                     DB::commit();
+    
+                    // Kembalikan response sukses
                     return new ResponseResource(true, 'Transaksi berhasil diapprove', null);
                 } else {
-                    return new ResponseResource(false, "notification tidak ditemukan", null);
+                    return new ResponseResource(false, "Role tidak memiliki izin", null);
                 }
             } else {
                 return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
             }
         } catch (\Exception $e) {
             DB::rollBack();
-            return new ResponseResource(false, "Gagal", $e->getMessage());
+            return new ResponseResource(false, "Gagal memproses transaksi", $e->getMessage());
         }
     }
+    
 
     public function findSimilarTabel(Request $request)
     {

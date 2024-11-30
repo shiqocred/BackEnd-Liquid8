@@ -36,6 +36,7 @@ class StagingProductController extends Controller
             $newProductsQuery = StagingProduct::query()
                 ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
                 ->whereNull('new_tag_product')
+                ->whereNull('stage')
                 ->latest();
 
             if ($searchQuery) {
@@ -73,32 +74,18 @@ class StagingProductController extends Controller
         DB::beginTransaction();
         $userId = auth()->id();
         try {
-            $product_filters = FilterStaging::where('user_id', $userId)->get();
+            $product_filters = StagingProduct::where('user_id', $userId)->where('stage', 'process')->get();
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
-
+            
             $insertData = $product_filters->map(function ($product) use ($userId) {
-                return [
-                    'code_document' => $product->code_document,
-                    'old_barcode_product' => $product->old_barcode_product,
-                    'new_barcode_product' => $product->new_barcode_product,
-                    'new_name_product' => $product->new_name_product,
-                    'new_quantity_product' => $product->new_quantity_product,
-                    'new_price_product' => $product->new_price_product,
-                    'old_price_product' => $product->old_price_product,
-                    'new_date_in_product' => $product->new_date_in_product,
-                    'new_status_product' => $product->new_status_product,
-                    'new_quality' => $product->new_quality,
-                    'new_category_product' => $product->new_category_product,
-                    'new_tag_product' => $product->new_tag_product,
-                    'new_discount' => $product->new_discount,
-                    'display_price' => $product->display_price,
-                    'type' => $product->type,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
-            })->toArray();
+                $product->update([
+                    'stage' => 'approve',
+                    'updated_at' => now()
+                ]);
+                return $product;
+            });
 
             Notification::create([
                 'user_id' => $userId,
@@ -109,9 +96,6 @@ class StagingProductController extends Controller
                 'repair_id' => null,
                 'status' => 'done',
             ]);
-
-            FilterStaging::where('user_id', $userId)->delete();
-            StagingApprove::insert($insertData);
 
             logUserAction($request, $request->user(), "stagging/list_product_stagging", "to staging approve");
 
