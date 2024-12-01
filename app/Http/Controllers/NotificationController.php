@@ -239,6 +239,8 @@ class NotificationController extends Controller
     public function getNotificationByRole(Request $request)
     {
         $query = $request->input('q');
+        $page = $request->input('page', 1);
+
         $user = User::with('role')->find(auth()->id());
 
         if ($user && $user->role) {
@@ -254,19 +256,27 @@ class NotificationController extends Controller
                 $notifQuery->where('status', 'LIKE', '%' . $query . '%');
             }
 
-            $notifPaginated = $notifQuery->paginate(50);
+            $notifResults = $notifQuery->get();
 
-            $userIds = $notifPaginated->pluck('user_id')->unique();
+            $userIds = $notifResults->pluck('user_id')->unique();
 
             $roles = User::whereIn('id', $userIds)->with('role')->get()->pluck('role.role_name', 'id');
 
             $role_id = $user->role->id;
 
-            $notifPaginated->getCollection()->transform(function ($notification) use ($roles, $role_id) {
+            // Transformasi hasil notifikasi dengan menambahkan informasi role
+            $notifResults->transform(function ($notification) use ($roles, $role_id) {
                 $notification->role_name = $roles[$notification->user_id] ?? null;
                 $notification->role_id = $role_id;
                 return $notification;
             });
+
+            $notifPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                $notifResults->forPage($page, 33),
+                $notifResults->count(),
+                33,
+                $page
+            );
 
             // Kembalikan hasil dalam format ResponseResource
             return new ResponseResource(true, "Notifications", $notifPaginated);
@@ -280,47 +290,46 @@ class NotificationController extends Controller
     {
         $query = $request->input('q');
         $user = User::with('role')->find(auth()->id());
-    
+
         if ($user && $user->role) {
             $notifQuery = Notification::query()->latest()->limit(5);
-    
+
             // Filter berdasarkan role
             if ($user->role->role_name === 'Spv') {
                 $notifQuery->where('role', 'Spv');
             } else {
                 $notifQuery->where('user_id', $user->id);
             }
-    
+
             // Jika ada query pencarian
             if ($query) {
                 $notifQuery->where('status', 'LIKE', '%' . $query . '%');
             }
-    
+
             // Ambil hasil query
             $notifications = $notifQuery->get();
-    
+
             // Ambil unique user_id dari notifikasi yang ditemukan
             $userIds = $notifications->pluck('user_id')->unique();
-    
+
             // Ambil role untuk user_ids yang ditemukan
             $roles = User::whereIn('id', $userIds)->with('role')->get()->pluck('role.role_name', 'id');
-    
+
             // Ambil role_id dari user yang sedang login
             $role_id = $user->role->id;
-    
+
             // Transformasi koleksi notifikasi untuk menambahkan role_name dan role_id
             $notifications->transform(function ($notification) use ($roles, $role_id) {
                 $notification->role_name = $roles[$notification->user_id] ?? null;
                 $notification->role_id = $role_id;
                 return $notification;
             });
-    
+
             // Kembalikan hasil dalam format ResponseResource
             return new ResponseResource(true, "Notifications", $notifications);
         }
-    
+
         // Jika user tidak ditemukan
         return (new ResponseResource(false, "User tidak dikenali", null))->response()->setStatusCode(404);
     }
-    
 }

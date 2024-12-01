@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
-use App\Http\Resources\ResponseResource; 
-use App\Http\Resources\DuplicateRequestResource; 
+use App\Http\Resources\ResponseResource;
+use App\Http\Resources\DuplicateRequestResource;
 use App\Jobs\ProductBatch;
 use App\Models\Document;
 use App\Models\FilterStaging;
@@ -70,17 +70,27 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        $userId = auth()->id();
-        $ipAddress = request()->ip();
+        $userId = auth()->id(); 
+        $oldBarcode = $request->input('old_barcode_product');  
+        $ttl = 5;  // Waktu kedaluwarsa 2 detik
 
-        $oldBarcode = $request->input('old_barcode_product');
-        $redisKey = 'user:' . $userId . ':ip:' . $ipAddress . ':barcode:' . $oldBarcode;
+        $redisKey = "user:$userId:barcode:$oldBarcode";
 
-        if (Redis::exists($redisKey)) {
-           return new DuplicateRequestResource(false, "barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
+        $luaScript = '
+        if redis.call("exists", KEYS[1]) == 1 then
+            return 0 -- Duplikasi
+        else
+            redis.call("setex", KEYS[1], ARGV[1], "processing")
+            return 1 -- Sukses
+        end
+        ';
+
+        $redis = app('redis');
+        $result = $redis->eval($luaScript, 1, $redisKey, $ttl);
+
+        if ($result == 0) {
+            return new DuplicateRequestResource(false, "Barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
         }
-
-        Redis::setex($redisKey, 2, 'processing');
 
 
         $validator = Validator::make($request->all(), [
@@ -180,7 +190,7 @@ class ProductApproveController extends Controller
             // }
 
             $redisKey = 'product_batch';
-            $batchSize = 100;
+            $batchSize = 4;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));

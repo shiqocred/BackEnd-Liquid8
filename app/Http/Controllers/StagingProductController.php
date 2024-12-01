@@ -37,7 +37,7 @@ class StagingProductController extends Controller
                 ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
                 ->whereNull('new_tag_product')
                 ->whereNull('stage')
-                ->latest();
+                ->latest(); 
 
             if ($searchQuery) {
                 $newProductsQuery->where(function ($queryBuilder) use ($searchQuery) {
