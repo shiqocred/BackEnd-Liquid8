@@ -94,9 +94,12 @@ class StagingApproveController extends Controller
     {
         DB::beginTransaction();
         try {
-            $product_filter = StagingApprove::findOrFail($id);
-            StagingProduct::create($product_filter->toArray());
-            $product_filter->delete();
+            $product_filter = StagingProduct::findOrFail($id);
+            $product_filter->update([
+                'stage' => 'process'
+            ]);
+            // StagingProduct::create($product_filter->toArray());
+            // $product_filter->delete();
             DB::commit();
             return new ResponseResource(true, "berhasil menghapus list product bundle", $product_filter);
         } catch (\Exception $e) {

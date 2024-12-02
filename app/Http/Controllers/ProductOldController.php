@@ -33,7 +33,7 @@ class ProductOldController extends Controller
             ->exists();
 
         if ($checkBarcode) {
-            return new ResponseResource(false, "tidak bisa scan product yang sudah ada.", []);
+            return new ResponseResource(false, "barcode dari file sudah ada di display.", []);
         }
 
         $product = Product_old::where('code_document', $codeDocument)

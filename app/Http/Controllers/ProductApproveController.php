@@ -70,10 +70,20 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        $userId = auth()->id(); 
-        $oldBarcode = $request->input('old_barcode_product');  
-        $ttl = 5;  // Waktu kedaluwarsa 2 detik
+        $userId = auth()->id();
+        // $ipAddress = request()->ip();
 
+        // $oldBarcode = $request->input('old_barcode_product');
+        // $redisKey = 'user:' . $userId . ':ip:' . $ipAddress . ':barcode:' . $oldBarcode;
+
+        // if (Redis::exists($redisKey)) {
+        //   return new DuplicateRequestResource(false, "barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
+        // }
+
+        // Redis::setex($redisKey, 2, 'processing');
+        
+        $oldBarcode = $request->input('old_barcode_product');  
+        $ttl = 5;  
         $redisKey = "user:$userId:barcode:$oldBarcode";
 
         $luaScript = '
@@ -89,7 +99,7 @@ class ProductApproveController extends Controller
         $result = $redis->eval($luaScript, 1, $redisKey, $ttl);
 
         if ($result == 0) {
-            return new DuplicateRequestResource(false, "Barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
+            return new DuplicateRequestResource(false, "Barcode awal di scan lebih dari 1x dalam waktu 5 detik", $oldBarcode, 429);
         }
 
 
@@ -190,7 +200,7 @@ class ProductApproveController extends Controller
             // }
 
             $redisKey = 'product_batch';
-            $batchSize = 4;
+            $batchSize = 100;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));
