@@ -419,6 +419,23 @@ class NewProductController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $ekspedisiData = $sheet->toArray(null, true, true, true);
 
+            // Ambil header dari file
+            $headersFromFile = $ekspedisiData[1]; // baris pertama (index 1) adalah header
+
+            // Header yang diharapkan
+            $expectedHeaders = [
+                'Waybill',
+                'Isi Barang',
+                'Qty',
+                'Nilai Barang Satuan',
+            ];
+
+            // Periksa apakah header sesuai
+            if (array_diff($expectedHeaders, $headersFromFile) || array_diff($headersFromFile, $expectedHeaders)) {
+                $response = new ResponseResource(false, "header tidak sesuai, berikut header yang benar : ", $expectedHeaders);
+                return $response->response()->setStatusCode(422);
+            }
+
             $chunkSize = 100;
             $count = 0;
             $headerMappings = [
