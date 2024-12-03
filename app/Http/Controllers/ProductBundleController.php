@@ -300,7 +300,7 @@ class ProductBundleController extends Controller
                 'total_price_custom_bundle' => 'nullable',
                 'total_product_bundle' => 'nullable',
                 'category' => 'nullable|exists:categories,name_category',
-                'name_color' => 'nullable|exists:color_tags,name_color',
+                'name_color' => 'nullable|exists:color_tag2s,name_color',
                 'ids' => 'nullable|array|min:1', 
                 'ids.*' => 'integer|exists:product_inputs,id'
                 

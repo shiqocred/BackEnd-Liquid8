@@ -339,6 +339,28 @@ class StagingProductController extends Controller
             $spreadsheet = IOFactory::load($filePath);
             $sheet = $spreadsheet->getActiveSheet();
             $ekspedisiData = $sheet->toArray(null, true, true, true);
+
+            $headersFromFile = $ekspedisiData[1]; // baris pertama (index 1) adalah header
+
+            // Header yang diharapkan untuk format baru
+            $expectedHeaders = [
+                'Barcode',
+                'Description',
+                'Category',
+                'Qty',
+                'Unit Price',
+                'Bast',
+                'Discount',
+                'Price After Discount',
+            ];
+
+             // Periksa apakah header sesuai
+             if (array_diff($expectedHeaders, $headersFromFile) || array_diff($headersFromFile, $expectedHeaders)) {
+                $response = new ResponseResource(false, "header tidak sesuai, berikut header yang benar : ", $expectedHeaders);
+                return $response->response()->setStatusCode(422);
+            }
+
+            
             $chunkSize = 500;
             $count = 0;
             $headerMappings = [
