@@ -70,11 +70,18 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        $userId = auth()->id(); 
-        $oldBarcode = $request->input('old_barcode_product');  
+        $userId = auth()->id();
+        $ip = $request->ip();
+        $oldBarcode = $request->input('old_barcode_product');
         $ttl = 5;  // Waktu kedaluwarsa 2 detik
+        $throttleTtl = 3; // Waktu throttle untuk setiap request
 
-        $redisKey = "user:$userId:barcode:$oldBarcode";
+
+        $redisKey = "user:$userId:ip:$ip:barcode:$oldBarcode";
+
+        // Throttling logika
+        $rateLimiter = app(\Illuminate\Cache\RateLimiter::class);
+        $throttleKey = "throttle:$userId:$ip:$oldBarcode";
 
         $luaScript = '
         if redis.call("exists", KEYS[1]) == 1 then
