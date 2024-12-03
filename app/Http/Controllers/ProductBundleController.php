@@ -352,6 +352,7 @@ class ProductBundleController extends Controller
                      'new_discount' => $product->new_discount,
                      'display_price' => $product->display_price,
                      'type' => $product->type,
+                     'image' => $product->image
                  ]);
     
                  $productFilters[] = $productBundle;
