@@ -3,8 +3,9 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class StorageReportExport implements FromCollection
+class StorageReportExport implements FromCollection, WithHeadings
 {
     protected $listStorageReport;
 
