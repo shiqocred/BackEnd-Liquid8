@@ -69,7 +69,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
    Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
    Route::get('dashboard/storage-report', [DashboardController::class, 'storageReport']);
-   Route::get('dashboard/sotrage-report/export', [DashboardController::class, 'exportStorageReport']);
+   Route::get('dashboard/storage-report/export', [DashboardController::class, 'exportStorageReport']);
    Route::get('dashboard/monthly-analytic-sales', [DashboardController::class, 'monthlyAnalyticSales']);
    Route::get('dashboard/monthly-analytic-sales/export', [DashboardController::class, 'exportMonthlyAnalyticSales']);
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
