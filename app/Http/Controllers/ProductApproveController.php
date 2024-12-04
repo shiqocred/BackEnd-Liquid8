@@ -21,6 +21,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+
 
 class ProductApproveController extends Controller
 {
@@ -70,26 +72,63 @@ class ProductApproveController extends Controller
 
     public function store(Request $request)
     {
-        $userId = auth()->id(); 
-        $oldBarcode = $request->input('old_barcode_product');  
-        $ttl = 5;  // Waktu kedaluwarsa 2 detik
+        $userId = auth()->id();
+        $ip = $request->ip();
 
-        $redisKey = "user:$userId:barcode:$oldBarcode";
+        // $ipAddress = request()->ip();
 
+        // $oldBarcode = $request->input('old_barcode_product');
+        // $redisKey = 'user:' . $userId . ':ip:' . $ipAddress . ':barcode:' . $oldBarcode;
+
+        // if (Redis::exists($redisKey)) {
+        //   return new DuplicateRequestResource(false, "barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
+        // }
+
+        // Redis::setex($redisKey, 2, 'processing');
+
+
+        $oldBarcode = $request->input('old_barcode_product');
+        $ttlRedis = 3;
+        $throttleTtl = 4;
+
+        $redisKey = "user:$userId:ip:$ip:barcode:$oldBarcode";
+
+
+        $rateLimiter = app(\Illuminate\Cache\RateLimiter::class);
+        $throttleKey = "throttle:$userId:$ip:$oldBarcode";
+
+        if ($rateLimiter->tooManyAttempts($throttleKey, 1)) {
+            return new DuplicateRequestResource(
+                false,
+                "throttle - barcode awal di scan lebih dari 1x dalam waktu $throttleTtl detik",
+                $oldBarcode,
+                429
+            );
+        }
+
+        // Tambahkan hit untuk throttle
+        $rateLimiter->hit($throttleKey, $throttleTtl);
+
+        // Lua Script untuk Atomic Lock
         $luaScript = '
-        if redis.call("exists", KEYS[1]) == 1 then
-            return 0 -- Duplikasi
-        else
-            redis.call("setex", KEYS[1], ARGV[1], "processing")
-            return 1 -- Sukses
-        end
-        ';
+           if redis.call("exists", KEYS[1]) == 1 then
+               return 0 -- Duplikasi
+           else
+               redis.call("setex", KEYS[1], ARGV[1], "processing")
+               return 1 -- Sukses
+           end
+       ';
 
         $redis = app('redis');
-        $result = $redis->eval($luaScript, 1, $redisKey, $ttl);
+        $lockAcquired = $redis->eval($luaScript, 1, $redisKey, $ttlRedis);
 
-        if ($result == 0) {
-            return new DuplicateRequestResource(false, "Barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
+        if ($lockAcquired == 0) {
+            return new DuplicateRequestResource(
+                false,
+                "redis - barcode awal di scan lebih dari 1x dalam waktu $ttlRedis detik",
+                $oldBarcode,
+                429
+            );
         }
 
 
@@ -190,7 +229,7 @@ class ProductApproveController extends Controller
             // }
 
             $redisKey = 'product_batch';
-            $batchSize = 4;
+            $batchSize = 100;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));
