@@ -316,6 +316,7 @@ class StagingProductController extends Controller
 
     public function processExcelFilesCategoryStaging(Request $request)
     {
+
         $user_id = auth()->id();
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
@@ -442,6 +443,7 @@ class StagingProductController extends Controller
                             'new_tag_product' => null,
                             'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'type' => 'type1',
+                            'user_id' => $user_id,
                             'new_quality' => json_encode(['lolos' => 'lolos']),
                             'created_at' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'updated_at' => Carbon::now('Asia/Jakarta')->toDateString(),
@@ -599,6 +601,7 @@ class StagingProductController extends Controller
                     'new_discount' => $productApprove->new_discount,
                     'display_price' => $productApprove->display_price,
                     'type' => $productApprove->type,
+                    'user_id' => $productApprove->user_id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -781,6 +784,7 @@ class StagingProductController extends Controller
                             'new_discount' => 0,
                             'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'type' => 'type1',
+                            'user_id' => $user_id,
                             'created_at' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                             'updated_at' => Carbon::now('Asia/Jakarta')->toDateTimeString(),
                         ]);
@@ -842,6 +846,7 @@ class StagingProductController extends Controller
                         'created_at' => $product->created_at,
                         'updated_at' => $product->updated_at,
                         'type' => $product->type ?? null,
+                        'user_id' => $product->user_id ?? null,
                     ];
                 }
     

@@ -49,4 +49,8 @@ class User extends Authenticatable
     public function user_scans(){
         return $this->hasMany(UserScan::class);
     }
+
+    public function user_scan_webs(){
+        return $this->hasMany(UserScanWeb::class);
+    }
 }

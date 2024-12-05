@@ -55,7 +55,7 @@ class PaletProductController extends Controller
             ]);
 
 
-            $insertData = $product_filters->map(function ($product) use ($palet) {
+            $insertData = $product_filters->map(function ($product) use ($palet, $userId) {
                 return [
                     'palet_id' => $palet->id,
                     'code_document' => $product->code_document,
@@ -74,7 +74,8 @@ class PaletProductController extends Controller
                     'display_price'=> $product->display_price,
                     'created_at' => now(),  
                     'updated_at' => now(),
-                    'type' => $product->type
+                    'type' => $product->type,
+                    'user_id' => $userId
                 ];
             })->toArray();
 
@@ -120,6 +121,7 @@ class PaletProductController extends Controller
      */
     public function destroy(PaletProduct $paletProduct)
     {
+        $userId = auth()->id();
         DB::beginTransaction();
         try {
             New_product::create([
@@ -137,7 +139,8 @@ class PaletProductController extends Controller
                 'new_tag_product' => $paletProduct->new_tag_product,
                 'new_discount' => $paletProduct->new_discount,
                 'display_price' => $paletProduct->display_price,
-                'type' => $paletProduct->type
+                'type' => $paletProduct->type,
+                'user_id' => $userId
             ]);
 
 
@@ -160,7 +163,7 @@ class PaletProductController extends Controller
 
     public function addProductPalet(New_product $new_product, Palet $palet)
     {
-
+        $userId = auth()->id();
         DB::beginTransaction();
         try {
 
@@ -180,7 +183,8 @@ class PaletProductController extends Controller
                 'new_tag_product' => $new_product->new_tag_product,
                 'new_discount' => $new_product->new_discount,
                 'display_price' => $new_product->display_price,
-                'type' => $new_product->type
+                'type' => $new_product->type,
+                'user_id' => $userId
             ]);
 
             $palet->update([

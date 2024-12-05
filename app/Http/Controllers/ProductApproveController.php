@@ -16,6 +16,7 @@ use App\Models\RiwayatCheck;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use App\Models\User;
+use App\Models\UserScanWeb;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -159,7 +160,7 @@ class ProductApproveController extends Controller
 
         $qualityData = $this->prepareQualityData($status, $description);
 
-        $inputData = $this->prepareInputData($request, $status, $qualityData);
+        $inputData = $this->prepareInputData($request, $status, $qualityData, $userId);
 
         $oldBarcode = $request->input('old_barcode_product');
 
@@ -229,7 +230,7 @@ class ProductApproveController extends Controller
             // }
 
             $redisKey = 'product_batch';
-            $batchSize = 100;
+            $batchSize = 1;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));
@@ -240,6 +241,9 @@ class ProductApproveController extends Controller
                     ProductBatch::dispatch($batchSize);
                 }
             }
+
+            UserScanWeb::updateOrCreateDailyScan($userId, $document->id);
+
 
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 
@@ -281,7 +285,7 @@ class ProductApproveController extends Controller
         ];
     }
 
-    private function prepareInputData($request, $status, $qualityData)
+    private function prepareInputData($request, $status, $qualityData, $userId)
     {
         $inputData = $request->only([
             'code_document',
@@ -297,6 +301,7 @@ class ProductApproveController extends Controller
             'condition',
             'deskripsi',
             'type',
+            'user_id'
         ]);
 
         if ($inputData['old_price_product'] < 100000) {
@@ -308,6 +313,7 @@ class ProductApproveController extends Controller
         $inputData['type'] = 'type1';
 
         $inputData['new_discount'] = 0;
+        $inputData['user_id'] = $userId;
         $inputData['display_price'] = $inputData['new_price_product'];
 
         if ($status !== 'lolos') {
@@ -349,7 +355,7 @@ class ProductApproveController extends Controller
 
             $qualityData = $this->prepareQualityData($status, $description);
 
-            $inputData = $this->prepareInputData($request, $status, $qualityData);
+            $inputData = $this->prepareInputData($request, $status, $qualityData, $userId);
 
             $document = Document::where('code_document', $inputData['code_document'])->first();
             $generate = null;
@@ -684,65 +690,5 @@ class ProductApproveController extends Controller
     //         ProcessProductData::dispatch($currentBatchCount, \App\Models\ProductApprove::class);
     //     }
     // }
-    public function jobBatch(Request $request)
-    {
-        $userId = auth()->id();
-        $validator = Validator::make($request->all(), [
-            'code_document' => 'required',
-            'old_barcode_product' => 'required',
-            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
-            'new_name_product' => 'required',
-            'new_quantity_product' => 'required|integer',
-            'new_price_product' => 'required|numeric',
-            'old_price_product' => 'required|numeric',
-            // 'new_date_in_product' => 'required|date',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
-            'condition' => 'required|in:lolos,damaged,abnormal',
-            'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
 
-        ], [
-            'new_barcode_product.unique' => 'barcode sudah ada',
-            'old_barcode_product.exists' => 'barcode tidak ada',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $status = $request->input('condition');
-        $description = $request->input('deskripsi', '');
-
-        $qualityData = $this->prepareQualityData($status, $description);
-
-        $inputData = $this->prepareInputData($request, $status, $qualityData);
-
-        $oldBarcode = $request->input('old_barcode_product');
-        $newBarcode = $request->input('new_barcode_product');
-
-        DB::beginTransaction();
-        try {
-
-            $redisKey = 'product_batch';
-            $batchSize = 7;
-
-            // Tambahkan data ke Redis list
-            Redis::rpush($redisKey, json_encode($inputData));
-
-            // Cek panjang list Redis
-            $listSize = Redis::llen($redisKey);
-
-            // Jika panjang list mencapai atau lebih dari batchSize, dispatch job
-            if ($listSize >= $batchSize) {
-                ProductBatch::dispatch($batchSize);
-            }
-
-            DB::commit();
-
-            return new ProductapproveResource(true, true, "New Produk Berhasil ditambah", $inputData);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
 }

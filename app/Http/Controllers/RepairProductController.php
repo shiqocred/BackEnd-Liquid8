@@ -72,7 +72,7 @@ class RepairProductController extends Controller
                 'barcode' => barcodeRepair(),
             ]);
 
-            $insertData = $productFilters->map(function ($product) use ($repair) {
+            $insertData = $productFilters->map(function ($product) use ($repair, $userId) {
                 return [
                     'repair_id' => $repair->id,
                     'code_document' => $product->code_document,
@@ -90,6 +90,7 @@ class RepairProductController extends Controller
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
                     'type' => $product->type,
+                    'user_id' => $userId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -176,6 +177,7 @@ class RepairProductController extends Controller
      */
     public function destroy(RepairProduct $repairProduct)
     {
+        $userId = auth()->id();
         DB::beginTransaction();
         try {
             // Data untuk new_quality
@@ -201,7 +203,8 @@ class RepairProductController extends Controller
                 'new_tag_product' => $repairProduct->new_tag_product,
                 'new_discount' => $repairProduct->new_discount,
                 'display_price' => $repairProduct->display_price,
-                'type' => 'type1'
+                'type' => 'type1',
+                'user_id' => $userId
             ]);
     
             // Update data repair
@@ -240,6 +243,8 @@ class RepairProductController extends Controller
     {
         // Mulai transaksi database
         DB::beginTransaction();
+
+        $userId = auth()->id();
 
         try {
 
@@ -293,7 +298,8 @@ class RepairProductController extends Controller
                 "new_tag_product" => $product->new_tag_product,
                 'new_discount' => $product->new_discount,
                 'display_price' => $product->display_price,
-                'type' => $product->type
+                'type' => $product->type,
+                'user_id' => $userId
             ]);
 
             // Hancurkan objek produk
