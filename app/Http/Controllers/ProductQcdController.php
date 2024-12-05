@@ -35,6 +35,7 @@ class ProductQcdController extends Controller
      */ 
     public function store(Request $request)
     {
+        $userId = auth()->id();
         DB::beginTransaction(); 
         try {
             $product_filters = FilterQcd::all();
@@ -52,7 +53,7 @@ class ProductQcdController extends Controller
                 // 'name_color' => $request->name_color,
             ]);
 
-            $insertData = $product_filters->map(function ($product) use ($bundle) {
+            $insertData = $product_filters->map(function ($product) use ($bundle, $userId) {
                 return [
                     'bundle_qcd_id' => $bundle->id,
                     'code_document' => $product->code_document,
@@ -71,7 +72,8 @@ class ProductQcdController extends Controller
                     'display_price' => $product->display_price,
                     'created_at' => now(),  
                     'updated_at' => now(),
-                    'type' => $product->type
+                    'type' => $product->type,
+                    'user_id' => $userId
                 ];
             })->toArray();
 

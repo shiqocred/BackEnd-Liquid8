@@ -10,4 +10,8 @@ class Document extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
+
+    public function user_scan_webs(){
+        return $this->hasMany(UserScanWeb::class);
+    }
 } 

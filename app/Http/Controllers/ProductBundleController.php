@@ -92,7 +92,8 @@ class ProductBundleController extends Controller
                     'display_price' => $product->display_price,
                     'created_at' => now(),
                     'updated_at' => now(),
-                    'type' => $product->type
+                    'type' => $product->type,
+                    'user_id' => $product->user_id ?? null
                 ];
             })->toArray();
 
@@ -160,7 +161,8 @@ class ProductBundleController extends Controller
                 'display_price' => $productBundle->display_price,
                 'created_at' => $productBundle->created_at,
                 'updated_at' => $productBundle->updated_at,
-                'type' => $productBundle->type
+                'type' => $productBundle->type,
+                'user_id' => $productBundle->user_id ??null
             ]);
 
             $bundle = Bundle::findOrFail($productBundle->bundle_id);
@@ -233,7 +235,8 @@ class ProductBundleController extends Controller
                 'new_tag_product' => $new_product->new_tag_product,
                 'new_discount' => $new_product->new_discount,
                 'display_price' => $new_product->display_price,
-                'type' => $new_product->type
+                'type' => $new_product->type,
+                'user_id' => $new_product->user_id ?? null
             ]);
 
             //calculate
@@ -352,7 +355,8 @@ class ProductBundleController extends Controller
                      'new_discount' => $product->new_discount,
                      'display_price' => $product->display_price,
                      'type' => $product->type,
-                     'image' => $product->image
+                     'image' => $product->image,
+                     'user_id' => $product->user_id ?? null
                  ]);
     
                  $productFilters[] = $productBundle;
@@ -424,7 +428,7 @@ class ProductBundleController extends Controller
                     'new_discount' => $product->new_discount,
                     'display_price' => $product->display_price,
                     'type' => $product->type,
-                    'user_id' => $userId, // Tambahkan user_id untuk melacak siapa yang menambahkan
+                    'user_id' => $userId, 
                 ]);
     
                 $productFilters[] = $productBundle;
@@ -447,6 +451,7 @@ class ProductBundleController extends Controller
 
     public function addProductInBundle(Request $request, Bundle $bundle)
     {
+        $userId = auth()->id();
         DB::beginTransaction();
         try {
             // Validasi input
@@ -468,7 +473,7 @@ class ProductBundleController extends Controller
     
             // Proses data menggunakan chunk
             ProductInput::whereIn('id', $productIds) // Ganti 'where' dengan 'whereIn'
-                ->chunk(100, function ($products) use ($bundle, &$totalPrice, &$totalProduct, &$totalIn) {
+                ->chunk(100, function ($products) use ($bundle, &$totalPrice, &$totalProduct, &$totalIn, $userId) {
                     foreach ($products as $product) {
                         // Tambahkan produk ke bundle
                         Product_Bundle::create([
@@ -487,7 +492,8 @@ class ProductBundleController extends Controller
                             'new_tag_product' => $product->new_tag_product,
                             'new_discount' => $product->new_discount,
                             'display_price' => $product->display_price,
-                            'type' => $product->type
+                            'type' => $product->type,
+                            'user_id' => $userId
                         ]);
     
                         // Perbarui total harga dan total produk
@@ -550,6 +556,7 @@ class ProductBundleController extends Controller
 
     public function destroyProductBundle(Request $request, Bundle $bundle)
     {
+        $userId = auth()->id();
         DB::beginTransaction(); // Hapus duplikasi transaksi
         try {
             // Validasi input untuk produk yang ada dalam bundle
@@ -571,7 +578,7 @@ class ProductBundleController extends Controller
             $productBundle = Product_Bundle::where('id', 4)->get();
             // Proses data menggunakan chunk
             Product_Bundle::whereIn('id', $productIds)
-                ->chunk(100, function ($products) use ($bundle, &$totalPrice, &$totalProduct, &$totalOut) {
+                ->chunk(100, function ($products) use ($bundle, &$totalPrice, &$totalProduct, &$totalOut, $userId) {
                     foreach ($products as $product) {
                         ProductInput::create([
                             'code_document' => $product->code_document,
@@ -588,7 +595,8 @@ class ProductBundleController extends Controller
                             'new_tag_product' => $product->new_tag_product,
                             'new_discount' => $product->new_discount,
                             'display_price' => $product->display_price,
-                            'type' => $product->type
+                            'type' => $product->type,
+                            'user_id' => $userId
                         ]);
     
                         $totalPrice -= $product->old_price_product;

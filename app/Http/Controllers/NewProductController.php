@@ -354,7 +354,7 @@ class NewProductController extends Controller
     public function listProductExpDisplay(Request $request)
     {
         try {
-            $query = $request->input('q');
+            $query = $request->input('q'); 
 
             $productExpDisplayQuery = New_product::latest()
                 ->where(function ($queryBuilder) {
@@ -398,6 +398,7 @@ class NewProductController extends Controller
     {
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
+        $user_id = auth()->id();
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -498,6 +499,7 @@ class NewProductController extends Controller
                     $newProductDataToInsert = array_merge($newProductDataToInsert, [
                         'code_document' => $code_document,
                         'type' => 'type1',
+                        'user_id' => $user_id,
                         'new_tag_product' => $newProductDataToInsert['new_tag_product'] ?? null,
                         'new_quality' => json_encode(['lolos' => 'lolos']),
                         'new_barcode_product' => newBarcodeScan(),
@@ -645,6 +647,7 @@ class NewProductController extends Controller
                             'new_tag_product' => null,
                             'new_date_in_product' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'type' => 'type1',
+                            'user_id' => $user_id,
                             'new_quality' => json_encode(['lolos' => 'lolos']),
                             'created_at' => Carbon::now('Asia/Jakarta')->toDateString(),
                             'updated_at' => Carbon::now('Asia/Jakarta')->toDateString(),
@@ -1193,6 +1196,7 @@ class NewProductController extends Controller
     //khusus super admin
     public function addProductByAdmin(Request $request)
     {
+        $userId = auth()->id();
         $validator = Validator::make($request->all(), [
             // 'new_barcode_product' => 'required|unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
@@ -1238,10 +1242,13 @@ class NewProductController extends Controller
                 'new_category_product',
                 'new_tag_product',
                 'price_discount',
-                'type'
+                'type',
+                'user_id'
             ]);
 
             $inputData['new_status_product'] = 'display';
+            $inputData['user_id'] = $userId;
+
 
             $inputData['new_date_in_product'] = Carbon::now('Asia/Jakarta')->toDateString();
             $inputData['new_quality'] = json_encode($qualityData);
