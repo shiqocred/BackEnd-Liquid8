@@ -615,8 +615,8 @@ class StagingProductController extends Controller
 
     public function export()
     {
-        set_time_limit(600);
-        ini_set('memory_limit', '1024M');
+        set_time_limit(3600);
+        ini_set('memory_limit', '2048M');
 
         try {
             $fileName = 'product-staging.xlsx';

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ResponseResource;
+use App\Models\Document;
 use App\Models\UserScanWeb;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -58,27 +59,9 @@ class UserScanWebController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($document_id)
+    public function show($code_document)
     {
-        $userFIleScan = UserScanWeb::where('document_id', $document_id)->get();
-
-        $countUser = $userFIleScan->unique('user_id')->count();
-
-        $totalScanAll = $userFIleScan->sum('total_scans');
-
-        $totalScanToday = $userFIleScan->where('scan_date', Carbon::now('Asia/Jakarta')->toDateString())->sum('total_scans');
-
-        $userFIleScan->each->makeHidden(['user', 'document']);
-
-        // Kembalikan data dalam format resource
-        return new ResponseResource(true, "Detail Data", [
-            'summary' => [
-                'count_user' => $countUser,
-                'total_scans_all' => $totalScanAll,
-                'total_scans_today' => $totalScanToday,
-            ],
-            'data' => $userFIleScan,
-        ]);
+       
     }
 
 
@@ -126,8 +109,7 @@ class UserScanWebController extends Controller
 
     public function total_user_scans(Request $request)
     {
-       //aku ingin menghitung total scans peruser dari user_id yg ada di tabel user_scan_webs
-       //get data nya get user_id nya dan hitung aja, kalau mau ngelompokin tinggal pakai groupBy
+
        $users = UserScanWeb::groupBy('user_id')->select('user_id')
        ->selectRaw('SUM(total_scans) as total_scans')->get()
        ->map(function($user){
@@ -137,5 +119,33 @@ class UserScanWebController extends Controller
         ];
        });
         return new ResponseResource(true, "List total per user scans", $users);
+    }
+
+    public function detail_user_scan($code_document)
+    {
+        $document = Document::where('code_document', $code_document)->first();
+
+        if(!$document) {
+            return (new ResponseResource(false, "code_document tidak ada", $document))->setStatusCode(404);
+        }
+        $userFIleScan = UserScanWeb::where('document_id', $document->id)->get();
+
+        $countUser = $userFIleScan->unique('user_id')->count();
+
+        $totalScanAll = $userFIleScan->sum('total_scans');
+
+        $totalScanToday = $userFIleScan->where('scan_date', Carbon::now('Asia/Jakarta')->toDateString())->sum('total_scans');
+
+        $userFIleScan->each->makeHidden(['user', 'document']);
+
+        // Kembalikan data dalam format resource
+        return new ResponseResource(true, "Detail Data", [
+            'summary' => [
+                'count_user' => $countUser,
+                'total_scans_all' => $totalScanAll,
+                'total_scans_today' => $totalScanToday,
+            ],
+            'data' => $userFIleScan,
+        ]);
     }
 }

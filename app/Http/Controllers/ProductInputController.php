@@ -273,7 +273,7 @@ class ProductInputController extends Controller
 
         try {
             $product_filters = FilterProductInput::where('user_id', $userId)->get();
-
+            
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
@@ -307,10 +307,11 @@ class ProductInputController extends Controller
                             'display_price' => $product->display_price,
                             'created_at' => now(),
                             'updated_at' => now(),
-                            'type' => 'type2'
+                            'type' => 'type2',
+                            'user_id' => $product->user_id ?? null,
                         ];
                     }
-                } elseif ($product->old_price_product <= 119000) {
+                } elseif ($product->old_price_product <= 119999) {
                     if (is_null($product->new_tag_product) || !is_null($product->new_category_product)) {
                         $tagcolorwrong[] = $product;
                     } else {
@@ -331,7 +332,8 @@ class ProductInputController extends Controller
                             'display_price' => $product->display_price,
                             'created_at' => now(),
                             'updated_at' => now(),
-                            'type' => 'type2'
+                            'type' => 'type2',
+                            'user_id' => $product->user_id ?? null,
                         ];
                     }
                 }
