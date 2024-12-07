@@ -184,7 +184,6 @@ class ProductApproveController extends Controller
                 New_product::class,
                 ProductApprove::class,
                 StagingProduct::class,
-                StagingApprove::class,
             ];
 
             $oldBarcodeExists = false;
@@ -230,7 +229,7 @@ class ProductApproveController extends Controller
             // }
 
             $redisKey = 'product_batch';
-            $batchSize = 1;
+            $batchSize = 4;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));
@@ -242,7 +241,7 @@ class ProductApproveController extends Controller
                 }
             }
 
-            UserScanWeb::updateOrCreateDailyScan($userId, $document->id);
+          UserScanWeb::updateOrCreateDailyScan($userId, $document->id);
 
 
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
@@ -394,6 +393,9 @@ class ProductApproveController extends Controller
             } else if ($qualityData['abnormal'] != null) {
                 $riwayatCheck->total_data_abnormal += 1;
             }
+
+            UserScanWeb::updateOrCreateDailyScan($userId, $document->id);
+
 
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');
 

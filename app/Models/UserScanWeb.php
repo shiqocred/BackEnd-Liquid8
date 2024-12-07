@@ -38,7 +38,6 @@ class UserScanWeb extends Model
         $scanDate = Carbon::now('Asia/Jakarta')->toDateString();
         // $scanDate = '2024-12-29';  
 
-
         $userScan = self::where('user_id', $userId)
             ->where('document_id', $documentId)
             ->where('scan_date', $scanDate)

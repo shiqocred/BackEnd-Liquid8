@@ -21,11 +21,11 @@ class UserController extends Controller
     {
         $query = $request->input('q');
 
-        $users = User::where(function ($queryBuilder) use ($query) {
+        $users = User::withTotalScans()->where(function ($queryBuilder) use ($query) {
             $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
                 ->orWhere('username', 'LIKE', '%' . $query . '%');
-        })->with('role')->latest()->paginate(50);
-
+        })->latest()->with('role')->paginate(50);
+   
         return new ResponseResource(true, "List users", $users);
     }
 
