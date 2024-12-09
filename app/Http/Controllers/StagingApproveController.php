@@ -27,6 +27,17 @@ class StagingApproveController extends Controller
         try {
             // Buat query dasar untuk StagingProduct
             $newProductsQuery = StagingProduct::query()
+                ->select(
+                    'id',
+                    'new_barcode_product',
+                    'new_name_product',
+                    'new_category_product',
+                    'new_price_product',
+                    'new_status_product',
+                    'display_price',
+                    'new_date_in_product',
+                    'stage'
+                )
                 ->where('stage', 'approve')
                 ->latest();
 
@@ -66,9 +77,15 @@ class StagingApproveController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(StagingApprove $stagingApprove)
+    public function show($id)
     {
-        return new ResponseResource(true, "data new product", $stagingApprove);
+        $product = StagingProduct::where('id', $id)->first();
+        if($product){
+            return new ResponseResource(true, "data product", $product);
+        }else{
+            return (new ResponseResource(true, "data product tidak ada", $product))->setStatusCode(404);
+
+        }
     }
 
     /**

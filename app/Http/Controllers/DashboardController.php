@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\ListAnalyticSalesExport;
 use App\Exports\ProductExpiredExport;
+use App\Exports\StorageReportExport;
 use App\Http\Resources\ResponseResource;
 use App\Models\Bundle;
 use App\Models\Buyer;
@@ -431,6 +432,28 @@ class DashboardController extends Controller
         );
 
         return $resource->response();
+    }
+
+    public function exportStorageReport()
+    {
+        $dataExport = $this->storageReport();
+        $dataExport = $dataExport->getData(true);
+
+        $listStorageReport = $dataExport['data']['resource']['chart']['category'];
+
+        if (empty($listStorageReport)) {
+            return response()->json(['errors' => "data kosong! tidak bisa di export!"], 422);
+        }
+
+        $customDataExport = array_map(function ($data) {
+            return [
+                'Category Name' => $data['category_product'],
+                'Total Product'   => $data['total_category'],
+                'Value Product' => $data['total_price_category'],
+            ];
+        }, $listStorageReport);
+
+        return Excel::download(new StorageReportExport($customDataExport), 'storage-report.xlsx');
     }
 
     public function generalSale(Request $request)
@@ -890,49 +913,5 @@ class DashboardController extends Controller
         });
 
         return Excel::download(new ProductExpiredExport($customProductExpired), 'expired-product.xlsx');
-    }
-
-    public function generateExcel_StorageReport()
-    {
-        // Ambil data dari function storageReport
-        $response = $this->storageReport();
-        $data = $response->getData(true);
-        $month = $data['data']['resource']['month']['current_month']['month'];
-        $year = $data['data']['resource']['month']['current_month']['year'];
-        $dataChart = $data['data']['resource']['chart'];
-        $totalPriceCategory = array_sum(array_column($dataChart, 'total_price_category'));
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
-        // Set judul kolom di baris pertama
-        $sheet->setCellValue('A1', 'Category Product');
-        $sheet->setCellValue('B1', 'Total Category');
-        $sheet->setCellValue('C1', 'Total Price Category');
-
-        // Isi data chart ke dalam spreadsheet mulai dari baris kedua
-        $row = 2;
-        foreach ($data['data']['resource']['chart'] as $item) {
-            $sheet->setCellValue('A' . $row, $item['category_product']);
-            $sheet->setCellValue('B' . $row, $item['total_category']);
-            $sheet->setCellValue('C' . $row, $item['total_price_category']);
-            $row++;
-        }
-
-        // Tambahkan total di akhir sheet
-        $sheet->setCellValue('A' . $row, 'Total');
-        $sheet->setCellValue('B' . $row, $data['data']['resource']['total_all_category']);
-        $sheet->setCellValue('C' . $row, $data['data']['resource']['total_all_price_category']);
-
-        $writer = new Xlsx($spreadsheet);
-        $fileName = $month . $year . '.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-        $writer->save($filePath);
-        $downloadUrl = url($publicPath . '/' . $fileName);
-        return new ResponseResource(true, "file diunduh", $downloadUrl);
     }
 }

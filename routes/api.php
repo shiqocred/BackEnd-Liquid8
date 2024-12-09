@@ -50,6 +50,7 @@ use App\Http\Controllers\SaleDocumentController;
 use App\Http\Controllers\StagingApproveController;
 use App\Http\Controllers\StagingProductController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserScanWebController;
 use App\Http\Controllers\VehicleTypeController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
@@ -69,12 +70,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('dashboard/summary-transaction', [DashboardController::class, 'summaryTransaction']);
    Route::get('dashboard/summary-sales', [DashboardController::class, 'summarySales']);
    Route::get('dashboard/storage-report', [DashboardController::class, 'storageReport']);
+   Route::get('dashboard/storage-report/export', [DashboardController::class, 'exportStorageReport']);
    Route::get('dashboard/monthly-analytic-sales', [DashboardController::class, 'monthlyAnalyticSales']);
    Route::get('dashboard/monthly-analytic-sales/export', [DashboardController::class, 'exportMonthlyAnalyticSales']);
    Route::get('dashboard/yearly-analytic-sales', [DashboardController::class, 'yearlyAnalyticSales']);
    Route::get('dashboard/yearly-analytic-sales/export', [DashboardController::class, 'exportYearlyAnalyticSales']);
    Route::get('dashboard/general-sales', [DashboardController::class, 'generalSale']);
-   Route::get('generateExcel_StorageReport', [DashboardController::class, 'generateExcel_StorageReport']);
    Route::get('dashboard/analytic-slow-moving', [DashboardController::class, 'analyticSlowMoving']);
    Route::get('export/product-expired', [DashboardController::class, 'productExpiredExport']);
 });
@@ -116,6 +117,11 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 
    //manual inbound
    Route::post('add_product', [NewProductController::class, 'addProductByAdmin']);
+
+   Route::resource('user_scan_webs', UserScanWebController::class);
+   Route::get('user_scan_webs/{code_document}', [UserScanWebController::class, 'detail_user_scan'])->where('code_document', '.*');
+
+   Route::get('total_scan_users', [UserScanWebController::class, 'total_user_scans']);
 });
 
 //manifest inbound, histroy index : Admin,Spv,Team leader,Crew
@@ -240,6 +246,21 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
+   //filter product bundle - mtc 
+   Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
+   Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
+   Route::delete('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'destroyFilterScan']);
+
+   //bundle-scans
+   Route::get('bundle-scans', [BundleController::class, 'listBundleScan']);
+   Route::post('bundle-scans', [ProductBundleController::class, 'createBundleScan']);
+   Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
+   Route::post('bundle-scans/product/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
+   Route::delete('bundle-scans/product/{bundle}', [ProductBundleController::class, 'destroyProductBundle']);
+});
+
+
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
 
    //filters product bundle
    Route::get('bundle/filter_product', [ProductFilterController::class, 'index']);
@@ -257,18 +278,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
 
    Route::get('bundle/product', [ProductBundleController::class, 'index']);
    Route::delete('bundle/destroy/{id}', [ProductBundleController::class, 'destroy']);
-
-   //filter product bundle - mtc 
-   Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
-   Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
-   Route::delete('bundle-scans/filter_product/{id}', [ProductFilterController::class, 'destroyFilterScan']);
-
-   //bundle-scans
-   Route::get('bundle-scans', [BundleController::class, 'listBundleScan']);
-   Route::post('bundle-scans', [ProductBundleController::class, 'createBundleScan']);
-   Route::delete('bundle-scans/{bundle}', [BundleController::class, 'unbundleScan']);
-   Route::post('bundle-scans/product/{bundle}', [ProductBundleController::class, 'addProductInBundle']);
-   Route::delete('bundle-scans/product/{bundle}', [ProductBundleController::class, 'destroyProductBundle']);
 
    //warehouse
    Route::resource('warehouses', WarehouseController::class);
@@ -359,6 +368,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('color_tags', [ColorTagController::class, 'index']);
    Route::get('color_tags2', [ColorTag2Controller::class, 'index']);
    Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
+   Route::get('product_byColor2', [NewProductController::class, 'getTagColor2']);
+
    Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
    Route::get('getByNameColor2', [ColorTag2Controller::class, 'getByNameColor2']);
@@ -389,7 +400,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('buyers/{buyer}', [BuyerController::class, 'destroy']);
    Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
    Route::delete('color_tags/{color_tag}', [ColorTagController::class, 'destroy']);
-   Route::delete('color_tags2/{color_tag}', [ColorTag2Controller::class, 'destroy']);
    Route::delete('product_olds/{product_old}', [ProductOldController::class, 'destroy']);
    Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
@@ -402,6 +412,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
    Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
+   Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {
@@ -426,7 +438,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
    Route::get('notif_widget', [NotificationController::class, 'notifWidget']);
-   
 });
 
 //collab mtc
@@ -513,4 +524,3 @@ Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentO
 //test function untuk cronjob cok
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
-// Route::post('jobBatch', [ProductApproveController::class, 'jobBatch']);

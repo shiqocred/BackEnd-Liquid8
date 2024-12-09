@@ -408,7 +408,9 @@ class PaletController extends Controller
                         'new_category_product' => $product->new_category_product,
                         'new_tag_product' => $product->new_tag_product,
                         'new_discount' => $product->new_discount,
-                        'display_price' => $product->display_price
+                        'display_price' => $product->display_price,
+                        'type' => $product->type ?? null,
+                        'user_id' => $product->user_id ?? null
                     ]);
 
                     $product->delete();

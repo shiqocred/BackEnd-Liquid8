@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
+
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
@@ -42,11 +44,26 @@ class User extends Authenticatable
         return $this->api_key;
     }
 
-    public function format_barcode(){
+    public function format_barcode()
+    {
         return $this->belongsTo(FormatBarcode::class);
     }
 
-    public function user_scans(){
+    public function user_scans()
+    {
         return $this->hasMany(UserScan::class);
+    }
+
+    public function user_scan_webs()
+    {
+        return $this->hasMany(UserScanWeb::class);
+    }
+
+    public function scopeWithTotalScans(Builder $query)
+    {
+        $query->addSelect([
+            'total_scans' => UserScanWeb::selectRaw('SUM(total_scans)')
+                ->whereColumn('user_scan_webs.user_id', 'users.id') // Cocokkan dengan user_id
+        ]);
     }
 }
