@@ -368,6 +368,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
    Route::get('color_tags', [ColorTagController::class, 'index']);
    Route::get('color_tags2', [ColorTag2Controller::class, 'index']);
    Route::get('product_byColor', [NewProductController::class, 'getTagColor']);
+   Route::get('product_byColor2', [NewProductController::class, 'getTagColor2']);
+
    Route::get('product_byCategory', [NewProductController::class, 'getByCategory']);
    Route::get('getByNameColor', [ColorTagController::class, 'getByNameColor']);
    Route::get('getByNameColor2', [ColorTag2Controller::class, 'getByNameColor2']);
@@ -398,7 +400,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('buyers/{buyer}', [BuyerController::class, 'destroy']);
    Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
    Route::delete('color_tags/{color_tag}', [ColorTagController::class, 'destroy']);
-   Route::delete('color_tags2/{color_tag}', [ColorTag2Controller::class, 'destroy']);
    Route::delete('product_olds/{product_old}', [ProductOldController::class, 'destroy']);
    Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
    Route::delete('historys/{history}', [RiwayatCheckController::class, 'destroy']);
@@ -411,6 +412,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('deleteCustomBarcode', [DocumentController::class, 'deleteCustomBarcode']);
    Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
+   Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {

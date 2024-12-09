@@ -19,7 +19,15 @@ class FilterStagingController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        $product_filtersByuser = StagingProduct::where('user_id', $userId)->where('stage', 'process')->get();
+        $product_filtersByuser = StagingProduct::
+        select(
+            'id',
+            'new_category_product',
+            'new_price_product',
+            'old_price_product',
+            'new_tag_product',
+            'stage'
+        )->where('user_id', $userId)->where('stage', 'process')->get();
 
         $totalNewPriceWithCategory = $product_filtersByuser->whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = $product_filtersByuser->whereNull('new_category_product')->sum('old_price_product');
@@ -30,7 +38,18 @@ class FilterStagingController extends Controller
 
 
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory + $totalNewPriceWithoutCtgrTagColor + $totalOldPriceWithoutCtgrTagColor;
-        $product_filters = StagingProduct::where('user_id', $userId)->where('stage', 'process')->paginate(50);
+        
+        $product_filters = StagingProduct::select(
+            'id',
+            'new_barcode_product',
+            'new_name_product',
+            'new_category_product',
+            'new_price_product',
+            'old_price_product',
+            'new_status_product',
+            'stage'
+            )
+            ->where('user_id', $userId)->where('stage', 'process')->paginate(50);
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
             'data' => $product_filters,
