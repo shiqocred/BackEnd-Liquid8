@@ -34,10 +34,21 @@ class StagingProductController extends Controller
         try {
             // Buat query dasar untuk StagingProduct
             $newProductsQuery = StagingProduct::query()
+                ->select(
+                    'id',
+                    'new_barcode_product',
+                    'new_name_product',
+                    'new_category_product',
+                    'new_price_product',
+                    'new_status_product',
+                    'display_price',
+                    'new_date_in_product',
+                    'stage'
+                )
                 ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
                 ->whereNull('new_tag_product')
                 ->whereNull('stage')
-                ->latest(); 
+                ->latest();
 
             if ($searchQuery) {
                 $newProductsQuery->where(function ($queryBuilder) use ($searchQuery) {
@@ -78,7 +89,7 @@ class StagingProductController extends Controller
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
             }
-            
+
             $insertData = $product_filters->map(function ($product) use ($userId) {
                 $product->update([
                     'stage' => 'approve',
@@ -355,13 +366,13 @@ class StagingProductController extends Controller
                 'Price After Discount',
             ];
 
-             // Periksa apakah header sesuai
-             if (array_diff($expectedHeaders, $headersFromFile) || array_diff($headersFromFile, $expectedHeaders)) {
+            // Periksa apakah header sesuai
+            if (array_diff($expectedHeaders, $headersFromFile) || array_diff($headersFromFile, $expectedHeaders)) {
                 $response = new ResponseResource(false, "header tidak sesuai, berikut header yang benar : ", $expectedHeaders);
                 return $response->response()->setStatusCode(422);
             }
 
-            
+
             $chunkSize = 500;
             $count = 0;
             $headerMappings = [
@@ -689,7 +700,7 @@ class StagingProductController extends Controller
         $user_id = auth()->id();
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
-    
+
         // Validate input file
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -698,12 +709,12 @@ class StagingProductController extends Controller
             'file.file' => 'File yang diunggah tidak valid.',
             'file.mimes' => 'File harus berupa file Excel dengan ekstensi .xlsx atau .xls.',
         ]);
-    
+
         $file = $request->file('file');
         $filePath = $file->getPathname();
         $fileName = $file->getClientOriginalName();
         $file->storeAs('public/ekspedisis', $fileName);
-    
+
         DB::beginTransaction();
         try {
             $spreadsheet = IOFactory::load($filePath);
@@ -711,7 +722,7 @@ class StagingProductController extends Controller
             $ekspedisiData = $sheet->toArray(null, true, true, true);
             $chunkSize = 500;
             $count = 0;
-    
+
             $headerMappings = [
                 'code_document' => 'Code Document',
                 'old_barcode_product' => 'Old Barcode',
@@ -725,19 +736,19 @@ class StagingProductController extends Controller
                 'display_price' => 'After Diskon',
                 'new_quality' => 'Keterangan',
             ];
-    
+
             for ($i = 1; $i < count($ekspedisiData); $i += $chunkSize) {
                 $chunkData = array_slice($ekspedisiData, $i, $chunkSize);
                 $newProductsToInsert = [];
-    
+
                 foreach ($chunkData as $dataItem) {
                     $newProductDataToInsert = [];
-    
+
                     foreach ($headerMappings as $key => $headerName) {
                         $columnKey = array_search($headerName, $ekspedisiData[1]);
                         if ($columnKey !== false) {
                             $value = trim($dataItem[$columnKey]);
-    
+
                             if ($key === 'new_quantity_product') {
                                 $quantity = $value !== '' ? (int)$value : 0;
                                 $newProductDataToInsert[$key] = $quantity;
@@ -763,13 +774,13 @@ class StagingProductController extends Controller
                     } else {
                         $newProductDataToInsert['new_quality'] = json_encode(['unknown' => 'unknown']);
                     }
-    
+
                     if (isset($newProductDataToInsert['old_price_product']) && $newProductDataToInsert['old_price_product'] < 100000) {
                         $tagwarna = Color_tag::where('min_price_color', '<=', $newProductDataToInsert['old_price_product'])
                             ->where('max_price_color', '>=', $newProductDataToInsert['old_price_product'])
                             ->select('fixed_price_color', 'name_color', 'hexa_code_color')
                             ->first();
-    
+
                         if ($tagwarna) {
                             $newProductDataToInsert['new_tag_product'] = $tagwarna->name_color;
                         } else {
@@ -778,7 +789,7 @@ class StagingProductController extends Controller
                     } else {
                         $newProductDataToInsert['new_tag_product'] = null;
                     }
-    
+
                     if (!empty($newProductDataToInsert['old_barcode_product']) && !empty($newProductDataToInsert['new_name_product'])) {
                         $newProductsToInsert[] = array_merge($newProductDataToInsert, [
                             'new_discount' => 0,
@@ -791,7 +802,7 @@ class StagingProductController extends Controller
                         $count++;
                     }
                 }
-    
+
                 if (!empty($newProductsToInsert)) {
                     ProductApprove::insert($newProductsToInsert);
                 }
@@ -804,9 +815,9 @@ class StagingProductController extends Controller
                 'total_column_in_document' => count($ekspedisiData) - 1, // Subtract 1 for header
                 'date_document' => Carbon::now('Asia/Jakarta')->toDateString(),
             ]);
-    
+
             DB::commit();
-    
+
             return new ResponseResource(true, "Data berhasil diproses dan disimpan", [
                 'code_document' => $newProductDataToInsert['code_document'] ?? null,
                 'file_name' => $fileName,
@@ -821,12 +832,12 @@ class StagingProductController extends Controller
 
     public function batchToLpr(Request $request)
     {
-        $totalProcessed = 0; 
+        $totalProcessed = 0;
         StagingProduct::whereNotNull('new_quality->abnormal')
             ->orWhereNotNull('new_quality->damaged')
             ->chunk(1000, function ($products) use (&$totalProcessed) {
                 $newProducts = [];
-    
+
                 foreach ($products as $product) {
                     $newProducts[] = [
                         'code_document' => $product->code_document,
@@ -849,13 +860,13 @@ class StagingProductController extends Controller
                         'user_id' => $product->user_id ?? null,
                     ];
                 }
-    
+
                 if (!empty($newProducts)) {
                     DB::table('new_products')->insert($newProducts);
-                    $totalProcessed += count($newProducts); 
+                    $totalProcessed += count($newProducts);
                 }
             });
-    
+
         return new ResponseResource(true, "Berhasil dipindahkan", $totalProcessed);
     }
 
@@ -864,7 +875,7 @@ class StagingProductController extends Controller
         try {
             // Inisialisasi variabel untuk menghitung total data yang dihapus
             $totalDeleted = 0;
-    
+
             // Gunakan chunk untuk memproses data dalam kelompok
             StagingProduct::whereNotNull('new_quality->abnormal')
                 ->orWhereNotNull('new_quality->damaged')
@@ -875,7 +886,7 @@ class StagingProductController extends Controller
                         $totalDeleted++;
                     }
                 });
-    
+
             // Kembalikan respons berhasil
             return response()->json([
                 'success' => true,
@@ -890,6 +901,4 @@ class StagingProductController extends Controller
             ], 500);
         }
     }
-    
-    
 }

@@ -104,9 +104,15 @@ class ColorTag2Controller extends Controller
      */
     public function destroy(ColorTag2 $color_tags2)
     {
-        $color_tags2->delete();
-        return new ResponseResource(true, "berhasil menghapus tag warna", $color_tags2);
-
+        try {
+            $color_tags2->delete();
+    
+            // Kembalikan respons berhasil
+            return new ResponseResource(true, "Berhasil menghapus tag warna 2", []);
+        } catch (\Exception $e) {
+            // Tangani error jika terjadi
+            return (new ResponseResource(false, "Gagal menghapus tag warna 2: " . $e->getMessage(), []))->setStatusCode(500);
+        }
     }
 
     public function getByNameColor2(Request $request) {

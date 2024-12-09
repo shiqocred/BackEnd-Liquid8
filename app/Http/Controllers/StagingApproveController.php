@@ -27,6 +27,17 @@ class StagingApproveController extends Controller
         try {
             // Buat query dasar untuk StagingProduct
             $newProductsQuery = StagingProduct::query()
+                ->select(
+                    'id',
+                    'new_barcode_product',
+                    'new_name_product',
+                    'new_category_product',
+                    'new_price_product',
+                    'new_status_product',
+                    'display_price',
+                    'new_date_in_product',
+                    'stage'
+                )
                 ->where('stage', 'approve')
                 ->latest();
 
@@ -66,9 +77,15 @@ class StagingApproveController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(StagingApprove $stagingApprove)
+    public function show($id)
     {
-        return new ResponseResource(true, "data new product", $stagingApprove);
+        $product = StagingProduct::where('id', $id)->first();
+        if($product){
+            return new ResponseResource(true, "data product", $product);
+        }else{
+            return (new ResponseResource(true, "data product tidak ada", $product))->setStatusCode(404);
+
+        }
     }
 
     /**
@@ -112,30 +129,30 @@ class StagingApproveController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-        
+
         $user = User::with('role')->find(auth()->id());
         DB::beginTransaction();
-        
+
         try {
             if ($user) {
                 if ($user->role && ($user->role->role_name == 'Kasir leader' || $user->role->role_name == 'Admin' || $user->role->role_name == 'Spv')) {
-    
+
                     $productApproves = StagingProduct::query()
                         ->where('stage', 'approve')
                         ->get();
-    
+
                     $barcodesInInventory = New_product::whereIn('new_barcode_product', $productApproves->pluck('new_barcode_product'))->pluck('new_barcode_product');
                     $duplicates = $productApproves->filter(function ($productApprove) use ($barcodesInInventory) {
                         return $barcodesInInventory->contains($productApprove->new_barcode_product);
                     });
-    
+
                     if ($duplicates->isNotEmpty()) {
                         return new ResponseResource(false, "Barcode product di inventory sudah ada: " . $duplicates->pluck('new_barcode_product')->implode(', '), null);
                     }
-    
+
                     // Batasi pengolahan data dalam chunk 100 produk
                     $chunkedProductApproves = $productApproves->chunk(100);
-    
+
                     foreach ($chunkedProductApproves as $chunk) {
                         // Siapkan data untuk insert ke New_product
                         $dataToInsert = $chunk->map(function ($productApprove) {
@@ -159,15 +176,15 @@ class StagingApproveController extends Controller
                                 'updated_at' => now(),
                             ];
                         })->toArray();
-    
+
                         // Insert data ke tabel New_product
                         New_product::insert($dataToInsert);
-    
+
                         StagingProduct::whereIn('id', $chunk->pluck('id'))->delete();
                     }
-    
+
                     DB::commit();
-    
+
                     // Kembalikan response sukses
                     return new ResponseResource(true, 'Transaksi berhasil diapprove', null);
                 } else {
@@ -181,7 +198,7 @@ class StagingApproveController extends Controller
             return new ResponseResource(false, "Gagal memproses transaksi", $e->getMessage());
         }
     }
-    
+
 
     public function findSimilarTabel(Request $request)
     {
