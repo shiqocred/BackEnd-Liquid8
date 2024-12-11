@@ -514,6 +514,8 @@ Route::post('createDummyData/{count}', [GenerateController::class, 'createDummyD
 Route::post('downloadTemplate', [GenerateController::class, 'exportTemplaye']);
 Route::get('getCategoryNull', [SaleController::class, 'getCategoryNull']);
 Route::get('exportSale', [SaleController::class, 'exportSale']);
+Route::get('export-sale-month', [SaleController::class, 'exportSaleMonth']);
+
 
 //excel
 Route::get('export-category-color-null', [NewProductController::class, 'exportCategoryColorNull']);
@@ -523,4 +525,7 @@ Route::post('export_product_byColor', [NewProductController::class, 'exportProdu
 Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentOnGoing']);
 //test function untuk cronjob cok
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
+
+Route::get('countStaging', [StagingProductController::class, 'countPrice']);
+
 
