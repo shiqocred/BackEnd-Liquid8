@@ -16,6 +16,7 @@ use App\Models\StagingProduct;
 use App\Models\Color_tag;
 use App\Models\User;
 use Carbon\Carbon;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -900,5 +901,30 @@ class StagingProductController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function countPrice(){
+        $newProductsQuery = StagingProduct::query()
+        ->select(
+            'id',
+            'new_barcode_product',
+            'new_name_product',
+            'new_category_product',
+            'new_price_product',
+            'new_status_product',
+            'display_price',
+            'new_date_in_product',
+            'stage'
+        )
+        ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
+        ->whereNull('new_tag_product')
+        ->whereNull('stage')->get();
+        $totalProduct = $newProductsQuery->count();
+        $totalPrice = $newProductsQuery->SUM('new_price_product');
+
+        return new ResponseResource(true, "list", [
+            "total product" => $totalProduct,
+            "total_price" => $totalPrice 
+        ]);
     }
 }
