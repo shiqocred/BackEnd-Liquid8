@@ -1009,7 +1009,7 @@ class NewProductController extends Controller
                     'total_data' => $group->first()->total_data_per_tag,
                     'total_price' => $group->first()->total_price_per_tag,
                 ];
-            });
+            })->values();
 
             $totalPriceAll = $tagsSummary->sum('total_price');
 
