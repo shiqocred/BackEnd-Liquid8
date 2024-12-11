@@ -4,16 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ProductapproveResource;
 use App\Http\Resources\ResponseResource;
-use App\Http\Resources\DuplicateRequestResource;
 use App\Jobs\ProductBatch;
 use App\Models\Document;
-use App\Models\FilterStaging;
 use App\Models\New_product;
 use App\Models\Notification;
 use App\Models\ProductApprove;
 use App\Models\Product_old;
 use App\Models\RiwayatCheck;
-use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use App\Models\User;
 use App\Models\UserScanWeb;
@@ -22,7 +19,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
 
 
 class ProductApproveController extends Controller
@@ -132,7 +128,7 @@ class ProductApproveController extends Controller
 
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
-            'old_barcode_product' => 'required',
+            'old_barcode_product' => 'required|exists:product_olds,old_barcode_product',
             // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
             'new_quantity_product' => 'required|integer',

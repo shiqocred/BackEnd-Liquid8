@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\ProductSale;
+use App\Exports\ProductSaleMonth;
 use App\Http\Resources\ResponseResource;
 use App\Models\Bundle;
 use App\Models\Buyer;
@@ -429,6 +430,35 @@ class SaleController extends Controller
             return new ResponseResource(true, "File berhasil diunduh", $downloadUrl);
         } catch (\Exception $e) {
             return new ResponseResource(false, "Gagal mengunduh file: " . $e->getMessage(), []);
+        }
+    }
+
+    public function exportSaleMonth()
+    {
+        try {
+            $fileName = 'pr.xlsx';
+            $publicPath = 'exports';
+            $filePath = storage_path('app/public/' . $publicPath . '/' . $fileName);
+    
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0777, true);
+            }
+    
+            Excel::store(new ProductSaleMonth(Sale::class, 11), $publicPath . '/' . $fileName, 'public');
+    
+            $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
+    
+            return response()->json([
+                'status' => true,
+                'message' => 'File berhasil diunduh',
+                'download_url' => $downloadUrl,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal mengunduh file: ' . $e->getMessage(),
+                'resource' => [],
+            ]);
         }
     }
 }
