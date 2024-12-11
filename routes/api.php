@@ -524,3 +524,6 @@ Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentO
 //test function untuk cronjob cok
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
+Route::get('countStaging', [StagingProductController::class, 'countPrice']);
+
+
