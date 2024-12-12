@@ -902,29 +902,29 @@ class StagingProductController extends Controller
             ], 500);
         }
     }
-
-    public function countPrice(){
-        $newProductsQuery = StagingProduct::query()
-        ->select(
-            'id',
-            'new_barcode_product',
-            'new_name_product',
-            'new_category_product',
-            'new_price_product',
-            'new_status_product',
-            'display_price',
-            'new_date_in_product',
-            'stage'
-        )
-        ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
-        ->whereNull('new_tag_product')
-        ->whereNull('stage')->get();
-        $totalProduct = $newProductsQuery->count();
-        $totalPrice = $newProductsQuery->SUM('new_price_product');
-
+    
+    public function countPrice()
+    {
+        // Query untuk menghitung data produk
+        $query = StagingProduct::query()
+            ->select(
+                'id',
+                'new_price_product'
+            )
+            ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
+            ->whereNull('new_tag_product')
+            ->whereNull('stage');
+    
+        // Hitung jumlah total produk
+        $totalProduct = $query->count();
+    
+        // Hitung total harga produk
+        $totalPrice = $query->sum('new_price_product');
+    
+        // Kembalikan response dalam format yang diinginkan
         return new ResponseResource(true, "list", [
-            "total product" => $totalProduct,
-            "total_price" => $totalPrice 
+            "total_product" => $totalProduct,
+            "total_price" => $totalPrice,
         ]);
     }
 }
