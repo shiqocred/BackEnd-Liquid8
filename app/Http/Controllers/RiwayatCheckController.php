@@ -30,7 +30,9 @@ class RiwayatCheckController extends Controller
     {
         $query = $request->input('q');
 
-        $riwayats = RiwayatCheck::latest()->where(function ($search) use ($query) {
+        $riwayats = RiwayatCheck::
+        select('id','code_document', 'base_document', 'total_data', 'total_data_in', 'status_approve', 'created_at')
+        ->latest()->where(function ($search) use ($query) {
             $search->where('code_document', 'LIKE', '%' . $query . '%')
                 ->orWhere('base_document', 'LIKE', '%' . $query . '%');
         })->paginate(50);

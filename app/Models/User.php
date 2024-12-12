@@ -69,6 +69,6 @@ class User extends Authenticatable
 
     public function getFormatBarcodeNameAttribute()
     {
-        return $this->format_barcode?->format; 
+        return $this->format_barcode?->format;
     }
 }
