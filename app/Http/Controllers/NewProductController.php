@@ -1080,9 +1080,7 @@ class NewProductController extends Controller
                 ->whereNull('new_category_product')
                 ->whereJsonContains('new_quality->lolos', 'lolos')
                 ->where('new_status_product', 'display')
-                ->where(function ($q) {
-                    $q->whereNull('type')->orWhere('type', 'type1');
-                })
+                ->where('type', 'type2')
                 ->when($query, function ($q) use ($query) {
                     $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
