@@ -970,53 +970,60 @@ class NewProductController extends Controller
     {
         $query = $request->input('q');
         $page = $request->input('page', 1);
-
+        $perPage = 33;
+    
         try {
-            $productByTagColor = New_product::query()
-                ->select(
-                    'id',
-                    'old_barcode_product',
-                    'new_name_product',
-                    'new_date_in_product',
-                    'new_status_product',
-                    'new_tag_product',
-                    'new_price_product',
-                    DB::raw('COUNT(*) OVER(PARTITION BY new_tag_product) as total_data_per_tag'),
-                    DB::raw('SUM(new_price_product) OVER(PARTITION BY new_tag_product) as total_price_per_tag')
-                )
+            $tagsSummaryQuery = New_product::select('new_tag_product', DB::raw('COUNT(*) as total_data'), DB::raw('SUM(new_price_product) as total_price'))
                 ->whereNotNull('new_tag_product')
                 ->whereNull('new_category_product')
-                ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+                ->whereJsonContains('new_quality->lolos', 'lolos')
                 ->where('new_status_product', 'display')
-                ->where(function ($type) {
-                    $type->whereNull('type')->orWhere('type', 'type1');
+                ->where(function ($q) {
+                    $q->whereNull('type')->orWhere('type', 'type1');
                 })
                 ->when($query, function ($q) use ($query) {
-                    $q->where(function ($queryBuilder) use ($query) {
-                        $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-                    });
+                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                })
+                ->groupBy('new_tag_product');
+    
+            $tagsSummary = $tagsSummaryQuery->get()->map(function ($item) {
+                return [
+                    'tag_name' => $item->new_tag_product,
+                    'total_data' => $item->total_data,
+                    'total_price' => $item->total_price,
+                ];
+            });
+            $totalPriceAll = $tagsSummary->sum('total_price');
+    
+            $productsQuery = New_product::select(
+                'id',
+                'old_barcode_product',
+                'new_name_product',
+                'new_date_in_product',
+                'new_status_product',
+                'new_tag_product',
+                'new_price_product'
+            )
+                ->whereNotNull('new_tag_product')
+                ->whereNull('new_category_product')
+                ->whereJsonContains('new_quality->lolos', 'lolos')
+                ->where('new_status_product', 'display')
+                ->where(function ($q) {
+                    $q->whereNull('type')->orWhere('type', 'type1');
+                })
+                ->when($query, function ($q) use ($query) {
+                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
                 ->latest();
-
-            $paginatedProducts = $productByTagColor->paginate(33, ['*'], 'page', $page);
-
-            $tagsSummary = $productByTagColor->get()->groupBy('new_tag_product')->map(function ($group) {
-                return [
-                    'tag_name' => $group->first()->new_tag_product,
-                    'total_data' => $group->first()->total_data_per_tag,
-                    'total_price' => $group->first()->total_price_per_tag,
-                ];
-            })->values();
-
-            $totalPriceAll = $tagsSummary->sum('total_price');
-
-            $paginatedProducts->getCollection()->transform(function ($item) {
-                return $item->makeHidden(['total_data_per_tag', 'total_price_per_tag']);
-            });
-
+    
+            $paginatedProducts = $productsQuery->paginate($perPage, ['*'], 'page', $page);
+    
             return new ResponseResource(true, "list product by tag color", [
                 "total_data" => $paginatedProducts->total(),
                 "total_price_all" => $totalPriceAll,
@@ -1029,59 +1036,65 @@ class NewProductController extends Controller
                 ->setStatusCode(500);
         }
     }
-
-
-
 
     public function getTagColor2(Request $request)
     {
         $query = $request->input('q');
         $page = $request->input('page', 1);
-
+        $perPage = 33;
+    
         try {
-            $productByTagColor = New_product::query()
-                ->select(
-                    'id',
-                    'old_barcode_product',
-                    'new_name_product',
-                    'new_date_in_product',
-                    'new_status_product',
-                    'new_tag_product',
-                    'new_price_product',
-                    DB::raw('COUNT(*) OVER(PARTITION BY new_tag_product) as total_data_per_tag'),
-                    DB::raw('SUM(new_price_product) OVER(PARTITION BY new_tag_product) as total_price_per_tag')
-                )
+            $tagsSummaryQuery = New_product::select('new_tag_product', DB::raw('COUNT(*) as total_data'), DB::raw('SUM(new_price_product) as total_price'))
                 ->whereNotNull('new_tag_product')
                 ->whereNull('new_category_product')
-                ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+                ->whereJsonContains('new_quality->lolos', 'lolos')
                 ->where('new_status_product', 'display')
-                ->where('type', 'type2')
+                ->where(function ($q) {
+                    $q->whereNull('type')->orWhere('type', 'type1');
+                })
                 ->when($query, function ($q) use ($query) {
-                    $q->where(function ($queryBuilder) use ($query) {
-                        $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
-                    });
+                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                })
+                ->groupBy('new_tag_product');
+    
+            $tagsSummary = $tagsSummaryQuery->get()->map(function ($item) {
+                return [
+                    'tag_name' => $item->new_tag_product,
+                    'total_data' => $item->total_data,
+                    'total_price' => $item->total_price,
+                ];
+            });
+            $totalPriceAll = $tagsSummary->sum('total_price');
+    
+            $productsQuery = New_product::select(
+                'id',
+                'old_barcode_product',
+                'new_name_product',
+                'new_date_in_product',
+                'new_status_product',
+                'new_tag_product',
+                'new_price_product'
+            )
+                ->whereNotNull('new_tag_product')
+                ->whereNull('new_category_product')
+                ->whereJsonContains('new_quality->lolos', 'lolos')
+                ->where('new_status_product', 'display')
+                ->where(function ($q) {
+                    $q->whereNull('type')->orWhere('type', 'type1');
+                })
+                ->when($query, function ($q) use ($query) {
+                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
                 ->latest();
-
-            $paginatedProducts = $productByTagColor->paginate(33, ['*'], 'page', $page);
-
-            $tagsSummary = $productByTagColor->get()->groupBy('new_tag_product')->map(function ($group) {
-                return [
-                    'tag_name' => $group->first()->new_tag_product,
-                    'total_data' => $group->first()->total_data_per_tag,
-                    'total_price' => $group->first()->total_price_per_tag,
-                ];
-            })->values();
-
-            $totalPriceAll = $tagsSummary->sum('total_price');
-
-            $paginatedProducts->getCollection()->transform(function ($item) {
-                return $item->makeHidden(['total_data_per_tag', 'total_price_per_tag']);
-            });
-
+    
+            $paginatedProducts = $productsQuery->paginate($perPage, ['*'], 'page', $page);
+    
             return new ResponseResource(true, "list product by tag color", [
                 "total_data" => $paginatedProducts->total(),
                 "total_price_all" => $totalPriceAll,
@@ -1094,6 +1107,68 @@ class NewProductController extends Controller
                 ->setStatusCode(500);
         }
     }
+
+    // public function getTagColor2(Request $request)
+    // {
+    //     $query = $request->input('q');
+    //     $page = $request->input('page', 1);
+
+    //     try {
+    //         $productByTagColor = New_product::query()
+    //             ->select(
+    //                 'id',
+    //                 'old_barcode_product',
+    //                 'new_name_product',
+    //                 'new_date_in_product',
+    //                 'new_status_product',
+    //                 'new_tag_product',
+    //                 'new_price_product',
+    //                 DB::raw('COUNT(*) OVER(PARTITION BY new_tag_product) as total_data_per_tag'),
+    //                 DB::raw('SUM(new_price_product) OVER(PARTITION BY new_tag_product) as total_price_per_tag')
+    //             )
+    //             ->whereNotNull('new_tag_product')
+    //             ->whereNull('new_category_product')
+    //             ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+    //             ->where('new_status_product', 'display')
+    //             ->where('type', 'type2')
+    //             ->when($query, function ($q) use ($query) {
+    //                 $q->where(function ($queryBuilder) use ($query) {
+    //                     $queryBuilder->where('new_tag_product', 'LIKE', '%' . $query . '%')
+    //                         ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+    //                         ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+    //                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+    //                 });
+    //             })
+    //             ->latest();
+
+    //         $paginatedProducts = $productByTagColor->paginate(33, ['*'], 'page', $page);
+
+    //         $tagsSummary = $productByTagColor->get()->groupBy('new_tag_product')->map(function ($group) {
+    //             return [
+    //                 'tag_name' => $group->first()->new_tag_product,
+    //                 'total_data' => $group->first()->total_data_per_tag,
+    //                 'total_price' => $group->first()->total_price_per_tag,
+    //             ];
+    //         })->values();
+
+    //         $totalPriceAll = $tagsSummary->sum('total_price');
+
+    //         $paginatedProducts->getCollection()->transform(function ($item) {
+    //             return $item->makeHidden(['total_data_per_tag', 'total_price_per_tag']);
+    //         });
+
+    //         return new ResponseResource(true, "list product by tag color", [
+    //             "total_data" => $paginatedProducts->total(),
+    //             "total_price_all" => $totalPriceAll,
+    //             "tags_summary" => $tagsSummary,
+    //             "data" => $paginatedProducts,
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return (new ResponseResource(false, "data tidak ada", $e->getMessage()))
+    //             ->response()
+    //             ->setStatusCode(500);
+    //     }
+    // }
 
 
 

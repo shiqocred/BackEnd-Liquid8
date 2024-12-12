@@ -26,9 +26,14 @@ class ProductSaleMonth implements FromQuery, WithHeadings, WithMapping, WithChun
 
     public function query()
     {
-        return $this->model::where('status_sale', 'selesai')
-            ->whereRaw('MONTH(created_at) = ?', [$this->month]);
+        // Query untuk mendapatkan data produk dengan total harga penjualan
+        return $this->model::select('sales.*')
+            ->selectRaw('(SELECT SUM(product_price_sale) FROM sales AS s WHERE s.status_sale = "selesai" AND MONTH(s.created_at) = ?) AS total_price_sum', [$this->month])
+            ->where('status_sale', 'selesai')
+            ->whereMonth('created_at', $this->month);
     }
+
+
 
     public function headings(): array
     {
@@ -51,7 +56,7 @@ class ProductSaleMonth implements FromQuery, WithHeadings, WithMapping, WithChun
     public function map($product): array
     {
         // Tambahkan harga ke total
-        $this->totalPrice += $product->product_price_sale;
+        $this->totalPrice = $product->total_price_sum;
 
         return [
             $product->code_document_sale,
@@ -78,11 +83,13 @@ class ProductSaleMonth implements FromQuery, WithHeadings, WithMapping, WithChun
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
+                // Baris terakhir setelah data
                 $lastRow = $event->sheet->getHighestRow() + 1;
-
+    
+                // Tampilkan label dan total
                 $event->sheet->setCellValue("L{$lastRow}", 'Total:');
+                $event->sheet->setCellValue("M{$lastRow}", number_format($this->totalPrice, 2, ',', '.'));
 
-                $event->sheet->setCellValue("M{$lastRow}", number_format($this->totalPrice, 2, ',', '.')); 
             },
         ];
     }

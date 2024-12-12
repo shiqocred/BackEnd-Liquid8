@@ -502,7 +502,7 @@ Route::get('cek-ping-with-image', [CheckConnectionController::class, 'checkPingW
 //oret2an debug
 Route::post('findSimilarTabel', [StagingApproveController::class, 'findSimilarTabel']);
 Route::post('findDifferenceTable', [StagingApproveController::class, 'findDifferenceTable']);
-Route::post('findSimilarTabel2', [StagingApproveController::class, 'findSimilarTabel2']);
+Route::get('difference', [StagingApproveController::class, 'findDifference']);
 Route::delete('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
 
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);

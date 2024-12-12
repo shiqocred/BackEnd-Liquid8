@@ -295,12 +295,12 @@ class StagingApproveController extends Controller
 
             // Daftar tabel yang akan dicek
             $tables = [
-                New_product::class,
-                StagingApprove::class,
-                FilterStaging::class,
-                StagingProduct::class,
-                ProductApprove::class,
-                // Product_old::class,
+                // New_product::class,
+                // StagingApprove::class,
+                // FilterStaging::class,
+                // StagingProduct::class,
+                // ProductApprove::class,
+                Product_old::class,
             ];
 
             $deletedCount = 0; // Variabel untuk menghitung jumlah data yang dihapus
@@ -379,115 +379,28 @@ class StagingApproveController extends Controller
     //     }
     // }
 
-    public function findSimilarTabel2(Request $request)
+    public function findDifference(Request $request)
     {
-        // Validasi input dokumen dari request
-        $documents = $request->input('documents'); // Mengambil array dokumen dari request
-
-        if (is_null($documents) || !is_array($documents)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Parameter documents harus berupa array.',
-            ], 400);
-        }
-
         // Memperpanjang waktu eksekusi dan batas memori
         set_time_limit(600);
         ini_set('memory_limit', '1024M');
-
+    
         try {
-            // Mengambil semua data barcode berdasarkan kode dokumen dari semua tabel
-            $barcodesOld = Product_old::whereIn('code_document', $documents)->pluck('old_barcode_product');
-            $barcodesApprove = ProductApprove::whereIn('code_document', $documents)->pluck('old_barcode_product');
-            $barcodesStaging = StagingProduct::whereIn('code_document', $documents)->pluck('old_barcode_product');
-            $barcodesNew = New_product::whereIn('code_document', $documents)->pluck('old_barcode_product');
-
-            // Gabungkan semua barcode
-            $mergedBarcodes = $barcodesOld->merge($barcodesApprove)->merge($barcodesStaging)->merge($barcodesNew);
-
-
-            // Jika tidak ada barcode ditemukan
-            if ($mergedBarcodes->isEmpty()) {
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Tidak ada barcode yang ditemukan untuk dokumen yang diberikan.',
-                    'data' => [],
-                ]);
-            }
-
-            // Menghitung jumlah kemunculan setiap barcode
-            $barcodeCounts = array_count_values($mergedBarcodes->toArray());
-
-            // Filter barcode yang duplikat (lebih dari 1 kemunculan)
-            $duplicateBarcodes = array_filter($barcodeCounts, function ($count) {
-                return $count > 1;
-            });
-
-            // Jika ada barcode duplikat
-            if (!empty($duplicateBarcodes)) {
-                foreach ($duplicateBarcodes as $barcode => $count) {
-                    // Cari dokumen yang memiliki barcode tersebut di semua tabel
-                    $relatedDocumentsOld = Product_old::where('old_barcode_product', $barcode)
-                        ->whereIn('code_document', $documents)
-                        ->pluck('code_document');
-
-                    $relatedDocumentsApprove = ProductApprove::where('old_barcode_product', $barcode)
-                        ->whereIn('code_document', $documents)
-                        ->pluck('code_document');
-
-                    $relatedDocumentsStaging = StagingProduct::where('old_barcode_product', $barcode)
-                        ->whereIn('code_document', $documents)
-                        ->pluck('code_document');
-
-                    $relatedDocumentsNew = New_product::where('old_barcode_product', $barcode)
-                        ->whereIn('code_document', $documents)
-                        ->pluck('code_document');
-
-                    // Gabungkan semua dokumen yang terkait dengan barcode
-                    $relatedDocuments = $relatedDocumentsOld
-                        ->merge($relatedDocumentsApprove)
-                        ->merge($relatedDocumentsStaging)
-                        ->merge($relatedDocumentsNew)
-                        ->unique(); // Hapus duplikasi dokumen
-
-                    // Simpan data ke dalam tabel BarcodeDamaged
-                    foreach ($relatedDocuments as $document) {
-                        BarcodeDamaged::updateOrCreate(
-                            [
-                                'code_document' => $document, // Simpan dokumen terkait barcode
-                                'old_barcode_product' => $barcode,
-                            ],
-                            [
-                                'occurrences' => $count, // Menyimpan jumlah duplikasi
-                            ]
-                        );
-                    }
-                }
-
-                // Mengembalikan respon dengan data barcode duplikat
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Barcode duplikat berhasil diproses.',
-                    'data' => $duplicateBarcodes,
-                ]);
-            }
-
-            // Jika tidak ada barcode duplikat
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Tidak ada barcode duplikat yang ditemukan.',
-                'data' => [],
-            ]);
+            // Pastikan menggunakan array untuk whereIn
+            $barcodesOld = Product_old::whereIn('code_document', ['0001/12/2024'])->pluck('old_barcode_product');
+            $barcodeOlds2 = Product_old::whereIn('code_document', ['0002/12/2024'])->pluck('old_barcode_product');
+    
+            // Hitung perbedaan antara dua koleksi
+            $differenceBarcodes = $barcodeOlds2->diff($barcodesOld);
+    
+            // Kembalikan respons
+            return new ResponseResource(true, "Jumlah barcode berbeda ditemukan.", $differenceBarcodes);
         } catch (\Exception $e) {
-            // Mengembalikan respon error
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat memproses data.',
-                'error' => $e->getMessage(),
-            ], 500);
+            // Tangani error
+            return new ResponseResource(false, "Terjadi kesalahan: " . $e->getMessage(), []);
         }
     }
-
+    
     public function findDifferenceTable(Request $request)
     {
         // Validasi input dokumen dari request
