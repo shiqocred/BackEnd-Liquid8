@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
-
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
@@ -26,6 +24,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    protected $appends = ['format_barcode_name'];
 
     public function role()
     {
@@ -63,7 +63,12 @@ class User extends Authenticatable
     {
         $query->addSelect([
             'total_scans' => UserScanWeb::selectRaw('SUM(total_scans)')
-                ->whereColumn('user_scan_webs.user_id', 'users.id') // Cocokkan dengan user_id
+                ->whereColumn('user_scan_webs.user_id', 'users.id')
         ]);
+    }
+
+    public function getFormatBarcodeNameAttribute()
+    {
+        return $this->format_barcode?->format;
     }
 }
