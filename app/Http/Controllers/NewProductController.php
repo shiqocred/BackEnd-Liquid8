@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Exports\ProductCategoryAndColorNull;
-use App\Models\Destination;
+
 
 class NewProductController extends Controller
 {
@@ -971,7 +971,7 @@ class NewProductController extends Controller
         $query = $request->input('q');
         $page = $request->input('page', 1);
         $perPage = 33;
-
+    
         try {
             $tagsSummaryQuery = New_product::select('new_tag_product', DB::raw('COUNT(*) as total_data'), DB::raw('SUM(new_price_product) as total_price'))
                 ->whereNotNull('new_tag_product')
@@ -988,7 +988,7 @@ class NewProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
                 ->groupBy('new_tag_product');
-
+    
             $tagsSummary = $tagsSummaryQuery->get()->map(function ($item) {
                 return [
                     'tag_name' => $item->new_tag_product,
@@ -997,7 +997,7 @@ class NewProductController extends Controller
                 ];
             });
             $totalPriceAll = $tagsSummary->sum('total_price');
-
+    
             $productsQuery = New_product::select(
                 'id',
                 'old_barcode_product',
@@ -1021,9 +1021,9 @@ class NewProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
                 ->latest();
-
+    
             $paginatedProducts = $productsQuery->paginate($perPage, ['*'], 'page', $page);
-
+    
             return new ResponseResource(true, "list product by tag color", [
                 "total_data" => $paginatedProducts->total(),
                 "total_price_all" => $totalPriceAll,
@@ -1042,7 +1042,7 @@ class NewProductController extends Controller
         $query = $request->input('q');
         $page = $request->input('page', 1);
         $perPage = 33;
-
+    
         try {
             $tagsSummaryQuery = New_product::select('new_tag_product', DB::raw('COUNT(*) as total_data'), DB::raw('SUM(new_price_product) as total_price'))
                 ->whereNotNull('new_tag_product')
@@ -1057,7 +1057,7 @@ class NewProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
                 ->groupBy('new_tag_product');
-
+    
             $tagsSummary = $tagsSummaryQuery->get()->map(function ($item) {
                 return [
                     'tag_name' => $item->new_tag_product,
@@ -1066,7 +1066,7 @@ class NewProductController extends Controller
                 ];
             });
             $totalPriceAll = $tagsSummary->sum('total_price');
-
+    
             $productsQuery = New_product::select(
                 'id',
                 'old_barcode_product',
@@ -1088,9 +1088,9 @@ class NewProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
                 })
                 ->latest();
-
+    
             $paginatedProducts = $productsQuery->paginate($perPage, ['*'], 'page', $page);
-
+    
             return new ResponseResource(true, "list product by tag color", [
                 "total_data" => $paginatedProducts->total(),
                 "total_price_all" => $totalPriceAll,
@@ -1459,6 +1459,22 @@ class NewProductController extends Controller
     }
 
     public function totalPerColor(Request $request)
+    {
+        $new_product = New_product::whereNotNull('new_tag_product')
+            ->where('new_category_product', null)
+            ->whereRaw("JSON_EXTRACT(new_quality, '$.\"lolos\"') = 'lolos'")
+            ->where('new_status_product', 'display')->pluck('new_tag_product');
+        $countByColor = $new_product->countBy(function ($item) {
+            return $item;
+        });
+
+        if (count($countByColor) < 1) {
+            return new ResponseResource(false, "tidak ada data data color", null);
+        }
+        return new ResponseResource(true, "list data product by color2", $countByColor);
+    }
+
+    public function colorDestination(Request $request)
     {
         $new_product = New_product::whereNotNull('new_tag_product')
             ->where('new_category_product', null)
