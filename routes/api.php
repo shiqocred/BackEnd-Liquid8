@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BklController;
+use App\Http\Controllers\BulkyDocumentController;
+use App\Http\Controllers\BulkySaleController;
 use App\Http\Controllers\BundleController;
 use App\Http\Controllers\BundleQcdController;
 use App\Http\Controllers\BuyerController;
@@ -356,6 +358,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leade
    Route::get('sale-report-by-product', [SaleDocumentController::class, 'combinedReport']);
    Route::get('sale-products', [SaleController::class, 'products']);
 
+   //bulky-sale
+   Route::resource('bulky-sales', BulkySaleController::class);
+
+   //bulky-document
+   Route::resource('bulky-documents', BulkyDocumentController::class);
+
    Route::apiResource('buyers', BuyerController::class)->except(['destroy']);
 
    Route::resource('vehicle-types', VehicleTypeController::class);
@@ -414,7 +422,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
    Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {
@@ -528,5 +535,3 @@ Route::get('check-manifest-onGoing', [DocumentController::class, 'checkDocumentO
 // Route::get('testBatchJobs', [ProductApproveController::class, 'processRemainingBatch']);
 
 Route::get('countStaging', [StagingProductController::class, 'countPrice']);
-
-
