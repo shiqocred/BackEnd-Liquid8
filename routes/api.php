@@ -330,6 +330,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 
    Route::resource('destinations', DestinationController::class)->except(['destroy']);
    Route::get('countColor', [NewProductController::class, 'totalPerColor']); //baru
+   Route::get('colorDestination', [NewProductController::class, 'colorDestination']); //baru
 
    Route::resource('migrates', MigrateController::class)->except(['destroy']);
    Route::get('displayMigrate', [MigrateController::class, 'displayMigrate']);
