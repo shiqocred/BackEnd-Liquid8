@@ -172,6 +172,7 @@ class StagingApproveController extends Controller
                                 'new_discount' => $productApprove->new_discount,
                                 'display_price' => $productApprove->display_price,
                                 'type' => $productApprove->type,
+                                'user_id' => $productApprove->user_id,
                                 'created_at' => now(),
                                 'updated_at' => now(),
                             ];
