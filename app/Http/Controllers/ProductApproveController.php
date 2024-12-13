@@ -131,7 +131,7 @@ class ProductApproveController extends Controller
             'old_barcode_product' => 'required|exists:product_olds,old_barcode_product',
             // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
-            'new_quantity_product' => 'required|integer',
+            'new_quantity_product' => 'required|integer', 
             'new_price_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
             // 'new_date_in_product' => 'required|date',
