@@ -85,53 +85,50 @@ class ProductApproveController extends Controller
 
 
         $oldBarcode = $request->input('old_barcode_product');
-        
-        // Redis Lock Key
+
         $lockKey = "lock:barcode:$oldBarcode";
-        $ttlRedisLock = 5; 
-        
-        // Rate Limiter Key
+        $ttlRedisLock = 5;
+
         $rateLimiter = app(\Illuminate\Cache\RateLimiter::class);
         $throttleKey = "throttle:user:$userId:ip:$ip:barcode:$oldBarcode";
-        $throttleTtl = 4; 
-        $maxAttempts = 1; 
-        
+        $throttleTtl = 4;
+        $maxAttempts = 1;
+
         // Cek throttle
         if ($rateLimiter->tooManyAttempts($throttleKey, $maxAttempts)) {
             return response()->json([
                 'success' => false,
                 'message' => "Request terlalu cepat. Harap tunggu $throttleTtl detik sebelum mencoba lagi.",
-            ], 429); 
+            ], 429);
         }
-        
+
         $rateLimiter->hit($throttleKey, $throttleTtl);
-        
+
         $redis = app('redis');
-        
+
         $lockAcquired = $redis->set($lockKey, 'locked', 'EX', $ttlRedisLock, 'NX');
-        
+
         if (!$lockAcquired) {
             return response()->json([
                 'success' => false,
                 'message' => "Request sedang diproses untuk barcode $oldBarcode, harap tunggu.",
-            ], 429); 
+            ], 429);
         }
-        
+
         try {
-            sleep(1);
-            
+            usleep(500000); // Tunggu 500 milidetik (0.5 detik)
         } finally {
             // Lepaskan lock setelah proses selesai
             $redis->del($lockKey);
         }
-        
+
 
         $validator = Validator::make($request->all(), [
             'code_document' => 'required',
             'old_barcode_product' => 'required|exists:product_olds,old_barcode_product',
             // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
             'new_name_product' => 'required',
-            'new_quantity_product' => 'required|integer', 
+            'new_quantity_product' => 'required|integer',
             'new_price_product' => 'required|numeric',
             'old_price_product' => 'required|numeric',
             // 'new_date_in_product' => 'required|date',
@@ -234,7 +231,7 @@ class ProductApproveController extends Controller
                 }
             }
 
-          UserScanWeb::updateOrCreateDailyScan($userId, $document->id);
+            UserScanWeb::updateOrCreateDailyScan($userId, $document->id);
 
 
             $totalDiscrepancy = Product_old::where('code_document', $request->input('code_document'))->pluck('code_document');

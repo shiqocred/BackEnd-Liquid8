@@ -152,8 +152,8 @@ class GenerateController extends Controller
     public function mapAndMergeHeaders(Request $request)
     {
         $userId = auth()->id();
-        set_time_limit(600);  
-        ini_set('memory_limit', '1024M');
+        set_time_limit(3600);  
+        ini_set('memory_limit', '2048M');
 
         DB::beginTransaction();
         try {
@@ -196,14 +196,12 @@ class GenerateController extends Controller
                 $qty = is_numeric($mergedData['old_quantity_product'][$index]) ? (int)$mergedData['old_quantity_product'][$index] : 0;
 
                 if ($nama && strlen($nama) > 2000) {
-                    // Bisa log error, throw exception, atau tangani sesuai kebutuhan
                     Log::error("Nama produk terlalu panjang, lebih dari 2000 karakter: " . substr($nama, 0, 50) . "...");
-                    
-                    // Bisa lempar error atau skip proses data ini
-                    return response()->json(['error' => 'old_name_product terlalu panjang, lebih dari 2000 karakter'], 422);
+            
+                    // Potong nama menjadi maksimal 250 karakter
+                    $nama = substr($nama, 0, 250);
                 }
             
-
                 $harga = isset($mergedData['old_price_product'][$index]) && is_numeric($mergedData['old_price_product'][$index])
                     ? (float)$mergedData['old_price_product'][$index]
                     : 0.0;
