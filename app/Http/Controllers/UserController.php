@@ -26,7 +26,7 @@ class UserController extends Controller
                 ->orWhere('username', 'LIKE', '%' . $query . '%');
         })->latest()->with('role')->paginate(33);
 
-        $users->makeHidden(['format_barcode', 'format_barcode_id', 'email_verified_at']);
+        $users->makeHidden(['format_barcode', 'email_verified_at']);
         return new ResponseResource(true, "List users", $users);
     }
 

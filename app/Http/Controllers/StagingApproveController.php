@@ -150,7 +150,6 @@ class StagingApproveController extends Controller
                         return new ResponseResource(false, "Barcode product di inventory sudah ada: " . $duplicates->pluck('new_barcode_product')->implode(', '), null);
                     }
 
-                    // Batasi pengolahan data dalam chunk 100 produk
                     $chunkedProductApproves = $productApproves->chunk(100);
 
                     foreach ($chunkedProductApproves as $chunk) {
