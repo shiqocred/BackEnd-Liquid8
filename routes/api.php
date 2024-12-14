@@ -350,8 +350,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leader'])->group(function () {
    //sale
    Route::resource('sales', SaleController::class);
-   Route::put('/sales/{sale}', [SaleController::class, 'updatePriceSale']);
-   Route::put('/update_price_sales/{sale}', [SaleController::class, 'livePriceUpdates']);
+   Route::put('/sales/gabor/{sale}', [SaleController::class, 'updatePriceSale']);
+   Route::put('/sales/update-price/{sale}', [SaleController::class, 'livePriceUpdates']);
    Route::resource('sale-documents', SaleDocumentController::class)->except(['destroy']);
    Route::post('sale-finish', [SaleDocumentController::class, 'saleFinish']);
    Route::get('sale-report', [SaleDocumentController::class, 'combinedReport']);
