@@ -151,21 +151,18 @@ class SaleDocumentController extends Controller
 
             $totalProductOldPriceSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('product_old_price_sale');
 
-            foreach ($sales as $sale) {
-                $newProduct = New_product::where('new_barcode_product', $sale->product_barcode_sale)->first();
-                $bundle = Bundle::where('barcode_bundle', $sale->product_barcode_sale)->first();
-                if (!$newProduct && !$bundle) {
-                    return response()->json(['error' => 'Both new product and bundle not found'], 404);
-                } elseif (!$newProduct) {
-                    $bundle->product_status = 'sale';
-                } elseif (!$bundle) {
-                    $newProduct->delete();
-                } else {
-                    $newProduct->delete();
-                    $bundle->product_status = 'sale';
-                }
-                $sale->update(['status_sale' => 'selesai']);
-            }
+            // Ambil barcodes dari $sales
+            $productBarcodes = $sales->pluck('product_barcode_sale');
+
+            // Hapus semua New_product yang sesuai
+            New_product::whereIn('new_barcode_product', $productBarcodes)->delete();
+
+            // Update semua Bundle yang sesuai menjadi 'sale'
+            Bundle::whereIn('barcode_bundle', $productBarcodes)->update(['product_status' => 'sale']);
+
+            // Batch update status pada $sales
+            $sales->each->update(['status_sale' => 'selesai']);
+
 
             $saleDocument->update([
                 'total_product_document_sale' => count($sales),
