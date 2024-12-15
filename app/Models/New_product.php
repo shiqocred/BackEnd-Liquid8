@@ -12,7 +12,15 @@ class New_product extends Model
 
     protected $guarded = ['id'];
 
-    public function Promos()
+    public static function boot()
+    {
+        parent::boot();
+        static::deleting(function ($newProduct) {
+            $newProduct->promos()->delete(); // Hapus semua child promos
+        });
+    }
+
+    public function promos()
     {
         return $this->hasMany(Promo::class);
     }
