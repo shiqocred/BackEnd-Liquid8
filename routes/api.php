@@ -360,7 +360,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Admin Kasir,Kasir leade
 
    //bulky-sale
    Route::resource('bulky-sales', BulkySaleController::class);
-
    //bulky-document
    Route::resource('bulky-documents', BulkyDocumentController::class);
 
