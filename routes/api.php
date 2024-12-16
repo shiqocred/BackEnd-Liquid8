@@ -320,6 +320,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::post('panel-spv/add-barcode', [UserController::class, 'addFormatBarcode']);
    Route::delete('panel-spv/format-delete/{id}', [UserController::class, 'deleteFormatBarcode']);
    Route::get('panel-spv/format-barcode', [UserController::class, 'allFormatBarcode']);
+   Route::get('format-user', [FormatBarcodeController::class, 'formatsUsers']);
+
    Route::get('panel-spv/detail/{user}', [UserController::class, 'showFormatBarcode']);
 });
 
