@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\FormatBarcodeResource;
 use App\Http\Resources\ResponseResource;
 use App\Models\FormatBarcode;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -160,5 +161,14 @@ class FormatBarcodeController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function formatsUsers(){
+        $formatBarcodes = FormatBarcode::latest()->get();
+        $users = User::latest()->get();
+        return new ResponseResource(true, "list format barcode dan user", [
+            "format_barcode" => $formatBarcodes,
+            "users" => $users
+        ]);
     }
 }
