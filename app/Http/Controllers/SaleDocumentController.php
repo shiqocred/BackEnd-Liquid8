@@ -203,6 +203,7 @@ class SaleDocumentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             $resource = new ResponseResource(false, "Data gagal disimpan!", $e->getMessage());
+            return $resource->response()->setStatusCode(500);
         }
 
         return $resource->response();
