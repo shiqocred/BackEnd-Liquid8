@@ -15,19 +15,25 @@ return new class extends Migration
             // Hapus foreign key lama
             $table->dropForeign(['format_barcode_id']);
 
-            // Tambahkan foreign key baru dengan ON DELETE CASCADE
+            // Ubah kolom agar dapat menerima NULL
+            $table->unsignedBigInteger('format_barcode_id')->nullable()->change();
+
+            // Tambahkan foreign key baru dengan ON DELETE SET NULL
             $table->foreign('format_barcode_id')
                 ->references('id')
                 ->on('format_barcodes')
-                ->onDelete('cascade');
+                ->onDelete('set null');
         });
     }
 
     public function down()
     {
         Schema::table('user_scans', function (Blueprint $table) {
-            // Hapus foreign key dengan ON DELETE CASCADE
+            // Hapus foreign key dengan ON DELETE SET NULL
             $table->dropForeign(['format_barcode_id']);
+
+            // Ubah kolom kembali agar tidak nullable
+            $table->unsignedBigInteger('format_barcode_id')->nullable(false)->change();
 
             // Tambahkan kembali foreign key lama
             $table->foreign('format_barcode_id')
