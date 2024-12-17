@@ -27,9 +27,7 @@ class SaleController extends Controller
         $userId = auth()->id();
 
         $allSales = Sale::where('status_sale', 'proses')->where('user_id', $userId)->get();
-
         $totalSale = $allSales->sum('product_price_sale');
-
         $sale = Sale::where('status_sale', 'proses')->where('user_id', $userId)->latest()->paginate(50);
 
         $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
@@ -37,14 +35,20 @@ class SaleController extends Controller
             $codeDocumentSale = codeDocumentSale($userId);
             $saleBuyerName = '';
             $saleBuyerId = '';
+            $addressBuyer = '';
+            $buyerPhone = '';
         } else {
             $codeDocumentSale = $saleDocument->code_document_sale;
             $saleBuyerName = $saleDocument->buyer_name_document_sale;
             $saleBuyerId = $saleDocument->buyer_id_document_sale;
+            $addressBuyer = $saleDocument->buyer_address_document_sale;
+            $buyerPhone = $saleDocument->buyer_phone_document_sale;
         }
 
         $data = [
             'code_document_sale' => $codeDocumentSale,
+            'buyer_address' =>  $addressBuyer,
+            'buyer_phone' => $buyerPhone,
             'sale_buyer_name' => $saleBuyerName,
             'sale_buyer_id' => $saleBuyerId,
             'total_sale' => $totalSale,
