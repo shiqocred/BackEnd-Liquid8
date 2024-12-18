@@ -148,4 +148,5 @@ class UserScanWebController extends Controller
             'data' => $userFIleScan,
         ]);
     }
+    
 }

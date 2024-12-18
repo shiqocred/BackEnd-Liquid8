@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
@@ -66,6 +67,17 @@ class User extends Authenticatable
                 ->whereColumn('user_scan_webs.user_id', 'users.id')
         ]);
     }
+
+    public function scopeTotalScanToday(Builder $query){
+        $today = Carbon::now('Asia/Jakarta')->toDateString(); // Mendapatkan tanggal hari ini dalam format YYYY-MM-DD
+    
+        $query->addSelect([
+            'total_scans_today' => UserScanWeb::selectRaw('SUM(total_scans)')
+                ->whereColumn('user_scan_webs.user_id', 'users.id')
+                ->whereDate('scan_date', $today) // Membatasi hanya untuk scan_date hari ini
+        ]);
+    }
+    
 
     public function getFormatBarcodeNameAttribute()
     {

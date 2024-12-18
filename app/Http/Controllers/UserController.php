@@ -20,15 +20,22 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-
-        $users = User::withTotalScans()->where(function ($queryBuilder) use ($query) {
-            $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
-                ->orWhere('username', 'LIKE', '%' . $query . '%');
-        })->latest()->with('role')->paginate(33);
-
+    
+        $users = User::query()
+            ->withTotalScans()
+            ->totalScanToday()
+            ->where(function ($queryBuilder) use ($query) {
+                $queryBuilder->where('name', 'LIKE', '%' . $query . '%')
+                    ->orWhere('username', 'LIKE', '%' . $query . '%');
+            })
+            ->latest()
+            ->with('role')
+            ->paginate(33);
+    
         $users->makeHidden(['format_barcode', 'email_verified_at']);
         return new ResponseResource(true, "List users", $users);
     }
+    
 
     public function show(Request $request, User $user)
     {
@@ -257,7 +264,6 @@ class UserController extends Controller
         }
     }
 
-
     public function allFormatBarcode(Request $request)
     {
         $query = $request->input('q');
@@ -275,4 +281,6 @@ class UserController extends Controller
         // Gunakan resource untuk memformat data
         return new ResponseResource(true, "list user berformat barcode", UserFormatResource::collection($results));
     }
+
+   
 }
