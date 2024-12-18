@@ -13,6 +13,7 @@ use App\Models\SaleDocument;
 use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
 use App\Models\Buyer;
+use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -129,9 +130,11 @@ class SaleDocumentController extends Controller
             $saleDocument = SaleDocument::where('status_document_sale', 'proses')
                 ->where('user_id', $userId)
                 ->first();
+
             if ($saleDocument == null) {
                 throw new Exception("Data sale belum dibuat!");
             }
+
             $validator = Validator::make($request->all(), [
                 'voucher' => 'nullable|numeric',
                 'cardbox_qty' => 'nullable|numeric|required_with:cardbox_unit_price',
@@ -142,7 +145,37 @@ class SaleDocumentController extends Controller
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }
 
+            $approved = '0';
+
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
+
+            if ($request->filled('voucher')) {
+                Notification::create([
+                    'user_id' => $userId,
+                    'notification_name' => 'approve discount sale',
+                    'status' => 'sale',
+                    'role' => 'Spv',
+                    'external_id' => $saleDocument->id
+
+                ]);
+                $approved = '1';
+            } else {
+                // Cek jika ada sale yang display_price > product_price_sale
+                $hasDiscount = $sales->contains(function ($sale) {
+                    return $sale->display_price > $sale->product_price_sale;
+                });
+
+                if ($hasDiscount) {
+                    Notification::create([
+                        'user_id' => $userId,
+                        'notification_name' => 'approve discount sale',
+                        'status' => 'sale',
+                        'role' => 'Spv',
+                        'external_id' => $saleDocument->id
+                    ]);
+                    $approved = '1';
+                }
+            }
 
             $totalDisplayPrice = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('display_price');
 
@@ -163,7 +196,6 @@ class SaleDocumentController extends Controller
             // Batch update status pada $sales
             $sales->each->update(['status_sale' => 'selesai']);
 
-
             $saleDocument->update([
                 'total_product_document_sale' => count($sales),
                 'total_old_price_document_sale' => $totalProductOldPriceSale,
@@ -173,7 +205,8 @@ class SaleDocumentController extends Controller
                 'cardbox_qty' => $request->cardbox_qty ?? 0,
                 'cardbox_unit_price' => $request->cardbox_unit_price ?? 0,
                 'cardbox_total_price' => $request->cardbox_qty * $request->cardbox_unit_price ?? 0,
-                'voucher' => $request->input('voucher')
+                'voucher' => $request->input('voucher'),
+                'approved' => $approved
             ]);
 
             $avgPurchaseBuyer = SaleDocument::where('status_document_sale', 'selesai')
@@ -509,5 +542,264 @@ class SaleDocumentController extends Controller
         $report[] = ['Total Harga', $totalPrice];
 
         return $report;
+    }
+
+    public function get_approve_discount($id_sale_document)
+    {
+        $check_approved = SaleDocument::where('id', $id_sale_document)
+            ->where('approved', '1')
+            ->exists();
+
+        if (!$check_approved) {
+            return new ResponseResource(false, "Document is not approved", null);
+        }
+
+        $document_sale = SaleDocument::select(
+            'id',
+            'code_document_sale',
+            'new_discount_sale',
+            'total_product_document_sale',
+            'total_price_document_sale',
+            'total_display_document_sale',
+            'voucher',
+            'approved',
+            'created_at'
+        )->where('id', $id_sale_document)
+            ->with([
+                'sales' => function ($query) {
+                    $query->whereColumn('product_price_sale', '<', 'display_price')
+                        ->select(
+                            'id',
+                            'code_document_sale',
+                            'product_name_sale',
+                            'product_old_price_sale',
+                            'product_category_sale',
+                            'product_barcode_sale',
+                            'product_price_sale',
+                            'product_qty_sale',
+                            'total_discount_sale',
+                            'created_at',
+                            'new_discount_sale',
+                            'display_price',
+                            'code_document',
+                            'approved'
+                        );
+                }
+            ])->first();
+
+        return new ResponseResource(true, "approved invoice discount", $document_sale);
+    }
+
+    public function approvedDocument($id_sale_document)
+    {
+        $document_sale = SaleDocument::where('id', $id_sale_document)
+            ->with(['sales' => function ($query) {
+                $query->whereColumn('product_price_sale', '<', 'display_price');
+            }])->first();
+
+        if (!$document_sale) {
+            return new ResponseResource(false, "Sale document tidak ditemukan!", null);
+        }
+
+        $document_sale->approved = '2';
+        $document_sale->save();
+
+        Sale::where('code_document_sale', $document_sale->code_document_sale)
+            ->whereColumn('product_price_sale', '<', 'display_price')
+            ->update(['approved' => '2']);
+
+        return new ResponseResource(true, "Approved berhasil di approve", $document_sale->code_document_sale);
+    }
+
+    public function approvedProduct($id_sale)
+    {
+        $sale = Sale::where('id', $id_sale)->where('approved', '1')->first();
+
+        if (!$sale) {
+            return new ResponseResource(false, "Product tidak ditemukan!", null);
+        }
+
+        $sale->approved = '2';
+        $sale->save();
+        $response = [
+            'code_document_sale' => $sale->code_document_sale,
+            'product_name_sale' => $sale->product_name_sale,
+            'product_category_sale' => $sale->product_category_sale,
+            'product_barcode_sale' => $sale->product_barcode_sale,
+            'product_price_sale' => $sale->product_price_sale,
+            'display_price' => $sale->display_price,
+            'approved' => $sale->approved
+        ];
+        return new ResponseResource(true, "berhasil approve", $response);
+    }
+
+    public function rejectProduct($id_sale)
+    {
+        // Cek apakah produk ini sedang dalam status diskon
+        $sale = Sale::where('id', $id_sale)
+            ->where(function ($query) {
+                $query->where('approved', '1')
+                    ->orWhere('approved', '2');
+            })
+            ->first();
+
+        if (!$sale) {
+            return new ResponseResource(false, "Product tidak ditemukan!", null);
+        }
+
+        $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->first();
+
+        // Simpan total harga lama sebelum update
+        $oldTotalPrice = $saleDocument->total_price_document_sale;
+
+        // Update sale dengan harga asli dan ubah status approved jadi 0
+        $sale->approved = '0';
+        $sale->product_price_sale = $sale->display_price;
+        $sale->save();
+
+        // Hitung total baru:
+        // 1. Total dari produk yang masih berstatus diskon (approved 1 atau 2)
+        $totalDiscountedPrice = Sale::where('code_document_sale', $sale->code_document_sale)
+            ->where(function ($query) {
+                $query->where('approved', '1')
+                    ->orWhere('approved', '2');
+            })
+            ->sum('product_price_sale');
+
+        // 2. Total dari produk yang tidak ada diskon (approved 0)
+        $totalNonDiscountedPrice = Sale::where('code_document_sale', $sale->code_document_sale)
+            ->where('approved', '0')
+            ->sum('product_price_sale');
+
+        // Total keseluruhan dikurangi voucher
+        $newTotalPrice = $totalDiscountedPrice + $totalNonDiscountedPrice;
+        $newTotalPriceAfterVoucher = $newTotalPrice - $saleDocument->voucher;
+
+        // Update total harga di sale document
+        $saleDocument->total_price_document_sale = $newTotalPriceAfterVoucher;
+        $saleDocument->save();
+
+        // Update buyer purchase amount
+        $buyer = Buyer::findOrFail($saleDocument->buyer_id_document_sale);
+
+        // Hitung rata-rata pembelian
+        $avgPurchaseBuyer = SaleDocument::where('buyer_id_document_sale', $buyer->id)
+            ->avg('total_price_document_sale');
+
+        // Update amount purchase buyer:
+        // 1. Kurangi dulu total lama
+        // 2. Tambahkan total baru
+        $buyer->update([
+            'amount_purchase_buyer' => number_format(
+                ($buyer->amount_purchase_buyer - $oldTotalPrice) + $newTotalPriceAfterVoucher,
+                2,
+                '.',
+                ''
+            ),
+            'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', '')
+        ]);
+
+        $response = [
+            'code_document_sale' => $sale->code_document_sale,
+            'product_name_sale' => $sale->product_name_sale,
+            'product_category_sale' => $sale->product_category_sale,
+            'product_barcode_sale' => $sale->product_barcode_sale,
+            'product_price_sale' => $sale->product_price_sale,
+            'display_price' => $sale->display_price,
+            'approved' => $sale->approved,
+            'total_price_document_sale' => $saleDocument->total_price_document_sale,
+            'total_display_document_sale' => $saleDocument->total_display_document_sale,
+            'grand_total' => $saleDocument->grand_total
+        ];
+
+        return new ResponseResource(true, "Berhasil reject discount", $response);
+    }
+
+    public function rejectAllDiscounts($id_sale_document)
+    {
+        // Ambil dokumen penjualan
+        $saleDocument = SaleDocument::where('id', $id_sale_document)->first();
+    
+        if (!$saleDocument) {
+            return new ResponseResource(false, "Dokumen penjualan tidak ditemukan!", null);
+        }
+    
+        // Simpan total harga lama untuk perhitungan amount purchase buyer
+        $oldTotalPrice = $saleDocument->total_price_document_sale;
+    
+        try {
+            DB::beginTransaction();
+    
+            // Update semua sale yang memiliki diskon (approved 1 atau 2)
+            $updatedSales = Sale::where('code_document_sale', $saleDocument->code_document_sale)
+                ->where(function ($query) {
+                    $query->where('approved', '1');
+                })
+                ->get();
+    
+            // Update setiap produk yang memiliki diskon
+            foreach ($updatedSales as $sale) {
+                $sale->approved = '0';
+                $sale->product_price_sale = $sale->display_price;
+                $sale->save();
+            }
+    
+            // Hitung total baru dari semua produk
+            $newTotalPrice = Sale::where('code_document_sale', $saleDocument->code_document_sale)
+                ->sum('product_price_sale');
+    
+            // Reset voucher jika ada
+            $saleDocument->voucher = 0;
+            
+            // Update total di dokumen penjualan
+            $saleDocument->total_price_document_sale = $newTotalPrice;
+            $saleDocument->approved = '0';
+            $saleDocument->save();
+    
+            // Update buyer purchase amount
+            $buyer = Buyer::findOrFail($saleDocument->buyer_id_document_sale);
+    
+            // Hitung rata-rata pembelian baru
+            $avgPurchaseBuyer = SaleDocument::where('buyer_id_document_sale', $buyer->id)
+                ->avg('total_price_document_sale');
+    
+            // Update amount purchase buyer
+            $buyer->update([
+                'amount_purchase_buyer' => number_format(
+                    ($buyer->amount_purchase_buyer - $oldTotalPrice) + $newTotalPrice,
+                    2,
+                    '.',
+                    ''
+                ),
+                'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', '')
+            ]);
+    
+            DB::commit();
+    
+            // Siapkan response
+            $response = [
+                'code_document_sale' => $saleDocument->code_document_sale,
+                'total_products_updated' => $updatedSales->count(),
+                'total_price_document_sale' => $saleDocument->total_price_document_sale,
+                'total_display_document_sale' => $saleDocument->total_display_document_sale,
+                'grand_total' => $saleDocument->grand_total,
+                'updated_products' => $updatedSales->map(function($sale) {
+                    return [
+                        'product_name_sale' => $sale->product_name_sale,
+                        'product_category_sale' => $sale->product_category_sale,
+                        'product_barcode_sale' => $sale->product_barcode_sale,
+                        'old_price' => $sale->getOriginal('product_price_sale'),
+                        'new_price' => $sale->product_price_sale,
+                        'display_price' => $sale->display_price
+                    ];
+                })
+            ];
+    
+            return new ResponseResource(true, "Berhasil reject semua diskon", $response);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return new ResponseResource(false, "Gagal reject diskon: " . $e->getMessage(), null);
+        }
     }
 }
