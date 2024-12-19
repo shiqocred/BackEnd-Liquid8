@@ -31,12 +31,26 @@ class PaletController extends Controller
     {
         $query = $request->input('q');
         $page = $request->input('page');
-        $newProductsQuery = New_product::latest()
+
+        // Tentukan kolom yang sama untuk kedua query
+        $columns = [
+            'id',
+            'new_name_product',
+            'new_barcode_product',
+            'old_barcode_product',
+            'new_category_product',
+            'new_status_product',
+            'new_tag_product',
+            'created_at',
+            'new_quality'
+        ];
+
+        $newProductsQuery = New_product::select($columns)
             ->where('new_status_product', 'display')
             ->whereJsonContains('new_quality', ['lolos' => 'lolos'])
             ->whereNull('new_tag_product');
 
-        $stagingProductsQuery = StagingProduct::latest()
+        $stagingProductsQuery = StagingProduct::select($columns)
             ->whereNotIn('new_status_product', ['dump', 'expired', 'sale', 'migrate', 'repair'])
             ->whereNull('new_tag_product');
 
@@ -54,14 +68,16 @@ class PaletController extends Controller
                     ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
                     ->orWhere('new_category_product', 'LIKE', '%' . $query . '%');
             });
+
             $page = 1;
         }
 
         $products = $newProductsQuery->unionAll($stagingProductsQuery)
-            ->orderBy('created_at', 'desc')->paginate(33, ['*'], 'page', $page);
+            ->orderBy('created_at', 'desc')
+            ->paginate(33, ['*'], 'page', $page);
+
         return new ResponseResource(true, "Data produk dengan status display.", $products);
     }
-
 
     public function index(Request $request)
     {
@@ -552,9 +568,10 @@ class PaletController extends Controller
         return new ResponseResource(true, "berhasil di update", []);
     }
 
-    public function palet_select(Request $request){
+    public function palet_select(Request $request)
+    {
         $categories = Category::latest()->get();
-        $warehouses= Warehouse::latest()->get();
+        $warehouses = Warehouse::latest()->get();
         $productBrands = ProductBrand::latest()->get();
         $productConditions = ProductCondition::latest()->get();
         $productStatus = ProductStatus::latest()->get();
