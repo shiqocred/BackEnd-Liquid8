@@ -437,7 +437,7 @@ class SaleController extends Controller
         }
     }
 
-    public function exportSaleMonth()
+    public function exportSaleMonth(Request $request)
     {
         try {
             $fileName = 'pr.xlsx';
@@ -448,7 +448,7 @@ class SaleController extends Controller
                 mkdir(dirname($filePath), 0777, true);
             }
 
-            Excel::store(new ProductSaleMonth(Sale::class, 11), $publicPath . '/' . $fileName, 'public');
+            Excel::store(new ProductSaleMonth(Sale::class, $request->input('month')), $publicPath . '/' . $fileName, 'public');
 
             $downloadUrl = asset('storage/' . $publicPath . '/' . $fileName);
 

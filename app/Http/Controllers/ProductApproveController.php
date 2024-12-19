@@ -71,25 +71,36 @@ class ProductApproveController extends Controller
     public function store(Request $request)
     {
         $userId = auth()->id();
-        $ip = $request->ip();
 
-        // $ipAddress = request()->ip();
+        $validator = Validator::make($request->all(), [
+            'code_document' => 'required',
+            'old_barcode_product' => 'required|exists:product_olds,old_barcode_product',
+            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
+            'new_name_product' => 'required',
+            'new_quantity_product' => 'required|integer',
+            'new_price_product' => 'required|numeric',
+            'old_price_product' => 'required|numeric',
+            // 'new_date_in_product' => 'required|date',
+            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
+            'condition' => 'required|in:lolos,damaged,abnormal',
+            'new_category_product' => 'nullable|exists:categories,name_category',
+            'new_tag_product' => 'nullable|exists:color_tags,name_color',
 
-        // $oldBarcode = $request->input('old_barcode_product');
-        // $redisKey = 'user:' . $userId . ':ip:' . $ipAddress . ':barcode:' . $oldBarcode;
+        ], [
+            'old_barcode_product.exists' => 'barcode tidak ada',
+        ]);
 
-        // if (Redis::exists($redisKey)) {
-        //   return new DuplicateRequestResource(false, "barcode awal di scan lebih dari 1x dalam waktu 2 detik", $oldBarcode, 429);
-        // }
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-        // Redis::setex($redisKey, 2, 'processing');
 
         $oldBarcode = $request->input('old_barcode_product');
         $ttlRedis = 3;
         $throttleTtl = 4;
-        $redisKey = "user:$userId:ip:$ip:barcode:$oldBarcode";
+        $redisKey = "barcode:$oldBarcode";
         $rateLimiter = app(\Illuminate\Cache\RateLimiter::class);
-        $throttleKey = "throttle:$userId:$ip:$oldBarcode";
+        $throttleKey = "throttle:$oldBarcode";
         if ($rateLimiter->tooManyAttempts($throttleKey, 1)) {
             return new DuplicateRequestResource(
                 false,
@@ -121,28 +132,7 @@ class ProductApproveController extends Controller
             );
         }
 
-        $validator = Validator::make($request->all(), [
-            'code_document' => 'required',
-            'old_barcode_product' => 'required|exists:product_olds,old_barcode_product',
-            // 'new_barcode_product' => 'unique:new_products,new_barcode_product',
-            'new_name_product' => 'required',
-            'new_quantity_product' => 'required|integer',
-            'new_price_product' => 'required|numeric',
-            'old_price_product' => 'required|numeric',
-            // 'new_date_in_product' => 'required|date',
-            'new_status_product' => 'required|in:display,expired,promo,bundle,palet,dump',
-            'condition' => 'required|in:lolos,damaged,abnormal',
-            'new_category_product' => 'nullable|exists:categories,name_category',
-            'new_tag_product' => 'nullable|exists:color_tags,name_color',
-
-        ], [
-            'old_barcode_product.exists' => 'barcode tidak ada',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
+       
         $status = $request->input('condition');
         $description = $request->input('deskripsi', '');
 
@@ -208,16 +198,8 @@ class ProductApproveController extends Controller
                 $riwayatCheck->total_data_abnormal += 1;
             }
 
-            //redis /data
-            //  if (isset($modelClass)) {
-            //     $redisKey = 'product:' . $generate;
-            //     Redis::set($redisKey, json_encode($inputData));
-
-            //     ProcessProductData::dispatch($generate, $modelClass);
-            // }
-
             $redisKey = 'product_batch';
-            $batchSize = 4;
+            $batchSize = 100;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));

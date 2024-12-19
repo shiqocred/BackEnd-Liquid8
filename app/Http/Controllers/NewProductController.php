@@ -982,10 +982,12 @@ class NewProductController extends Controller
                     $q->whereNull('type')->orWhere('type', 'type1');
                 })
                 ->when($query, function ($q) use ($query) {
-                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    $q->where(function($subQuery) use ($query) {
+                        $subQuery->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    });
                 })
                 ->groupBy('new_tag_product');
     
@@ -1015,10 +1017,12 @@ class NewProductController extends Controller
                     $q->whereNull('type')->orWhere('type', 'type1');
                 })
                 ->when($query, function ($q) use ($query) {
-                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    $q->where(function($subQuery) use ($query) {
+                        $subQuery->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    });
                 })
                 ->latest();
     
