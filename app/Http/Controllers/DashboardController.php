@@ -15,6 +15,7 @@ use App\Models\SaleDocument;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -644,25 +645,37 @@ class DashboardController extends Controller
 
     public function exportMonthlyAnalyticSales(Request $request)
     {
-        $dataExport = $this->monthlyAnalyticSales($request);
-        $dataExport = $dataExport->getData(true);
+        try {
+            $dataExport = $this->monthlyAnalyticSales($request);
+            $dataExport = $dataExport->getData(true);
 
-        if (!empty($dataExport['error'])) {
-            return response()->json($dataExport, 422);
+            if (!empty($dataExport['error'])) {
+                return response()->json($dataExport, 422);
+            }
+
+            $listAnalyticSale = $dataExport['data']['resource']['list_analytic_sale'];
+
+            $customDataExport = array_map(function ($data) {
+                return [
+                    'Category Name' => $data['product_category_sale'],
+                    'Qty'           => $data['total_category'],
+                    'Display Price' => $data['display_price_sale'],
+                    'Sale Price'    => $data['purchase'],
+                ];
+            }, $listAnalyticSale);
+
+            $fileName = 'exports/list-monthly-analytic-sales.xlsx';
+
+            Excel::store(new ListAnalyticSalesExport($customDataExport), $fileName, 'public');
+
+            $fileUrl = Storage::disk('public')->url($fileName);
+
+            $resource = new ResponseResource('true', 'File export berhasil di buat!', $fileUrl);
+        } catch (\Exception $e) {
+            $resource = new ResponseResource('false', 'Gagal membuat file export!', $e->getMessage());
+            return $resource->response()->setStatusCode(500);
         }
-
-        $listAnalyticSale = $dataExport['data']['resource']['list_analytic_sale'];
-
-        $customDataExport = array_map(function ($data) {
-            return [
-                'Category Name' => $data['product_category_sale'],
-                'Qty'           => $data['total_category'],
-                'Display Price' => $data['display_price_sale'],
-                'Sale Price'    => $data['purchase'],
-            ];
-        }, $listAnalyticSale);
-
-        return Excel::download(new ListAnalyticSalesExport($customDataExport), 'list-monthly-analytic-sales.xlsx');
+        return $resource;
     }
 
     public function yearlyAnalyticSales(Request $request)
@@ -783,25 +796,35 @@ class DashboardController extends Controller
 
     public function exportYearlyAnalyticSales(Request $request)
     {
-        $dataExport = $this->yearlyAnalyticSales($request);
-        $dataExport = $dataExport->getData(true);
+        try {
+            $dataExport = $this->yearlyAnalyticSales($request);
+            $dataExport = $dataExport->getData(true);
 
-        if (!empty($dataExport['error'])) {
-            return response()->json($dataExport, 422);
+            if (!empty($dataExport['error'])) {
+                return response()->json($dataExport, 422);
+            }
+
+            $listAnalyticSale = $dataExport['data']['resource']['list_analytic_sale'];
+
+            $customDataExport = array_map(function ($data) {
+                return [
+                    'Category Name' => $data['product_category_sale'],
+                    'Qty'           => $data['total_category'],
+                    'Display Price' => $data['display_price_sale'],
+                    'Sale Price'    => $data['purchase'],
+                ];
+            }, $listAnalyticSale);
+
+            $fileName = 'exports/list-yearly-analytic-sales.xlsx';
+            Excel::store(new ListAnalyticSalesExport($customDataExport), $fileName, 'public');
+
+            $fileUrl = Storage::disk('public')->url($fileName);
+            $resource = new ResponseResource('true', 'File export berhasil di buat!', $fileUrl);
+        } catch (\Exception $e) {
+            $resource = new ResponseResource('false', 'Gagal membuat file export!', $e->getMessage());
+            return $resource->response()->setStatusCode(500);
         }
-
-        $listAnalyticSale = $dataExport['data']['resource']['list_analytic_sale'];
-
-        $customDataExport = array_map(function ($data) {
-            return [
-                'Category Name' => $data['product_category_sale'],
-                'Qty'           => $data['total_category'],
-                'Display Price' => $data['display_price_sale'],
-                'Sale Price'    => $data['purchase'],
-            ];
-        }, $listAnalyticSale);
-
-        return Excel::download(new ListAnalyticSalesExport($customDataExport), 'list-yearly-analytic-sales.xlsx');
+        return $resource;
     }
 
     public function analyticSlowMoving(Request $request)
@@ -871,14 +894,15 @@ class DashboardController extends Controller
 
     public function productExpiredExport(Request $request)
     {
-        // Ambil input dari user
-        $inputWeek = $request->input('week');
+        try {
+            // Ambil input dari user
+            $inputWeek = $request->input('week');
 
-        // Produk dianggap expired setelah 4 minggu
-        $expirationThreshold = 4;
+            // Produk dianggap expired setelah 4 minggu
+            $expirationThreshold = 4;
 
-        // Query untuk mendapatkan produk yang sudah expired
-        $queryListProductExpired = New_product::selectRaw("
+            // Query untuk mendapatkan produk yang sudah expired
+            $queryListProductExpired = New_product::selectRaw("
             new_barcode_product AS barcode_product,
             new_name_product AS name_product,
             new_price_product AS price_product,
@@ -886,32 +910,40 @@ class DashboardController extends Controller
             FLOOR(DATEDIFF(NOW(), created_at) / 7) - $expirationThreshold AS weeks_expired,
             DATEDIFF(NOW(), created_at) % 7 AS days_expired
         ")
-            ->where('new_status_product', 'expired');
+                ->where('new_status_product', 'expired');
 
-        if ($inputWeek !== null) {
-            $startDate = Carbon::now()->subWeeks($inputWeek + $expirationThreshold);
-            $endDate = Carbon::now()->subWeeks($expirationThreshold + ($inputWeek - 1));
+            if ($inputWeek !== null) {
+                $startDate = Carbon::now()->subWeeks($inputWeek + $expirationThreshold);
+                $endDate = Carbon::now()->subWeeks($expirationThreshold + ($inputWeek - 1));
 
-            $queryListProductExpired->whereBetween('created_at', [$startDate, $endDate]);
+                $queryListProductExpired->whereBetween('created_at', [$startDate, $endDate]);
+            }
+
+            // Ambil data dalam bentuk collection
+            $ListProductExpired = $queryListProductExpired->get();
+
+            // Buat collection yang sudah di-custom
+            $customProductExpired = $ListProductExpired->map(function ($product) {
+                // Gabungkan weeks_expired dan days_expired menjadi satu string
+                $expiredDate = "{$product->weeks_expired} minggu {$product->days_expired} hari";
+
+                return [
+                    'Barcode' => $product->barcode_product,
+                    'Nama Produk' => $product->name_product,
+                    'Harga' => $product->price_product,
+                    'Qty' => $product->qty_product,
+                    'Lama Expired' => $expiredDate,
+                ];
+            });
+            $fileName = 'exports/expired-product.xlsx';
+            Excel::store(new ProductExpiredExport($customProductExpired), $fileName, 'public');
+
+            $fileUrl = Storage::disk('public')->url($fileName);
+            $resource = new ResponseResource('true', 'File export berhasil di buat!', $fileUrl);
+        } catch (\Exception $e) {
+            $resource = new ResponseResource('false', 'Gagal membuat file export!', $e->getMessage());
+            return $resource->response()->setStatusCode(500);
         }
-
-        // Ambil data dalam bentuk collection
-        $ListProductExpired = $queryListProductExpired->get();
-
-        // Buat collection yang sudah di-custom
-        $customProductExpired = $ListProductExpired->map(function ($product) {
-            // Gabungkan weeks_expired dan days_expired menjadi satu string
-            $expiredDate = "{$product->weeks_expired} minggu {$product->days_expired} hari";
-
-            return [
-                'Barcode' => $product->barcode_product,
-                'Nama Produk' => $product->name_product,
-                'Harga' => $product->price_product,
-                'Qty' => $product->qty_product,
-                'Lama Expired' => $expiredDate,
-            ];
-        });
-
-        return Excel::download(new ProductExpiredExport($customProductExpired), 'expired-product.xlsx');
+        return $resource;
     }
 }
