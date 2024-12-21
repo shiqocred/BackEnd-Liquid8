@@ -519,7 +519,6 @@ Route::post('findSimilarTabel', [StagingApproveController::class, 'findSimilarTa
 Route::post('findDifferenceTable', [StagingApproveController::class, 'findDifferenceTable']);
 Route::get('difference', [StagingApproveController::class, 'findDifference']);
 Route::delete('deleteDuplicateOldBarcodes', [StagingApproveController::class, 'deleteDuplicateOldBarcodes']);
-product_byColor
 Route::get('setCache', [StagingApproveController::class, 'cacheProductBarcodes']);
 Route::get('selectionDataRedis', [StagingApproveController::class, 'dataSelectionRedis']);
 
