@@ -59,11 +59,10 @@ class StagingProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
                 });
 
-                $page = 1;
             }
 
             // Terapkan pagination setelah pencarian selesai
-            $paginatedProducts = $newProductsQuery->paginate(33, ['*'], 'page', $page);
+            $paginatedProducts = $newProductsQuery->paginate(10, ['*'], 'page', $page);
             return new ResponseResource(true, "List of new products", $paginatedProducts);
         } catch (\Exception $e) {
             return (new ResponseResource(false, "data tidak ada", $e->getMessage()))->response()->setStatusCode(500);
