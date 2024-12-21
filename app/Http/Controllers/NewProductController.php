@@ -1055,10 +1055,12 @@ class NewProductController extends Controller
                 ->where('new_status_product', 'display')
                 ->where('type', 'type2')
                 ->when($query, function ($q) use ($query) {
-                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    $q->where(function($subQuery) use ($query) {
+                        $subQuery->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    });
                 })
                 ->groupBy('new_tag_product');
     
@@ -1086,10 +1088,12 @@ class NewProductController extends Controller
                 ->where('new_status_product', 'display')
                 ->where('type', 'type2')
                 ->when($query, function ($q) use ($query) {
-                    $q->where('new_tag_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
-                        ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    $q->where(function($subQuery) use ($query) {
+                        $subQuery->where('new_tag_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('old_barcode_product', 'LIKE', '%' . $query . '%')
+                            ->orWhere('new_name_product', 'LIKE', '%' . $query . '%');
+                    });
                 })
                 ->latest();
     

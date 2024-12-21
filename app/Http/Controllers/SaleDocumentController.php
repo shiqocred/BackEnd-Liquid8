@@ -802,4 +802,27 @@ class SaleDocumentController extends Controller
             return new ResponseResource(false, "Gagal reject diskon: " . $e->getMessage(), null);
         }
     }
+
+    public function doneApproveDiscount($id_sale_document) {
+        if (empty($id_sale_document)) {
+            return new ResponseResource(false, "id tidak ada", null);
+        }
+    
+        try {
+            $saleDocument = SaleDocument::where('id', $id_sale_document)
+                ->update(['approved' => '0']); 
+    
+            if (!$saleDocument) {
+                return new ResponseResource(false, "gagal memperbarui data", null);
+            }
+    
+            return new ResponseResource(true, "berhasil approve document", null);
+    
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

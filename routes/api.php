@@ -329,6 +329,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::put('approved-product/{id_sale}', [SaleDocumentController::class, 'approvedProduct']);
    Route::put('rejectProduct/{id_sale}', [SaleDocumentController::class, 'rejectProduct']);
    Route::put('rejectAllDiscounts/{id_sale}', [SaleDocumentController::class, 'rejectAllDiscounts']);
+   Route::put('doneApproveDiscount/{id_sale_document}', [SaleDocumentController::class, 'doneApproveDiscount']);
 });
 
 //end inventory=========================================== Inventory ==========================================================
