@@ -437,24 +437,36 @@ class DashboardController extends Controller
 
     public function exportStorageReport()
     {
-        $dataExport = $this->storageReport();
-        $dataExport = $dataExport->getData(true);
+        try {
+            $dataExport = $this->storageReport();
+            $dataExport = $dataExport->getData(true);
 
-        $listStorageReport = $dataExport['data']['resource']['chart']['category'];
+            $listStorageReport = $dataExport['data']['resource']['chart']['category'];
 
-        if (empty($listStorageReport)) {
-            return response()->json(['errors' => "data kosong! tidak bisa di export!"], 422);
+            if (empty($listStorageReport)) {
+                return response()->json(['errors' => "data kosong! tidak bisa di export!"], 422);
+            }
+
+            $customDataExport = array_map(function ($data) {
+                return [
+                    'Category Name' => $data['category_product'],
+                    'Total Product'   => $data['total_category'],
+                    'Value Product' => $data['total_price_category'],
+                ];
+            }, $listStorageReport);
+
+            $fileName = 'exports/storage-report.xlsx';
+
+            Excel::store(new StorageReportExport($customDataExport), $fileName, 'public');
+
+            $fileUrl = Storage::disk('public')->url($fileName);
+
+            $resource = new ResponseResource('true', 'File export berhasil di buat!', $fileUrl);
+        } catch (\Exception $e) {
+            $resource = new ResponseResource('false', 'Gagal membuat file export!', $e->getMessage());
+            return $resource->response()->setStatusCode(500);
         }
-
-        $customDataExport = array_map(function ($data) {
-            return [
-                'Category Name' => $data['category_product'],
-                'Total Product'   => $data['total_category'],
-                'Value Product' => $data['total_price_category'],
-            ];
-        }, $listStorageReport);
-
-        return Excel::download(new StorageReportExport($customDataExport), 'storage-report.xlsx');
+        return $resource;
     }
 
     public function generalSale(Request $request)
