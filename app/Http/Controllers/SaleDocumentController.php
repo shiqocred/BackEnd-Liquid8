@@ -785,7 +785,7 @@ class SaleDocumentController extends Controller
             if (!$notif) {
                 return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
             }
-            $notif->update(['approved' => '2']);
+            $notif->update(['approved' => '1']);
 
             DB::commit();
 
