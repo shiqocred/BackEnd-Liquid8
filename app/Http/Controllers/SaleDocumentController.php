@@ -9,6 +9,7 @@ use App\Models\Bundle;
 use App\Models\Category;
 use Brick\Math\BigInteger;
 use App\Models\New_product;
+use Illuminate\Support\Facades\Log;
 use App\Models\SaleDocument;
 use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
@@ -145,41 +146,52 @@ class SaleDocumentController extends Controller
                 return (new ResponseResource(false, "Input tidak valid!", $validator->errors()))->response()->setStatusCode(422);
             }
 
-            $approved = '0';
 
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
 
+            // Inisialisasi approved dokumen sebagai '0'
+            $approved = '0';
+
             if ($request->filled('voucher')) {
+                foreach ($sales as $sale) {
+                    if ($sale->display_price > $sale->product_price_sale) {
+                        // Update hanya sales yang memenuhi kondisi
+                        $sale->update(['approved' => '1']);
+                        $approved = '1';
+                    } else {
+                        // Sales yang tidak memenuhi kondisi tetap '0'
+                        $sale->update(['approved' => '0']);
+                    }
+                }
+            } else {
+                foreach ($sales as $sale) {
+                    if ($sale->display_price > $sale->product_price_sale) {
+                        $sale->update(['approved' => '1']);
+                        $approved = '1';
+                    } else {
+                        $sale->update(['approved' => '0']);
+                    }
+                }
+            }
+
+            // Update dokumen dan buat notifikasi jika ada sales yang approved
+            if ($approved === '1') {
                 Notification::create([
                     'user_id' => $userId,
                     'notification_name' => 'approve discount sale',
                     'status' => 'sale',
                     'role' => 'Spv',
                     'external_id' => $saleDocument->id
-
                 ]);
-                $approved = '1';
-            } else {
-                // Cek jika ada sale yang display_price > product_price_sale
-                $hasDiscount = $sales->contains(function ($sale) {
-                    return $sale->display_price > $sale->product_price_sale;
-                });
 
-                if ($hasDiscount) {
-                    Notification::create([
-                        'user_id' => $userId,
-                        'notification_name' => 'approve discount sale',
-                        'status' => 'sale',
-                        'role' => 'Spv',
-                        'external_id' => $saleDocument->id
-                    ]);
-                    $approved = '1';
-                }
+                $saleDocument->update(['approved' => '1']);
             }
+
 
             $totalDisplayPrice = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('display_price');
 
             $totalProductPriceSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('product_price_sale');
+
             $totalProductPriceSale = $request['voucher'] ? $totalProductPriceSale - $request['voucher'] : $totalProductPriceSale;
 
             $totalProductOldPriceSale = Sale::where('code_document_sale', $saleDocument->code_document_sale)->sum('product_old_price_sale');
