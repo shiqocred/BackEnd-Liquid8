@@ -608,6 +608,12 @@ class SaleDocumentController extends Controller
             ->whereColumn('product_price_sale', '<', 'display_price')
             ->update(['approved' => '2']);
 
+        $notif = Notification::where('status', 'sale')->where('external_id', $id_sale_document)->first();
+        if (!$notif) {
+            return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
+        }
+        $notif->update(['approved' => '2']);
+
         return new ResponseResource(true, "Approved berhasil di approve", $document_sale->code_document_sale);
     }
 
@@ -630,6 +636,7 @@ class SaleDocumentController extends Controller
             'display_price' => $sale->display_price,
             'approved' => $sale->approved
         ];
+
         return new ResponseResource(true, "berhasil approve", $response);
     }
 
@@ -719,50 +726,50 @@ class SaleDocumentController extends Controller
     {
         // Ambil dokumen penjualan
         $saleDocument = SaleDocument::where('id', $id_sale_document)->first();
-    
+
         if (!$saleDocument) {
             return new ResponseResource(false, "Dokumen penjualan tidak ditemukan!", null);
         }
-    
+
         // Simpan total harga lama untuk perhitungan amount purchase buyer
         $oldTotalPrice = $saleDocument->total_price_document_sale;
-    
+
         try {
             DB::beginTransaction();
-    
+
             // Update semua sale yang memiliki diskon (approved 1 atau 2)
             $updatedSales = Sale::where('code_document_sale', $saleDocument->code_document_sale)
                 ->where(function ($query) {
                     $query->where('approved', '1');
                 })
                 ->get();
-    
+
             // Update setiap produk yang memiliki diskon
             foreach ($updatedSales as $sale) {
                 $sale->approved = '0';
                 $sale->product_price_sale = $sale->display_price;
                 $sale->save();
             }
-    
+
             // Hitung total baru dari semua produk
             $newTotalPrice = Sale::where('code_document_sale', $saleDocument->code_document_sale)
                 ->sum('product_price_sale');
-    
+
             // Reset voucher jika ada
             $saleDocument->voucher = 0;
-            
+
             // Update total di dokumen penjualan
             $saleDocument->total_price_document_sale = $newTotalPrice;
             $saleDocument->approved = '0';
             $saleDocument->save();
-    
+
             // Update buyer purchase amount
             $buyer = Buyer::findOrFail($saleDocument->buyer_id_document_sale);
-    
+
             // Hitung rata-rata pembelian baru
             $avgPurchaseBuyer = SaleDocument::where('buyer_id_document_sale', $buyer->id)
                 ->avg('total_price_document_sale');
-    
+
             // Update amount purchase buyer
             $buyer->update([
                 'amount_purchase_buyer' => number_format(
@@ -773,9 +780,15 @@ class SaleDocumentController extends Controller
                 ),
                 'avg_purchase_buyer' => number_format($avgPurchaseBuyer, 2, '.', '')
             ]);
-    
+
+            $notif = Notification::where('status', 'sale')->where('external_id', $id_sale_document)->first();
+            if (!$notif) {
+                return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
+            }
+            $notif->update(['approved' => '2']);
+
             DB::commit();
-    
+
             // Siapkan response
             $response = [
                 'code_document_sale' => $saleDocument->code_document_sale,
@@ -783,7 +796,7 @@ class SaleDocumentController extends Controller
                 'total_price_document_sale' => $saleDocument->total_price_document_sale,
                 'total_display_document_sale' => $saleDocument->total_display_document_sale,
                 'grand_total' => $saleDocument->grand_total,
-                'updated_products' => $updatedSales->map(function($sale) {
+                'updated_products' => $updatedSales->map(function ($sale) {
                     return [
                         'product_name_sale' => $sale->product_name_sale,
                         'product_category_sale' => $sale->product_category_sale,
@@ -794,30 +807,35 @@ class SaleDocumentController extends Controller
                     ];
                 })
             ];
-    
+
             return new ResponseResource(true, "Berhasil reject semua diskon", $response);
-    
         } catch (\Exception $e) {
             DB::rollBack();
             return new ResponseResource(false, "Gagal reject diskon: " . $e->getMessage(), null);
         }
     }
 
-    public function doneApproveDiscount($id_sale_document) {
+    public function doneApproveDiscount($id_sale_document)
+    {
         if (empty($id_sale_document)) {
             return new ResponseResource(false, "id tidak ada", null);
         }
-    
+
         try {
             $saleDocument = SaleDocument::where('id', $id_sale_document)
-                ->update(['approved' => '0']); 
-    
+                ->update(['approved' => '0']);
+
             if (!$saleDocument) {
                 return new ResponseResource(false, "gagal memperbarui data", null);
             }
-    
+
+            $notif = Notification::where('status', 'sale')->where('external_id', $id_sale_document)->first();
+            if (!$notif) {
+                return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
+            }
+            $notif->update(['approved' => '2']);
+
             return new ResponseResource(true, "berhasil approve document", null);
-    
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
