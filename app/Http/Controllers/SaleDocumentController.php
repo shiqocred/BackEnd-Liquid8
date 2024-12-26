@@ -150,14 +150,14 @@ class SaleDocumentController extends Controller
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
 
             // Inisialisasi approved dokumen sebagai '0'
-            $approved = '0';
+            $documentApproved = '0';
 
             if ($request->filled('voucher')) {
                 foreach ($sales as $sale) {
                     if ($sale->display_price > $sale->product_price_sale) {
                         // Update hanya sales yang memenuhi kondisi
                         $sale->update(['approved' => '1']);
-                        $approved = '1';
+                        $documentApproved = '1';
                     } else {
                         // Sales yang tidak memenuhi kondisi tetap '0'
                         $sale->update(['approved' => '0']);
@@ -167,7 +167,7 @@ class SaleDocumentController extends Controller
                 foreach ($sales as $sale) {
                     if ($sale->display_price > $sale->product_price_sale) {
                         $sale->update(['approved' => '1']);
-                        $approved = '1';
+                        $documentApproved = '1';
                     } else {
                         $sale->update(['approved' => '0']);
                     }
@@ -175,7 +175,7 @@ class SaleDocumentController extends Controller
             }
 
             // Update dokumen dan buat notifikasi jika ada sales yang approved
-            if ($approved === '1') {
+            if ($documentApproved === '1') {
                 Notification::create([
                     'user_id' => $userId,
                     'notification_name' => 'approve discount sale',
