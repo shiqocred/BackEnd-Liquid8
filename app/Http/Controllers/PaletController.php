@@ -42,7 +42,8 @@ class PaletController extends Controller
             'new_status_product',
             'new_tag_product',
             'created_at',
-            'new_quality'
+            'new_quality',
+            'new_price_product'
         ];
 
         $newProductsQuery = New_product::select($columns)
