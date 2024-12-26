@@ -199,7 +199,7 @@ class ProductApproveController extends Controller
             }
 
             $redisKey = 'product_batch';
-            $batchSize = 7;
+            $batchSize = 4;
 
             if (isset($modelClass)) {
                 Redis::rpush($redisKey, json_encode($inputData));
