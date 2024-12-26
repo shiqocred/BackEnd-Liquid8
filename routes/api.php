@@ -327,8 +327,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
    Route::get('get_approve_discount/{id_sale_document}', [SaleDocumentController::class, 'get_approve_discount']);
    Route::put('approved-document/{id_sale_document}', [SaleDocumentController::class, 'approvedDocument']);
    Route::put('approved-product/{id_sale}', [SaleDocumentController::class, 'approvedProduct']);
-   Route::put('rejectProduct/{id_sale}', [SaleDocumentController::class, 'rejectProduct']);
-   Route::put('rejectAllDiscounts/{id_sale}', [SaleDocumentController::class, 'rejectAllDiscounts']);
+   Route::put('reject-product/{id_sale}', [SaleDocumentController::class, 'rejectProduct']);
+   Route::put('reject-document/{id_sale}', [SaleDocumentController::class, 'rejectAllDiscounts']);
    Route::put('doneApproveDiscount/{id_sale_document}', [SaleDocumentController::class, 'doneApproveDiscount']);
 });
 

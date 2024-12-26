@@ -59,7 +59,6 @@ class StagingProductController extends Controller
                         ->orWhere('new_name_product', 'LIKE', '%' . $searchQuery . '%');
                 });
 
-                $page = 1;
             }
 
             // Terapkan pagination setelah pencarian selesai

@@ -41,6 +41,7 @@ class PaletController extends Controller
             'new_category_product',
             'new_status_product',
             'new_tag_product',
+            'new_price_product',
             'created_at',
             'new_quality',
             'new_price_product'
