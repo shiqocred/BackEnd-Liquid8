@@ -329,8 +329,8 @@ class StagingProductController extends Controller
     {
 
         $user_id = auth()->id();
-        set_time_limit(600);
-        ini_set('memory_limit', '1024M');
+        set_time_limit(3600);
+        ini_set('memory_limit', '2048M');
 
         // Validate input file
         $request->validate([
