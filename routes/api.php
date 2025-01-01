@@ -456,6 +456,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
    Route::get('notif_widget', [NotificationController::class, 'notifWidget']);
 });
 
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+   Route::get('wms-scan', [UserController::class, 'wmsScans']);
+});
+
 //collab mtc
 Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(function () {
    //=========================================== Api For Bulky ==========================================================
