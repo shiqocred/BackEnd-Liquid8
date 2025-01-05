@@ -39,4 +39,6 @@ class Palet extends Model
     {
         return $this->belongsTo(ProductCondition::class, 'product_condition_id');
     }
+
+
 }
