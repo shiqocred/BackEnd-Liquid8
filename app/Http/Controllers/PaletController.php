@@ -139,19 +139,28 @@ class PaletController extends Controller
                 return response()->json($validator->errors(), 422);
             }
 
+            $validatedData = [];
+
             // Handle PDF upload
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
-                $filename = $file->getClientOriginalName();
+                // Buat nama file unik untuk menghindari konflik
+                $filename = time() . '_' . $file->getClientOriginalName();
+            
+                // Simpan file di storage
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-                $validatedData['file_pdf'] = $filename;
-            }
+            
+                // Simpan path file ke validatedData
+                $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
 
+            } else {
+                $validatedData['file_pdf'] = null; // Jika tidak ada file
+            }
+            
             $category = Category::find($request['category_id']) ?: null;
             $warehouse = Warehouse::findOrFail($request['warehouse_id']);
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
-
             // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],
