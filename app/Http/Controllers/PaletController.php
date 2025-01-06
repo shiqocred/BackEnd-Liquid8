@@ -315,18 +315,6 @@ class PaletController extends Controller
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
-            // if (!$category) {
-            //     return new ResponseResource(false, "Category ID tidak ditemukan", $request['category_id']);
-            // }
-            // if (!$destination) {
-            //     return new ResponseResource(false, "destination ID tidak ditemukan", $request['destination_id']);
-            // }
-            // if (!$productStatus) {
-            //     return new ResponseResource(false, "productStatus ID tidak ditemukan", $request['product_status_id']);
-            // }
-            // if (!$productCondition) {
-            //     return new ResponseResource(false, "productCondition ID tidak ditemukan", $request['product_condition_id']);
-            // }
             $validatedData = [];
 
             if ($request->hasFile('file_pdf')) {
@@ -398,6 +386,9 @@ class PaletController extends Controller
                 
                 foreach ($brands as $brandId) {
                     $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
+                    if(!$paletBrandName){
+                        return (new ResponseResource(false, "Data gagal diperbarui, id brand tidak ada", $brandId))->response()->setStatusCode(500);
+                    }
                     $paletBrand = PaletBrand::updateOrCreate(
                         ['palet_id' => $palet->id, 'brand_id' => $brandId],
                         ['palet_brand_name' => $paletBrandName]
@@ -413,7 +404,7 @@ class PaletController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update palet: ' . $e->getMessage());
-            return new ResponseResource(false, "Data gagal diperbarui", null);
+            return (new ResponseResource(false, "Data gagal diperbarui", null))->response()->setStatusCode(500);
         }
     }
 
