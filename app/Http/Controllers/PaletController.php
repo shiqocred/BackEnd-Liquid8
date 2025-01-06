@@ -146,17 +146,16 @@ class PaletController extends Controller
                 $file = $request->file('file_pdf');
                 // Buat nama file unik untuk menghindari konflik
                 $filename = time() . '_' . $file->getClientOriginalName();
-            
+
                 // Simpan file di storage
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-            
+
                 // Simpan path file ke validatedData
                 $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
-
             } else {
                 $validatedData['file_pdf'] = null; // Jika tidak ada file
             }
-            
+
             $category = Category::find($request['category_id']) ?: null;
             $warehouse = Warehouse::findOrFail($request['warehouse_id']);
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
@@ -295,7 +294,7 @@ class PaletController extends Controller
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
                 'palet_barcode' => 'required|string|unique:palets,palet_barcode,' . $palet->id,
-                'file_pdf' => 'nullable|mimes:pdf|max:2048',
+                'file_pdf' => 'nullable|mimes:pdf|max:5120',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
@@ -328,7 +327,7 @@ class PaletController extends Controller
             // if (!$productCondition) {
             //     return new ResponseResource(false, "productCondition ID tidak ditemukan", $request['product_condition_id']);
             // }
-
+            $validatedData = [];
 
             if ($request->hasFile('file_pdf')) {
                 // Hapus file PDF lama jika ada
@@ -339,10 +338,9 @@ class PaletController extends Controller
                 $file = $request->file('file_pdf');
                 $filename = $file->getClientOriginalName();
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-                $palet->file_pdf = $pdfPath;
-                $request['file_pdf'] = $filename;
+                // Simpan path file ke validatedData
+                $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
             }
-
             $palet->update([
                 'name_palet' => $request['name_palet'],
                 'category_palet' => $category->name_category ?? '',
@@ -597,30 +595,25 @@ class PaletController extends Controller
 
     public function delete_pdf_palet($id_palet)
     {
-        // Cari palet berdasarkan ID
         $pdf_palet = Palet::find($id_palet);
-    
+
         if (!$pdf_palet) {
             return (new ResponseResource(false, "ID palet tidak ditemukan", []))
                 ->response()
                 ->setStatusCode(404);
         }
-    
-        // Mendapatkan path relatif dari URL file_pdf
+
         $filePath = str_replace('/storage/', '', parse_url($pdf_palet->file_pdf, PHP_URL_PATH));
-    
-        // Hapus file jika ada di storage
+
         if ($filePath && Storage::exists($filePath)) {
             Storage::delete($filePath);
         }
-    
-        // Update kolom file_pdf menjadi null
+
         $pdf_palet->file_pdf = null;
         $pdf_palet->save();
-    
+
         return (new ResponseResource(true, "Berhasil menghapus PDF", $pdf_palet))
             ->response()
             ->setStatusCode(200);
     }
-    
 }
