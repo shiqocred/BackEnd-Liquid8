@@ -478,7 +478,6 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
    Route::delete('palet_pdf/{id_palet}', [PaletController::class, 'delete_pdf_palet']);
 
-
    //get
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
    Route::get('list-categories', [CategoryController::class, 'index']);
