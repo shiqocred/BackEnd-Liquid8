@@ -123,7 +123,7 @@ class PaletController extends Controller
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
-                'file_pdf' => 'nullable|mimes:pdf|max:2048',
+                'file_pdf' => 'nullable|mimes:pdf|max:5120',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
