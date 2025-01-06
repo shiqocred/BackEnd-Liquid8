@@ -594,4 +594,33 @@ class PaletController extends Controller
             'product_status' => $productStatus
         ]);
     }
+
+    public function delete_pdf_palet($id_palet)
+    {
+        // Cari palet berdasarkan ID
+        $pdf_palet = Palet::find($id_palet);
+    
+        if (!$pdf_palet) {
+            return (new ResponseResource(false, "ID palet tidak ditemukan", []))
+                ->response()
+                ->setStatusCode(404);
+        }
+    
+        // Mendapatkan path relatif dari URL file_pdf
+        $filePath = str_replace('/storage/', '', parse_url($pdf_palet->file_pdf, PHP_URL_PATH));
+    
+        // Hapus file jika ada di storage
+        if ($filePath && Storage::exists($filePath)) {
+            Storage::delete($filePath);
+        }
+    
+        // Update kolom file_pdf menjadi null
+        $pdf_palet->file_pdf = null;
+        $pdf_palet->save();
+    
+        return (new ResponseResource(true, "Berhasil menghapus PDF", $pdf_palet))
+            ->response()
+            ->setStatusCode(200);
+    }
+    
 }
