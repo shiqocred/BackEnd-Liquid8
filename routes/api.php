@@ -476,6 +476,8 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::put('palets/{palet}', [PaletController::class, 'update']);
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
+   Route::delete('palet_pdf/{id_palet}', [PaletController::class, 'delete_pdf_palet']);
+
 
    //get
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);
