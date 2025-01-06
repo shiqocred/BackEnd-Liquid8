@@ -118,7 +118,7 @@ class PaletController extends Controller
             // Validasi request
             $validator = Validator::make($request->all(), [
                 'images' => 'array|nullable',
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
                 'name_palet' => 'required|string',
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
@@ -288,7 +288,7 @@ class PaletController extends Controller
             // Validasi request
             $validator = Validator::make($request->all(), [
                 'images' => 'array|nullable',
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
                 'name_palet' => 'required|string',
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',

@@ -21,13 +21,17 @@ class PaletFilterController extends Controller
 
         $totalNewPriceWithCategory = $product_filtersbyUser->whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = $product_filtersbyUser->whereNull('new_category_product')->sum('old_price_product');
+        $totalOldPriceWithCategory = $product_filtersbyUser->whereNotNull('new_category_product')->sum('new_price_product');
 
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
+        
+        $totalOldPrice = $totalOldPriceWithCategory + $totalOldPriceWithoutCategory;
 
         $product_filters = PaletFilter::where('user_id', $userId)->paginate(100);
 
         return new ResponseResource(true, "list product filter", [
             'total_new_price' => $totalNewPrice,
+            'total_old_price'=> $totalOldPrice,
             'data' => $product_filters,
         ]);
     }
@@ -52,8 +56,13 @@ class PaletFilterController extends Controller
             $product = New_product::findOrFail($id);
             $product->user_id = $userId;
             $productFilter = PaletFilter::create($product->toArray());
-            $product->delete();
-            DB::commit();
+            if ($product->delete()) {
+                DB::commit(); 
+                return new ResponseResource(true, "Successfully transferred product to PaletFilter.", $productFilter);
+            } else {
+                DB::rollBack();
+                return (new ResponseResource(false, "id tidak ada.", $productFilter))->response()->setStatusCode(404);
+            }
             return new ResponseResource(true, "berhasil menambah list product palet", $productFilter);
         } catch (\Exception $e) {
             DB::rollBack();
