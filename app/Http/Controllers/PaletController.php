@@ -299,7 +299,7 @@ class PaletController extends Controller
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
                 'category_id' => 'nullable|exists:categories,id',
-                'product_brand_ids' => 'array|nullable',
+                'product_brand_ids' => 'nullable',
                 'product_brand_ids.*' => 'exists:product_brands,id',
                 'warehouse_id' => 'required|exists:warehouses,id',
                 'product_condition_id' => 'required|exists:product_conditions,id',
@@ -381,13 +381,23 @@ class PaletController extends Controller
             }
 
             $brands = $request->input('product_brand_ids');
+
+            // Deteksi array atau string
+            if (!is_array($brands)) {
+                $brands = trim($brands, '"');
+                $brands = explode(',', $brands);
+            }
+
+            // Proses data
             if ($brands) {
                 $updatedBrands = [];
 
+                $brandCurrent = PaletBrand::where('palet_id', $palet->id)->pluck('brand_id')->toArray();
+                $brandToDeletes = array_diff($brandCurrent, $brands);
+                PaletBrand::where('palet_id', $palet->id)->whereIn('brand_id', $brandToDeletes)->delete();
+                
                 foreach ($brands as $brandId) {
                     $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
-
-                    // Gunakan updateOrCreate untuk memperbarui atau membuat data baru jika belum ada
                     $paletBrand = PaletBrand::updateOrCreate(
                         ['palet_id' => $palet->id, 'brand_id' => $brandId],
                         ['palet_brand_name' => $paletBrandName]
