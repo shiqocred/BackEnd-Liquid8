@@ -21,7 +21,7 @@ class PaletFilterController extends Controller
 
         $totalNewPriceWithCategory = $product_filtersbyUser->whereNotNull('new_category_product')->sum('new_price_product');
         $totalOldPriceWithoutCategory = $product_filtersbyUser->whereNull('new_category_product')->sum('old_price_product');
-        $totalOldPriceWithCategory = $product_filtersbyUser->whereNotNull('new_category_product')->sum('new_price_product');
+        $totalOldPriceWithCategory = $product_filtersbyUser->whereNotNull('new_category_product')->sum('old_price_product');
 
         $totalNewPrice = $totalNewPriceWithCategory + $totalOldPriceWithoutCategory;
         
