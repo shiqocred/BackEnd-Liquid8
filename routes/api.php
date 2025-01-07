@@ -189,7 +189,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(
 //=========================================== Inventory ==========================================================
 //product by category,color : Admin,Spv,Team leader,Admin Kasir
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Kasir leader'])->group(function () {
 
    //slow moving product
    //list product r

@@ -23,6 +23,7 @@ use App\Models\Warehouse;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use setasign\Fpdi\Fpdi;
 
 
 class PaletController extends Controller
@@ -144,22 +145,39 @@ class PaletController extends Controller
             // Handle PDF upload
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
-                // Buat nama file unik untuk menghindari konflik
-                $filename = time() . '_' . $file->getClientOriginalName();
 
-                // Simpan file di storage
+                // Check file size (dalam bytes)
+                $fileSize = $file->getSize();
+                $maxSizeWithoutCompression = 100 * 1024; // 100kb
+
+                if ($fileSize > $maxSizeWithoutCompression) {
+                    $pdf = new Fpdi();
+                    $pdf->SetCompression(true);
+
+                    $pageCount = $pdf->setSourceFile($file->path());
+                    for ($i = 1; $i <= $pageCount; $i++) {
+                        $tpl = $pdf->importPage($i);
+                        $pdf->AddPage();
+                        $pdf->useTemplate($tpl);
+                    }
+
+                    $filename = time() . '_compressed_' . $file->getClientOriginalName();
+                } else {
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $pdf = $file;
+                }
+
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-
-                // Simpan path file ke validatedData
                 $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
             } else {
-                $validatedData['file_pdf'] = null; // Jika tidak ada file
+                $validatedData['file_pdf'] = null;
             }
 
             $category = Category::find($request['category_id']) ?: null;
             $warehouse = Warehouse::findOrFail($request['warehouse_id']);
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
+
             // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],
@@ -383,10 +401,10 @@ class PaletController extends Controller
                 $brandCurrent = PaletBrand::where('palet_id', $palet->id)->pluck('brand_id')->toArray();
                 $brandToDeletes = array_diff($brandCurrent, $brands);
                 PaletBrand::where('palet_id', $palet->id)->whereIn('brand_id', $brandToDeletes)->delete();
-                
+
                 foreach ($brands as $brandId) {
                     $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
-                    if(!$paletBrandName){
+                    if (!$paletBrandName) {
                         return (new ResponseResource(false, "Data gagal diperbarui, id brand tidak ada", $brandId))->response()->setStatusCode(500);
                     }
                     $paletBrand = PaletBrand::updateOrCreate(
