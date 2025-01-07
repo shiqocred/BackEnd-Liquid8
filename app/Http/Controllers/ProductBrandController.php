@@ -35,7 +35,7 @@ class ProductBrandController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'brand_name' => 'required|min:3'
+            'brand_name' => 'required'
         ]);
 
         if ($validator->fails()) {
