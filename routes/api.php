@@ -31,6 +31,7 @@ use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
 use App\Http\Controllers\PaletImageController;
 use App\Http\Controllers\PaletProductController;
+use App\Http\Controllers\PpnController;
 use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\ProductBrandController;
 use App\Http\Controllers\ProductBundleController;
@@ -248,6 +249,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
+   
    //filter product bundle - mtc 
    Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
    Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
@@ -430,6 +432,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
    Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
+
+   Route::resource('ppn', PpnController::class);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {
