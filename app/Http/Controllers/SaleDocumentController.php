@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use App\Http\Resources\ResponseResource;
 use App\Models\Buyer;
 use App\Models\Notification;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -150,6 +151,7 @@ class SaleDocumentController extends Controller
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
 
             // Inisialisasi approved dokumen sebagai '0'
+            
             $approved = '0';
 
             if ($request->filled('voucher')) {
@@ -218,7 +220,10 @@ class SaleDocumentController extends Controller
                 'cardbox_unit_price' => $request->cardbox_unit_price ?? 0,
                 'cardbox_total_price' => $request->cardbox_qty * $request->cardbox_unit_price ?? 0,
                 'voucher' => $request->input('voucher'),
-                'approved' => $approved
+                'approved' => $approved,
+                'is_tax' => $request->input('is_tax') ?? 0,
+                'tax' => $request->input('tax') ?? null,
+                'price_after_tax' => $request->input('price_after_tax') ?? null
             ]);
 
             $avgPurchaseBuyer = SaleDocument::where('status_document_sale', 'selesai')
@@ -563,7 +568,7 @@ class SaleDocumentController extends Controller
             ->exists();
 
         if (!$check_approved) {
-            return new ResponseResource(false, "Document is not approved", null);
+            return (new ResponseResource(false, "Document is not approved", null))->response()->setStatusCode(404);
         }
 
         $document_sale = SaleDocument::select(
@@ -610,7 +615,7 @@ class SaleDocumentController extends Controller
             }])->first();
 
         if (!$document_sale) {
-            return new ResponseResource(false, "Sale document tidak ditemukan!", null);
+            return (new ResponseResource(false, "Sale document tidak ditemukan!", null))->response()->setStatusCode(404);
         }
 
         $document_sale->approved = '2';
@@ -622,7 +627,7 @@ class SaleDocumentController extends Controller
 
         $notif = Notification::where('status', 'sale')->where('external_id', $id_sale_document)->first();
         if (!$notif) {
-            return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
+            return (new ResponseResource(false, "Notification tidak tidak ditemukan!", null))->response()->setStatusCode(404);
         }
         $notif->update(['approved' => '2']);
 
@@ -634,7 +639,7 @@ class SaleDocumentController extends Controller
         $sale = Sale::where('id', $id_sale)->where('approved', '1')->first();
 
         if (!$sale) {
-            return new ResponseResource(false, "Product tidak ditemukan!", null);
+            return (new ResponseResource(false, "Product tidak ditemukan!", null))->response()->setStatusCode(404);
         }
 
         $sale->approved = '2';
@@ -663,7 +668,7 @@ class SaleDocumentController extends Controller
             ->first();
 
         if (!$sale) {
-            return new ResponseResource(false, "Product tidak ditemukan!", null);
+            return (new ResponseResource(false, "Product tidak ditemukan!", null))->response()->setStatusCode(404);
         }
 
         $saleDocument = SaleDocument::where('code_document_sale', $sale->code_document_sale)->first();
@@ -740,7 +745,7 @@ class SaleDocumentController extends Controller
         $saleDocument = SaleDocument::where('id', $id_sale_document)->first();
 
         if (!$saleDocument) {
-            return new ResponseResource(false, "Dokumen penjualan tidak ditemukan!", null);
+            return (new ResponseResource(false, "Dokumen penjualan tidak ditemukan!", null))->response()->setStatusCode(404);
         }
 
         // Simpan total harga lama untuk perhitungan amount purchase buyer
@@ -795,7 +800,7 @@ class SaleDocumentController extends Controller
 
             $notif = Notification::where('status', 'sale')->where('external_id', $id_sale_document)->first();
             if (!$notif) {
-                return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
+                return (new ResponseResource(false, "Notification tidak tidak ditemukan!", null))->response()->setStatusCode(404);
             }
             $notif->update(['approved' => '1']);
 
@@ -823,14 +828,14 @@ class SaleDocumentController extends Controller
             return new ResponseResource(true, "Berhasil reject semua diskon", $response);
         } catch (\Exception $e) {
             DB::rollBack();
-            return new ResponseResource(false, "Gagal reject diskon: " . $e->getMessage(), null);
+            return (new ResponseResource(false, "Gagal reject diskon: " . $e->getMessage(), null))->response()->setStatusCode(500);
         }
     }
 
     public function doneApproveDiscount($id_sale_document)
     {
         if (empty($id_sale_document)) {
-            return new ResponseResource(false, "id tidak ada", null);
+            return (new ResponseResource(false, "id tidak ada", null))->response()->setStatusCode(404);
         }
 
         try {
@@ -838,12 +843,12 @@ class SaleDocumentController extends Controller
                 ->update(['approved' => '0']);
 
             if (!$saleDocument) {
-                return new ResponseResource(false, "gagal memperbarui data", null);
+                return (new ResponseResource(false, "gagal memperbarui data", null))->response()->setStatusCode(500);
             }
 
             $notif = Notification::where('status', 'sale')->where('external_id', $id_sale_document)->first();
             if (!$notif) {
-                return new ResponseResource(false, "Notification tidak tidak ditemukan!", null);
+                return (new ResponseResource(false, "Notification tidak tidak ditemukan!", null))->response()->setStatusCode(404);
             }
             $notif->update(['approved' => '2']);
 
@@ -855,4 +860,5 @@ class SaleDocumentController extends Controller
             ], 500);
         }
     }
+
 }
