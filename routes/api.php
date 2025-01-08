@@ -434,6 +434,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
 
    Route::resource('ppn', PpnController::class);
+   Route::put('ppn-set-default', [PpnController::class, 'set_default']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {

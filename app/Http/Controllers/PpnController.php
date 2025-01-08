@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ResponseResource;
 use App\Models\Ppn;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 
 class PpnController extends Controller
@@ -164,6 +165,27 @@ class PpnController extends Controller
                 "Gagal menghapus data PPN",
                 null
             ))->response()->setStatusCode(500);
+        }
+    }
+
+    public function set_default(Request $request, $id)
+    {
+        try {
+            DB::beginTransaction();
+            $updateFalse =  Ppn::query()->update(['is_tax_default' => false]);
+            if (!$updateFalse) {
+                return (new ResponseResource(false, "gagal mereset is_Tax_default", null))->response()->setStatusCode(500);
+            }
+
+            $ppn = Ppn::find($id);
+            $ppn->is_tax_default = true;
+            $ppn->save();
+            DB::commit();
+            return new ResponseResource(true, "berhasil mengupdate default ppn", $ppn);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return (new ResponseResource(false, "gagal update is_Tax_default", null))->response()->setStatusCode(500);
+
         }
     }
 }
