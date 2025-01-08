@@ -108,7 +108,8 @@ class PpnController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'ppn' => 'required|numeric|unique:ppns,ppn,' . $id
+                'ppn' => 'required|numeric|unique:ppns,ppn,' . $id,
+                'is_tax_default' => 'nullable|boolean'
             ]);
 
             if ($validator->fails()) {
@@ -120,7 +121,8 @@ class PpnController extends Controller
             }
 
             $ppn->update([
-                'ppn' => $request->ppn
+                'ppn' => $request->ppn,
+                'is_tax_default' => $request->is_tax_default
             ]);
 
             return new ResponseResource(
