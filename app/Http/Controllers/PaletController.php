@@ -23,6 +23,7 @@ use App\Models\Warehouse;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use setasign\Fpdi\Fpdi;
 
 
 class PaletController extends Controller
@@ -118,12 +119,12 @@ class PaletController extends Controller
             // Validasi request
             $validator = Validator::make($request->all(), [
                 'images' => 'array|nullable',
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
                 'name_palet' => 'required|string',
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
-                'file_pdf' => 'nullable|mimes:pdf|max:2048',
+                'file_pdf' => 'nullable|mimes:pdf|max:5120',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
@@ -139,12 +140,37 @@ class PaletController extends Controller
                 return response()->json($validator->errors(), 422);
             }
 
+            $validatedData = [];
+
             // Handle PDF upload
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
-                $filename = $file->getClientOriginalName();
+
+                // Check file size (dalam bytes)
+                $fileSize = $file->getSize();
+                $maxSizeWithoutCompression = 100 * 1024; // 100kb
+
+                if ($fileSize > $maxSizeWithoutCompression) {
+                    $pdf = new Fpdi();
+                    $pdf->SetCompression(true);
+
+                    $pageCount = $pdf->setSourceFile($file->path());
+                    for ($i = 1; $i <= $pageCount; $i++) {
+                        $tpl = $pdf->importPage($i);
+                        $pdf->AddPage();
+                        $pdf->useTemplate($tpl);
+                    }
+
+                    $filename = time() . '_compressed_' . $file->getClientOriginalName();
+                } else {
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $pdf = $file;
+                }
+
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-                $validatedData['file_pdf'] = $filename;
+                $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
+            } else {
+                $validatedData['file_pdf'] = null;
             }
 
             $category = Category::find($request['category_id']) ?: null;
@@ -280,18 +306,18 @@ class PaletController extends Controller
             // Validasi request
             $validator = Validator::make($request->all(), [
                 'images' => 'array|nullable',
-                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,svg|max:5120',
                 'name_palet' => 'required|string',
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
                 'palet_barcode' => 'required|string|unique:palets,palet_barcode,' . $palet->id,
-                'file_pdf' => 'nullable|mimes:pdf|max:2048',
+                'file_pdf' => 'nullable|mimes:pdf|max:5120',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
                 'category_id' => 'nullable|exists:categories,id',
-                'product_brand_ids' => 'array|nullable',
+                'product_brand_ids' => 'nullable',
                 'product_brand_ids.*' => 'exists:product_brands,id',
                 'warehouse_id' => 'required|exists:warehouses,id',
                 'product_condition_id' => 'required|exists:product_conditions,id',
@@ -307,19 +333,7 @@ class PaletController extends Controller
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
-            // if (!$category) {
-            //     return new ResponseResource(false, "Category ID tidak ditemukan", $request['category_id']);
-            // }
-            // if (!$destination) {
-            //     return new ResponseResource(false, "destination ID tidak ditemukan", $request['destination_id']);
-            // }
-            // if (!$productStatus) {
-            //     return new ResponseResource(false, "productStatus ID tidak ditemukan", $request['product_status_id']);
-            // }
-            // if (!$productCondition) {
-            //     return new ResponseResource(false, "productCondition ID tidak ditemukan", $request['product_condition_id']);
-            // }
-
+            $validatedData = [];
 
             if ($request->hasFile('file_pdf')) {
                 // Hapus file PDF lama jika ada
@@ -330,10 +344,9 @@ class PaletController extends Controller
                 $file = $request->file('file_pdf');
                 $filename = $file->getClientOriginalName();
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-                $palet->file_pdf = $pdfPath;
-                $request['file_pdf'] = $filename;
+                // Simpan path file ke validatedData
+                $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
             }
-
             $palet->update([
                 'name_palet' => $request['name_palet'],
                 'category_palet' => $category->name_category ?? '',
@@ -374,13 +387,26 @@ class PaletController extends Controller
             }
 
             $brands = $request->input('product_brand_ids');
+
+            // Deteksi array atau string
+            if (!is_array($brands)) {
+                $brands = trim($brands, '"');
+                $brands = explode(',', $brands);
+            }
+
+            // Proses data
             if ($brands) {
                 $updatedBrands = [];
 
+                $brandCurrent = PaletBrand::where('palet_id', $palet->id)->pluck('brand_id')->toArray();
+                $brandToDeletes = array_diff($brandCurrent, $brands);
+                PaletBrand::where('palet_id', $palet->id)->whereIn('brand_id', $brandToDeletes)->delete();
+
                 foreach ($brands as $brandId) {
                     $paletBrandName = ProductBrand::findOrFail($brandId)->brand_name;
-
-                    // Gunakan updateOrCreate untuk memperbarui atau membuat data baru jika belum ada
+                    if (!$paletBrandName) {
+                        return (new ResponseResource(false, "Data gagal diperbarui, id brand tidak ada", $brandId))->response()->setStatusCode(500);
+                    }
                     $paletBrand = PaletBrand::updateOrCreate(
                         ['palet_id' => $palet->id, 'brand_id' => $brandId],
                         ['palet_brand_name' => $paletBrandName]
@@ -396,7 +422,7 @@ class PaletController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update palet: ' . $e->getMessage());
-            return new ResponseResource(false, "Data gagal diperbarui", null);
+            return (new ResponseResource(false, "Data gagal diperbarui", null))->response()->setStatusCode(500);
         }
     }
 
@@ -584,5 +610,29 @@ class PaletController extends Controller
             'product_conditions' => $productConditions,
             'product_status' => $productStatus
         ]);
+    }
+
+    public function delete_pdf_palet($id_palet)
+    {
+        $pdf_palet = Palet::find($id_palet);
+
+        if (!$pdf_palet) {
+            return (new ResponseResource(false, "ID palet tidak ditemukan", []))
+                ->response()
+                ->setStatusCode(404);
+        }
+
+        $filePath = str_replace('/storage/', '', parse_url($pdf_palet->file_pdf, PHP_URL_PATH));
+
+        if ($filePath && Storage::exists($filePath)) {
+            Storage::delete($filePath);
+        }
+
+        $pdf_palet->file_pdf = null;
+        $pdf_palet->save();
+
+        return (new ResponseResource(true, "Berhasil menghapus PDF", $pdf_palet))
+            ->response()
+            ->setStatusCode(200);
     }
 }

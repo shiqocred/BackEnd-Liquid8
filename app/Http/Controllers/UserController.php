@@ -20,7 +20,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $query = $request->input('q');
-    
+
         $users = User::query()
             ->withTotalScans()
             ->totalScanToday()
@@ -31,11 +31,11 @@ class UserController extends Controller
             ->latest()
             ->with('role')
             ->paginate(33);
-    
+
         $users->makeHidden(['format_barcode', 'email_verified_at']);
         return new ResponseResource(true, "List users", $users);
     }
-    
+
 
     public function show(Request $request, User $user)
     {
@@ -282,5 +282,24 @@ class UserController extends Controller
         return new ResponseResource(true, "list user berformat barcode", UserFormatResource::collection($results));
     }
 
-   
+    public function wmsScans(Request $request)
+    {
+        $userAuth = auth()->user();
+        $userAuth['role_name'] = $userAuth->role->role_name;
+
+        if (in_array($userAuth->role_name, ['Admin', 'Spv', 'Team leader'])) {
+            $users = User::query()
+                ->totalScanToday()
+                ->paginate(33);
+            $users->makeHidden(['role', 'remember_token', 'email_verified_at', 'name', 'api_key',
+            'role_id','created_at','updated_at', 'format_barcode_id', 'format_barcode_name', 'format_barcode', 'id', 'email']);
+
+            return new ResponseResource(true, "List users", $users);
+        } else {
+            // return (new ResponseResource(false, "Anda tidak berhak mengakses ini", []))
+            // ->response()
+            // ->setStatusCode(403);
+            return new ResponseResource(false, "Anda tidak berhak mengakses ini", []);
+        }
+    }
 }

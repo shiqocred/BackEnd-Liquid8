@@ -73,18 +73,17 @@ class ProductApproveController extends Controller
         $userId = auth()->id();
 
         $oldBarcode = $request->input('old_barcode_product');
-        $ttlRedis = 3;
-        $throttleTtl = 4;
+        $ttlRedis = 4;
+        $throttleTtl = 7;
         $redisKey = "barcode:$oldBarcode";
         $rateLimiter = app(\Illuminate\Cache\RateLimiter::class);
         $throttleKey = "throttle:$oldBarcode";
         if ($rateLimiter->tooManyAttempts($throttleKey, 1)) {
-            return new DuplicateRequestResource(
+            return response()->json(new ResponseResource(
                 false,
-                "throttle - barcode awal di scan lebih dari 1x dalam waktu $throttleTtl detik",
-                $oldBarcode,
-                429
-            );
+                "redis - barcode awal di scan lebih dari 1x dalam waktu $ttlRedis detik",
+                $oldBarcode
+            ), 429);
         }
         $rateLimiter->hit($throttleKey, $throttleTtl);
         $luaScript = '

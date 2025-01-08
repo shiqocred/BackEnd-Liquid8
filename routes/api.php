@@ -31,6 +31,7 @@ use App\Http\Controllers\PaletController;
 use App\Http\Controllers\PaletFilterController;
 use App\Http\Controllers\PaletImageController;
 use App\Http\Controllers\PaletProductController;
+use App\Http\Controllers\PpnController;
 use App\Http\Controllers\ProductApproveController;
 use App\Http\Controllers\ProductBrandController;
 use App\Http\Controllers\ProductBundleController;
@@ -189,7 +190,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(
 //=========================================== Inventory ==========================================================
 //product by category,color : Admin,Spv,Team leader,Admin Kasir
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir,Kasir leader'])->group(function () {
 
    //slow moving product
    //list product r
@@ -248,6 +249,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Admin Kasir
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer'])->group(function () {
+   
    //filter product bundle - mtc 
    Route::get('bundle-scans/filter_product', [ProductFilterController::class, 'listFilterScans']);
    Route::post('bundle-scans/filter_product/{id}', [ProductBundleController::class, 'addFilterScan']);
@@ -430,6 +432,8 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('delete-all-new-products', [NewProductController::class, 'deleteAll']);
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
    Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
+
+   Route::resource('ppn', PpnController::class);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {
@@ -456,6 +460,10 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
    Route::get('notif_widget', [NotificationController::class, 'notifWidget']);
 });
 
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
+   Route::get('wms-scan', [UserController::class, 'wmsScans']);
+});
+
 //collab mtc
 Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(function () {
    //=========================================== Api For Bulky ==========================================================
@@ -472,6 +480,7 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    Route::put('palets/{palet}', [PaletController::class, 'update']);
    Route::post('addPalet', [PaletController::class, 'store']);
    Route::delete('palets/{palet}', [PaletController::class, 'destroy']);
+   Route::delete('palet_pdf/{id_palet}', [PaletController::class, 'delete_pdf_palet']);
 
    //get
    Route::get('productBycategory', [NewProductController::class, 'getByCategory']);

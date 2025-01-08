@@ -15,7 +15,6 @@ use App\Models\Product_old;
 use App\Models\PaletProduct;
 use App\Models\RiwayatCheck;
 use Illuminate\Http\Request;
-use App\Models\RepairProduct;
 use App\Models\Product_Bundle;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -31,8 +30,8 @@ class GenerateController extends Controller
 {
     public function processExcelFiles(Request $request)
     {
-        set_time_limit(600);
-        ini_set('memory_limit', '1024M');
+        set_time_limit(3600);
+        ini_set('memory_limit', '2048M');
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls',
@@ -118,7 +117,6 @@ class GenerateController extends Controller
             $this->insertChunk($dataToInsert);
             $rowCount += count($dataToInsert);
         }
-
         return $rowCount;
     }
 

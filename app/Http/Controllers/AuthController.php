@@ -21,8 +21,13 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             $user['role_name'] = $user->role->role_name;
-            $user->makeHidden('role');
+            $user->makeHidden(['role', 'remember_token', 'email_verified_at']);
             $token = $user->createToken('user')->plainTextToken;
+            if($user->role_name == 'Admin' || $user->role_name == 'Spv' || $user->role_name == 'Team leader'){
+                $user['check_scan'] = 'true';
+            }else{
+                $user['check_scan'] = 'false';
+            }
             return new ResponseResource(true, "berhasil login", [$token, $user]);
         }
 

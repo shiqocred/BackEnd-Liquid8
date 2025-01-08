@@ -28,6 +28,7 @@ class SaleController extends Controller
 
         $allSales = Sale::where('status_sale', 'proses')->where('user_id', $userId)->get();
         $totalSale = $allSales->sum('product_price_sale');
+
         $sale = Sale::where('status_sale', 'proses')->where('user_id', $userId)->latest()->paginate(50);
 
         $saleDocument = SaleDocument::where('status_document_sale', 'proses')->where('user_id', $userId)->first();
