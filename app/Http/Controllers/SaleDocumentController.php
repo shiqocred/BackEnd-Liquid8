@@ -151,9 +151,9 @@ class SaleDocumentController extends Controller
             $sales = Sale::where('code_document_sale', $saleDocument->code_document_sale)->get();
 
             // Inisialisasi approved dokumen sebagai '0'
-            
+
             $approved = '0';
-            if ($request['voucher']) {
+            if ($request->filled('voucher')) {
                 foreach ($sales as $sale) {
                     if ($sale->display_price > $sale->product_price_sale) {
                         // Update hanya sales yang memenuhi kondisi
@@ -164,6 +164,7 @@ class SaleDocumentController extends Controller
                         $sale->update(['approved' => '0']);
                     }
                 }
+            $approved = '1';
             } else {
                 foreach ($sales as $sale) {
                     if ($sale->display_price > $sale->product_price_sale) {
@@ -254,7 +255,7 @@ class SaleDocumentController extends Controller
             $resource = new ResponseResource(false, "Data gagal disimpan!", $e->getMessage());
             return $resource->response()->setStatusCode(500);
         }
-
+        sleep(10);
         return $resource->response();
     }
 
@@ -859,5 +860,4 @@ class SaleDocumentController extends Controller
             ], 500);
         }
     }
-
 }
