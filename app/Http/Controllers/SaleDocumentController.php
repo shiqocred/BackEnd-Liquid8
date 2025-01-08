@@ -153,8 +153,7 @@ class SaleDocumentController extends Controller
             // Inisialisasi approved dokumen sebagai '0'
             
             $approved = '0';
-
-            if ($request->filled('voucher')) {
+            if ($request['voucher']) {
                 foreach ($sales as $sale) {
                     if ($sale->display_price > $sale->product_price_sale) {
                         // Update hanya sales yang memenuhi kondisi
