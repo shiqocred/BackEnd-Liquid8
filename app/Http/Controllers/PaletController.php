@@ -197,6 +197,7 @@ class PaletController extends Controller
                 'warehouse_id' => $request['warehouse_id'],
                 'product_condition_id' => $request['product_condition_id'],
                 'product_status_id' => $request['product_status_id'],
+                'discount' => $request['discount'],
             ]);
 
 
@@ -323,6 +324,7 @@ class PaletController extends Controller
                 'warehouse_id' => 'required|exists:warehouses,id',
                 'product_condition_id' => 'required|exists:product_conditions,id',
                 'product_status_id' => 'required|exists:product_statuses,id',
+                'discount' => 'nullable'
             ]);
 
             if ($validator->fails()) {
@@ -365,6 +367,7 @@ class PaletController extends Controller
                 'warehouse_id' => $request['warehouse_id'],
                 'product_condition_id' => $request['product_condition_id'],
                 'product_status_id' => $request['product_status_id'],
+                'discount' => $request['discount']
             ]);
 
             // Handle multiple image uploads
@@ -653,9 +656,7 @@ class PaletController extends Controller
             foreach ($paletBrands as $paletBrand) {
                 $paletBrand->delete();
             }
-
             $palet->delete();
-
             DB::commit();
             return new ResponseResource(true, "palet berhasil dihapus", null);
         } catch (\Exception $e) {
