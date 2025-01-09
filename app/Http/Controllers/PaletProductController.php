@@ -40,7 +40,7 @@ class PaletProductController extends Controller
         DB::beginTransaction();
         try {
             $userId = auth()->id();
-            $product_filters = PaletFilter::where('user_id', $userId)->get();  
+            $product_filters = PaletFilter::where('user_id', $userId)->get();
 
             if ($product_filters->isEmpty()) {
                 return new ResponseResource(false, "Tidak ada produk filter yang tersedia saat ini", $product_filters);
@@ -71,8 +71,8 @@ class PaletProductController extends Controller
                     'new_category_product' => $product->new_category_product,
                     'new_tag_product' => $product->new_tag_product,
                     'new_discount' => $product->new_discount,
-                    'display_price'=> $product->display_price,
-                    'created_at' => now(),  
+                    'display_price' => $product->display_price,
+                    'created_at' => now(),
                     'updated_at' => now(),
                     'type' => $product->type,
                     'user_id' => $userId
@@ -145,10 +145,31 @@ class PaletProductController extends Controller
 
 
             $palet = Palet::findOrFail($paletProduct->palet_id);
-            $palet->update([
-                'total_price_palet' => $palet->total_price_palet - $paletProduct->new_price_product,
-                'total_product_palet' => $palet->total_product_palet - 1,
-            ]);
+            $paletProductAll = PaletProduct::where('palet_id', $palet->id)->get();
+
+            if ($palet->discount !== null && $palet->discount !== 0) {
+                // Hitung total harga produk lama tanpa diskon
+                $priceOldWithoutDiscount = $paletProductAll->sum('old_price_product');
+
+                // Kurangi harga produk yang dihapus
+                $countFixedPrice = $priceOldWithoutDiscount - $paletProduct->old_price_product;
+
+                // Diskon palet
+                $discountPalet = $palet->discount;
+                $newTotalPricePalet = $countFixedPrice * (1 - $discountPalet / 100);
+
+                $palet->update([
+                    'total_price_palet' => $newTotalPricePalet,
+                    'total_product_palet' => max($palet->total_product_palet - 1, 0),
+                ]);
+            } else {
+                $palet->update([
+                    'total_price_palet' => max($palet->total_price_palet - $paletProduct->new_price_product, 0),
+                    'total_product_palet' => max($palet->total_product_palet - 1, 0),
+                ]);
+            }
+
+
 
             $paletProduct->delete();
 
@@ -187,11 +208,25 @@ class PaletProductController extends Controller
                 'user_id' => $userId
             ]);
 
-            $palet->update([
-                'total_price_palet' => $palet->total_price_palet + $productPalet->new_price_product,
-                'total_product_palet' => $palet->total_product_palet + 1,
-            ]);
+            $paletProductAll = PaletProduct::where('palet_id', $palet->id)->get();
 
+            if ($palet->discount !== null && $palet->discount !== 0) {
+                $priceOldWithoutDiscount = $paletProductAll->sum('old_price_product');
+
+                // Diskon palet
+                $discountPalet = $palet->discount;
+                $newTotalPricePalet = $priceOldWithoutDiscount * (1 - $discountPalet / 100);
+
+                $palet->update([
+                    'total_price_palet' => $newTotalPricePalet,
+                    'total_product_palet' => max($palet->total_product_palet + 1, 0),
+                ]);
+            } else {
+                $palet->update([
+                    'total_price_palet' => max($palet->total_price_palet + $new_product->new_price_product, 0),
+                    'total_product_palet' => max($palet->total_product_palet + 1, 0),
+                ]);
+            }
             $new_product->delete();
 
             DB::commit();
