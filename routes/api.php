@@ -179,7 +179,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
    Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
 
-
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
@@ -311,6 +310,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->gr
    Route::delete('product-palet/{paletProduct}', [PaletProductController::class, 'destroy']);
 
    Route::get('palet-select', [PaletController::class, 'palet_select']);
+   Route::delete('palet-delete/{palet}', [PaletController::class, 'destroy_with_product']);
+
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
