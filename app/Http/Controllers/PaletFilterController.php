@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductBkl;
 use App\Models\PaletFilter;
 use App\Models\New_product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\StagingProduct;
 
 class PaletFilterController extends Controller
 {
@@ -54,6 +56,8 @@ class PaletFilterController extends Controller
         $userId = auth()->id();
         try {
             $product = New_product::findOrFail($id);
+            $product = StagingProduct::findOrFail($id);
+
             $product->user_id = $userId;
             $productFilter = PaletFilter::create($product->toArray());
             if ($product->delete()) {

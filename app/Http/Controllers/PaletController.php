@@ -178,6 +178,8 @@ class PaletController extends Controller
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
+            sleep(10);
+
             // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],

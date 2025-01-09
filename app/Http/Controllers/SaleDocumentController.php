@@ -164,7 +164,7 @@ class SaleDocumentController extends Controller
                         $sale->update(['approved' => '0']);
                     }
                 }
-            $approved = '1';
+                
             } else {
                 foreach ($sales as $sale) {
                     if ($sale->display_price > $sale->product_price_sale) {
@@ -172,10 +172,13 @@ class SaleDocumentController extends Controller
                         $approved = '1';
                     } else {
                         $sale->update(['approved' => '0']);
+                        $approved = '0';
                     }
                 }
             }
-
+            if($request->input('voucher') !== '0'){
+                $approved = '1';
+            }
             // Update dokumen dan buat notifikasi jika ada sales yang approved
             if ($approved === '1') {
                 Notification::create([
@@ -255,7 +258,6 @@ class SaleDocumentController extends Controller
             $resource = new ResponseResource(false, "Data gagal disimpan!", $e->getMessage());
             return $resource->response()->setStatusCode(500);
         }
-        sleep(10);
         return $resource->response();
     }
 
