@@ -134,6 +134,7 @@ class PaletController extends Controller
                 'warehouse_id' => 'required|exists:warehouses,id',
                 'product_condition_id' => 'required|exists:product_conditions,id',
                 'product_status_id' => 'required|exists:product_statuses,id',
+                'discount' => 'nullable'
             ]);
 
             if ($validator->fails()) {
