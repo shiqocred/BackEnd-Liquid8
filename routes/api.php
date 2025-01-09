@@ -179,13 +179,16 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
    // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
    Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
 
-   Route::resource('ppn', PpnController::class);
-   Route::put('ppn-set-default/{id}', [PpnController::class, 'set_default']);
+
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
    //untuk spv me approve staging ke inventory
    Route::post('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
+
+   //ppn
+   Route::resource('ppn', PpnController::class);
+   Route::put('ppn-set-default/{id}', [PpnController::class, 'set_default']);
 });
 
 //end staging =========================================== Staging ==========================================================
