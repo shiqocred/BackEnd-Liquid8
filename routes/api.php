@@ -178,6 +178,9 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
 
    // Route::post('batchToLpr', [StagingProductController::class, 'batchToLpr']);
    Route::delete('deleteToLprBatch', [StagingProductController::class, 'deleteToLprBatch']);
+
+   Route::resource('ppn', PpnController::class);
+   Route::put('ppn-set-default/{id}', [PpnController::class, 'set_default']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
@@ -433,8 +436,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin'])->group(function () {
    Route::delete('delete-all-documents', [DocumentController::class, 'deleteAll']);
    Route::delete('color_tags2/{color_tags2}', [ColorTag2Controller::class, 'destroy']);
 
-   Route::resource('ppn', PpnController::class);
-   Route::put('ppn-set-default/{id}', [PpnController::class, 'set_default']);
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leader,Admin Kasir'])->group(function () {
