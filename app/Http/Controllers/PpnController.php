@@ -97,8 +97,9 @@ class PpnController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            // Cari data PPN berdasarkan ID
             $ppn = Ppn::find($id);
-
+    
             if (!$ppn) {
                 return (new ResponseResource(
                     false,
@@ -106,12 +107,13 @@ class PpnController extends Controller
                     null
                 ))->response()->setStatusCode(404);
             }
-
+    
+            // Validasi input
             $validator = Validator::make($request->all(), [
                 'ppn' => 'required|numeric|unique:ppns,ppn,' . $id,
                 'is_tax_default' => 'nullable|boolean'
             ]);
-
+    
             if ($validator->fails()) {
                 return (new ResponseResource(
                     false,
@@ -119,12 +121,17 @@ class PpnController extends Controller
                     $validator->errors()
                 ))->response()->setStatusCode(422);
             }
-
+    
+            if ($request->is_tax_default) {
+                Ppn::query()->update(['is_tax_default' => false]);
+            }
+    
+            // Update data PPN dengan nilai baru
             $ppn->update([
                 'ppn' => $request->ppn,
-                'is_tax_default' => $request->is_tax_default
+                'is_tax_default' => $request->is_tax_default ?? false, 
             ]);
-
+    
             return new ResponseResource(
                 true,
                 "Berhasil mengupdate data PPN",
@@ -134,10 +141,11 @@ class PpnController extends Controller
             return (new ResponseResource(
                 false,
                 "Gagal mengupdate data PPN",
-                null
+                $e->getMessage() 
             ))->response()->setStatusCode(500);
         }
     }
+    
     /**
      * Remove the specified resource from storage.
      */
