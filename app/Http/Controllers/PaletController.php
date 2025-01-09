@@ -179,8 +179,6 @@ class PaletController extends Controller
             $productStatus = ProductStatus::findOrFail($request['product_status_id']);
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
-            sleep(10);
-
             // Create Palet
             $palet = Palet::create([
                 'name_palet' => $request['name_palet'],
@@ -637,5 +635,33 @@ class PaletController extends Controller
         return (new ResponseResource(true, "Berhasil menghapus PDF", $pdf_palet))
             ->response()
             ->setStatusCode(200);
+    }
+
+    public function destroy_with_product(Palet $palet)
+    {
+        DB::beginTransaction();
+        try {
+            $palet->paletProducts()->delete();
+
+            $oldImages = PaletImage::where('palet_id', $palet->id)->get();
+            foreach ($oldImages as $oldImage) {
+                Storage::disk('public')->delete('product-images/' . $oldImage->filename);
+                $oldImage->delete();
+            }
+
+            $paletBrands = PaletBrand::where('palet_id', $palet->id)->get();
+            foreach ($paletBrands as $paletBrand) {
+                $paletBrand->delete();
+            }
+
+            $palet->delete();
+
+            DB::commit();
+            return new ResponseResource(true, "palet berhasil dihapus", null);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error("Gagal menghapus palet: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus palet', 'error' => $e->getMessage()], 500);
+        }
     }
 }
