@@ -3,27 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Palet;
+use setasign\Fpdi\Fpdi;
 use App\Models\Category;
+use App\Models\Warehouse;
+use App\Models\PaletBrand;
 use App\Models\PaletImage;
 use App\Models\Destination;
 use App\Models\New_product;
 use App\Models\PaletFilter;
 use App\Models\PaletProduct;
+use App\Models\ProductBrand;
 use Illuminate\Http\Request;
 use App\Models\ProductStatus;
 use App\Models\StagingProduct;
 use App\Models\ProductCondition;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\ResponseResource;
-use App\Models\PaletBrand;
-use App\Models\ProductBrand;
-use App\Models\Warehouse;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use setasign\Fpdi\Fpdi;
 
 
 class PaletController extends Controller
@@ -143,36 +144,52 @@ class PaletController extends Controller
 
             $validatedData = [];
 
-            // Handle PDF upload
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
-
-                // Check file size (dalam bytes)
                 $fileSize = $file->getSize();
-                $maxSizeWithoutCompression = 100 * 1024; // 100kb
-
-                if ($fileSize > $maxSizeWithoutCompression) {
-                    $pdf = new Fpdi();
-                    $pdf->SetCompression(true);
-
-                    $pageCount = $pdf->setSourceFile($file->path());
-                    for ($i = 1; $i <= $pageCount; $i++) {
-                        $tpl = $pdf->importPage($i);
-                        $pdf->AddPage();
-                        $pdf->useTemplate($tpl);
+                $maxSize = 100 * 1024; // 100KB
+            
+                if ($fileSize > $maxSize) {
+                    try {
+                        // 1. Siapkan FPDI
+                        $pdf = new Fpdi();
+                        $pdf->SetCompression(true);
+                        
+                        // 2. Proses kompresi 
+                        $pageCount = $pdf->setSourceFile($file->path());
+                        for ($i = 1; $i <= $pageCount; $i++) {
+                            $tpl = $pdf->importPage($i);
+                            $size = $pdf->getTemplateSize($tpl);
+                            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                            $pdf->useTemplate($tpl, null, null, null, null, true);
+                        }
+                        
+                        // 3. Simpan ke temporary file
+                        $tempFile = tempnam(sys_get_temp_dir(), 'temp_pdf_');
+                        $pdf->Output('F', $tempFile);
+                        
+                        // 4. Pindahkan ke storage
+                        $filename = time() . '_compressed_' . $file->getClientOriginalName();
+                        $pdfPath = File::get($tempFile);
+                        Storage::disk('public')->put('palets_pdfs/' . $filename, $pdfPath);
+                        
+                        unlink($tempFile); // Hapus temporary file
+                        
+                        $pdfPath = 'palets_pdfs/' . $filename;
+                        
+                    } catch (\Exception $e) {
+                        return back()->with('error', 'Gagal mengompresi PDF');
                     }
-
-                    $filename = time() . '_compressed_' . $file->getClientOriginalName();
                 } else {
                     $filename = time() . '_' . $file->getClientOriginalName();
-                    $pdf = $file;
+                    $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
                 }
-
-                $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
+                
                 $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
             } else {
                 $validatedData['file_pdf'] = null;
             }
+
 
             $category = Category::find($request['category_id']) ?: null;
             $warehouse = Warehouse::findOrFail($request['warehouse_id']);
@@ -283,6 +300,9 @@ class PaletController extends Controller
                     ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             }
         }]);
+        if($palet->discount == null) {
+            $palet->discount = 0;
+        }
         $palet->total_harga_lama = $palet->paletProducts->sum('old_price_product');
 
         return new ResponseResource(true, "list product", $palet);
