@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Palet;
-use setasign\Fpdi\Fpdi;
 use App\Models\Category;
 use App\Models\Warehouse;
 use App\Models\PaletBrand;
 use App\Models\PaletImage;
-use App\Models\Destination;
 use App\Models\New_product;
 use App\Models\PaletFilter;
 use App\Models\PaletProduct;
@@ -19,12 +17,13 @@ use App\Models\StagingProduct;
 use App\Models\ProductCondition;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\ResponseResource;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 
 class PaletController extends Controller
@@ -332,7 +331,7 @@ class PaletController extends Controller
 
                 // Simpan path file ke validatedData
                 $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
-            }else{
+            } else {
                 $validatedData['file_pdf'] = $palet->file_pdf;
             }
             $palet->update([
@@ -469,15 +468,20 @@ class PaletController extends Controller
     }
 
 
-    public function exportpaletsDetail($id)
+    public function exportpaletsDetail(Request $request, $id)
     {
+        if (!in_array($request->input('type'), ['pdf', 'excel'])) {
+            return new ResponseResource(false, "Invalid export type", null);
+        }
+
         // Meningkatkan batas waktu eksekusi dan memori
         set_time_limit(300);
         ini_set('memory_limit', '512M');
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
+        $palet = Palet::with('paletProducts')->where('id', $id)->first();
+        if (!$palet) {
+            return new ResponseResource(false, "Palet not found", null);
+        }
 
         $paletHeaders = [
             'id',
@@ -512,16 +516,43 @@ class PaletController extends Controller
             'display_price'
         ];
 
-        $columnIndex = 1;
-        foreach ($paletHeaders as $header) {
-            $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
-            $columnIndex++;
+        $fileName = 'Palet_' . $palet->palet_barcode . '.' . ($request->input('type') === 'pdf' ? 'pdf' : 'xlsx');
+        $publicPath = 'exports';
+        $filePath = public_path($publicPath) . '/' . $fileName;
+
+        if (!file_exists(public_path($publicPath))) {
+            mkdir(public_path($publicPath), 0777, true);
         }
 
-        $rowIndex = 2;
+        if ($request->input('type') === 'pdf') {
+            // Gunakan Facade PDF
+            $pdf = Pdf::loadView('exports.palet-detail', [
+                'palet' => $palet,
+                'paletHeaders' => $paletHeaders,
+                'paletProductsHeaders' => $paletProductsHeaders
+            ]);
 
-        $palet = Palet::with('paletProducts')->where('id', $id)->first();
-        if ($palet) {
+            $fileName = 'Palet_' . $palet->palet_barcode . '.pdf';
+            $publicPath = 'exports';
+            $filePath = public_path($publicPath) . '/' . $fileName;
+
+            if (!file_exists(public_path($publicPath))) {
+                mkdir(public_path($publicPath), 0777, true);
+            }
+
+            $pdf->save($filePath);
+            $downloadUrl = url($publicPath . '/' . $fileName);
+        } else {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            $columnIndex = 1;
+            foreach ($paletHeaders as $header) {
+                $sheet->setCellValueByColumnAndRow($columnIndex, 1, $header);
+                $columnIndex++;
+            }
+
+            $rowIndex = 2;
             $columnIndex = 1;
 
             foreach ($paletHeaders as $header) {
@@ -540,7 +571,7 @@ class PaletController extends Controller
 
             if ($palet->paletProducts->isNotEmpty()) {
                 foreach ($palet->paletProducts as $productPalet) {
-                    $productColumnIndex = 1; // Mulai dari kolom pertama
+                    $productColumnIndex = 1;
                     foreach ($paletProductsHeaders as $header) {
                         $sheet->setCellValueByColumnAndRow($productColumnIndex, $rowIndex, $productPalet->$header);
                         $productColumnIndex++;
@@ -548,27 +579,12 @@ class PaletController extends Controller
                     $rowIndex++;
                 }
             }
-            $rowIndex++;
-        } else {
-            $sheet->setCellValueByColumnAndRow(1, 1, 'No data found');
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save($filePath);
         }
 
-        // Menyimpan file Excel
-        $writer = new Xlsx($spreadsheet);
-        $fileName = 'exportPalet_' . $palet->name_palet . '.xlsx';
-        $publicPath = 'exports';
-        $filePath = public_path($publicPath) . '/' . $fileName;
-
-        // Membuat direktori exports jika belum ada
-        if (!file_exists(public_path($publicPath))) {
-            mkdir(public_path($publicPath), 0777, true);
-        }
-
-        $writer->save($filePath);
-
-        // Mengembalikan URL untuk mengunduh file
         $downloadUrl = url($publicPath . '/' . $fileName);
-
         return new ResponseResource(true, "unduh", $downloadUrl);
     }
 
