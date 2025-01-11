@@ -84,7 +84,6 @@ class PaletController extends Controller
 
     public function index(Request $request)
     {
-
         $query = $request->input('q');
         $palets = Palet::latest()
             ->where(function ($queryBuilder) use ($query) {
@@ -125,7 +124,7 @@ class PaletController extends Controller
                 'category_palet' => 'nullable|string',
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
-                'file_pdf' => 'nullable|mimes:pdf|max:5120',
+                'file_pdf' => 'nullable|mimes:pdf|max:100',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
@@ -146,50 +145,12 @@ class PaletController extends Controller
 
             if ($request->hasFile('file_pdf')) {
                 $file = $request->file('file_pdf');
-                $fileSize = $file->getSize();
-                $maxSize = 100 * 1024; // 100KB
-            
-                if ($fileSize > $maxSize) {
-                    try {
-                        // 1. Siapkan FPDI
-                        $pdf = new Fpdi();
-                        $pdf->SetCompression(true);
-                        
-                        // 2. Proses kompresi 
-                        $pageCount = $pdf->setSourceFile($file->path());
-                        for ($i = 1; $i <= $pageCount; $i++) {
-                            $tpl = $pdf->importPage($i);
-                            $size = $pdf->getTemplateSize($tpl);
-                            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                            $pdf->useTemplate($tpl, null, null, null, null, true);
-                        }
-                        
-                        // 3. Simpan ke temporary file
-                        $tempFile = tempnam(sys_get_temp_dir(), 'temp_pdf_');
-                        $pdf->Output('F', $tempFile);
-                        
-                        // 4. Pindahkan ke storage
-                        $filename = time() . '_compressed_' . $file->getClientOriginalName();
-                        $pdfPath = File::get($tempFile);
-                        Storage::disk('public')->put('palets_pdfs/' . $filename, $pdfPath);
-                        
-                        unlink($tempFile); // Hapus temporary file
-                        
-                        $pdfPath = 'palets_pdfs/' . $filename;
-                        
-                    } catch (\Exception $e) {
-                        return back()->with('error', 'Gagal mengompresi PDF');
-                    }
-                } else {
-                    $filename = time() . '_' . $file->getClientOriginalName();
-                    $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
-                }
-                
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
                 $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
             } else {
                 $validatedData['file_pdf'] = null;
             }
-
 
             $category = Category::find($request['category_id']) ?: null;
             $warehouse = Warehouse::findOrFail($request['warehouse_id']);
@@ -300,7 +261,7 @@ class PaletController extends Controller
                     ->orWhere('new_tag_product', 'LIKE', '%' . $query . '%');
             }
         }]);
-        if($palet->discount == null) {
+        if ($palet->discount == null) {
             $palet->discount = 0;
         }
         $palet->total_harga_lama = $palet->paletProducts->sum('old_price_product');
@@ -334,7 +295,7 @@ class PaletController extends Controller
                 'total_price_palet' => 'required|numeric',
                 'total_product_palet' => 'required|integer',
                 'palet_barcode' => 'required|string|unique:palets,palet_barcode,' . $palet->id,
-                'file_pdf' => 'nullable|mimes:pdf|max:5120',
+                'file_pdf' => 'nullable|mimes:pdf|max:100',
                 'description' => 'nullable|string',
                 'is_active' => 'boolean',
                 'is_sale' => 'boolean',
@@ -357,18 +318,22 @@ class PaletController extends Controller
             $productCondition = ProductCondition::findOrFail($request['product_condition_id']);
 
             $validatedData = [];
-
             if ($request->hasFile('file_pdf')) {
-                // Hapus file PDF lama jika ada
-                if ($palet->file_pdf) {
+                // Cek jika file yang dikirim berbeda dengan file lama
+                if ($palet->file_pdf && $palet->file_pdf !== $request->file('file_pdf')->getClientOriginalName()) {
+                    // Hapus file PDF lama jika ada dan nama file berbeda
                     Storage::disk('public')->delete('palets_pdfs/' . $palet->file_pdf);
                 }
 
+                // Ambil file baru dan simpan
                 $file = $request->file('file_pdf');
                 $filename = $file->getClientOriginalName();
                 $pdfPath = $file->storeAs('palets_pdfs', $filename, 'public');
+
                 // Simpan path file ke validatedData
                 $validatedData['file_pdf'] = asset('storage/' . $pdfPath);
+            }else{
+                $validatedData['file_pdf'] = $palet->file_pdf;
             }
             $palet->update([
                 'name_palet' => $request['name_palet'],
@@ -390,7 +355,6 @@ class PaletController extends Controller
                 'discount' => $request['discount']
             ]);
 
-            // Handle multiple image uploads
             if ($request->hasFile('images')) {
                 $oldImages = PaletImage::where('palet_id', $palet->id)->get();
                 foreach ($oldImages as $oldImage) {
@@ -449,7 +413,6 @@ class PaletController extends Controller
             return (new ResponseResource(false, "Data gagal diperbarui", null))->response()->setStatusCode(500);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
@@ -524,6 +487,11 @@ class PaletController extends Controller
             'total_product_palet',
             'palet_barcode',
             'total_harga_lama',
+            'is_sale',
+            'warehouse_name',
+            'product_condition_name',
+            'product_status_name',
+            'discount'
         ];
 
         $paletProductsHeaders = [
