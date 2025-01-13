@@ -15,7 +15,7 @@ class AuthController extends Controller
         $loginField = filter_var($request->input('email_or_username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
         $credentials = [
             $loginField => $request->input('email_or_username'),
-            'password' => $request->input('password') 
+            'password' => $request->input('password')
         ];
 
         if (Auth::attempt($credentials)) {
@@ -23,9 +23,12 @@ class AuthController extends Controller
             $user['role_name'] = $user->role->role_name;
             $user->makeHidden(['role', 'remember_token', 'email_verified_at']);
             $token = $user->createToken('user')->plainTextToken;
-            if($user->role_name == 'Admin' || $user->role_name == 'Spv' || $user->role_name == 'Team leader'){
+            if (
+                $user->role_name == 'Admin' || $user->role_name == 'Spv' || $user->role_name == 'Team leader'
+                || $user->role_name === 'Admin Kasir' || $user->role_name === 'Kasir leader'
+            ) {
                 $user['check_scan'] = 'true';
-            }else{
+            } else {
                 $user['check_scan'] = 'false';
             }
             return new ResponseResource(true, "berhasil login", [$token, $user]);
