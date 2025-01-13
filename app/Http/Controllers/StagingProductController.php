@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ProductsExportCategory;
-use App\Http\Resources\ResponseResource;
+use Carbon\Carbon;
+use App\Models\Sale;
+use App\Models\User;
 use App\Models\Category;
 use App\Models\Document;
-use App\Models\FilterStaging;
+use App\Models\Color_tag;
 use App\Models\New_product;
 use App\Models\Notification;
-use App\Models\ProductApprove;
 use App\Models\RiwayatCheck;
+use Illuminate\Http\Request;
+use App\Models\FilterStaging;
+use GuzzleHttp\Psr7\Response;
+use App\Models\ProductApprove;
 use App\Models\StagingApprove;
 use App\Models\StagingProduct;
-use App\Models\Color_tag;
-use App\Models\User;
-use Carbon\Carbon;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductsExportCategory;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Http\Resources\ResponseResource;
+use Illuminate\Support\Facades\Validator;
 
 class StagingProductController extends Controller
 {
@@ -539,12 +540,8 @@ class StagingProductController extends Controller
             $sources[] = 'Product-Inventory';
         }
 
-        if (StagingApprove::where('new_barcode_product', $barcode)->exists()) {
-            $sources[] = 'Staging-Approve';
-        }
-
-        if (FilterStaging::where('new_barcode_product', $barcode)->exists()) {
-            $sources[] = 'Filter-Staging';
+        if (Sale::where('product_barcode_sale', $barcode)->exists()) {
+            $sources[] = 'sale';
         }
 
         return $sources;
