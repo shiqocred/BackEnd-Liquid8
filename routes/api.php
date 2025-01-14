@@ -461,7 +461,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
    Route::post('exportUsers', [UserController::class, 'exportUsers']);
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team leader,Admin Kasir,Kasir leader'])->group(function () {
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
    Route::get('notif_widget', [NotificationController::class, 'notifWidget']);
