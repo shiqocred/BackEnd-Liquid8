@@ -125,13 +125,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Kasir leade
    Route::get('user_scan_webs/{code_document}', [UserScanWebController::class, 'detail_user_scan'])->where('code_document', '.*');
 
    Route::get('total_scan_users', [UserScanWebController::class, 'total_user_scans']);
-
-   Route::get('get_approve_discount/{id_sale_document}', [SaleDocumentController::class, 'get_approve_discount']);
-   Route::put('approved-document/{id_sale_document}', [SaleDocumentController::class, 'approvedDocument']);
-   Route::put('approved-product/{id_sale}', [SaleDocumentController::class, 'approvedProduct']);
-   Route::put('reject-product/{id_sale}', [SaleDocumentController::class, 'rejectProduct']);
-   Route::put('reject-document/{id_sale}', [SaleDocumentController::class, 'rejectAllDiscounts']);
-   Route::put('doneApproveDiscount/{id_sale_document}', [SaleDocumentController::class, 'doneApproveDiscount']);
 });
 
 //manifest inbound, histroy index : Admin,Spv,Team leader,Crew
@@ -188,7 +181,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasi
 
 });
 
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasir'])->group(function () {
    //untuk spv me approve staging ke inventory
    Route::post('stagingTransactionApprove', [StagingApproveController::class, 'stagingTransaction']);
 
@@ -341,7 +334,12 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 
    Route::get('panel-spv/detail/{user}', [UserController::class, 'showFormatBarcode']);
 
- 
+   Route::get('get_approve_discount/{id_sale_document}', [SaleDocumentController::class, 'get_approve_discount']);
+   Route::put('approved-document/{id_sale_document}', [SaleDocumentController::class, 'approvedDocument']);
+   Route::put('approved-product/{id_sale}', [SaleDocumentController::class, 'approvedProduct']);
+   Route::put('reject-product/{id_sale}', [SaleDocumentController::class, 'rejectProduct']);
+   Route::put('reject-document/{id_sale}', [SaleDocumentController::class, 'rejectAllDiscounts']);
+   Route::put('doneApproveDiscount/{id_sale_document}', [SaleDocumentController::class, 'doneApproveDiscount']);
 });
 
 //end inventory=========================================== Inventory ==========================================================
@@ -467,7 +465,6 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Crew,Reparasi,Team lead
    Route::get('notificationByRole', [NotificationController::class, 'getNotificationByRole']);
    Route::get('documents-approve', [ProductApproveController::class, 'documentsApprove']);
    Route::get('notif_widget', [NotificationController::class, 'notifWidget']);
-   
 });
 
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader'])->group(function () {
