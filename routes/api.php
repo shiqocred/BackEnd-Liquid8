@@ -166,7 +166,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv'])->group(function () {
 //=========================================== Staging ==========================================================
 
 // Admin,Spv,Admin Kasir
-Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasir'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Kasir leader,Admin Kasir,Team leader'])->group(function () {
    //store nya untuk mindah ke approve staging
    Route::resource('staging_products', StagingProductController::class);
    Route::get('staging/filter_product', [FilterStagingController::class, 'index']);
