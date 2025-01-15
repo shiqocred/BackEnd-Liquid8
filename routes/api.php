@@ -301,7 +301,7 @@ Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Developer']
 Route::middleware(['auth:sanctum', 'check.role:Admin,Spv,Team leader,Crew'])->group(function () {
    //palet filter
    Route::get('palet/filter_product', [PaletFilterController::class, 'index']);
-   Route::post('palet/filter_product/{id}/add', [PaletFilterController::class, 'store']);
+   Route::post('palet/filter_product/{barcode}/add', [PaletFilterController::class, 'store']);
    Route::delete('palet/filter_product/destroy/{id}', [PaletFilterController::class, 'destroy']);
 
    //palet

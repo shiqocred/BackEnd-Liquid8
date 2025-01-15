@@ -48,12 +48,12 @@ class PaletFilterController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store($id)
+    public function store($barcode)
     {
         DB::beginTransaction();
         $userId = auth()->id();
         try {
-            $product = New_product::findOrFail($id);
+            $product = New_product::where('new_barcode_product', $barcode)->firstOrFail();
             $product->user_id = $userId;
             $productFilter = PaletFilter::create($product->toArray());
             if ($product->delete()) {
