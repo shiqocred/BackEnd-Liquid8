@@ -499,7 +499,6 @@ class PaletController extends Controller
         ];
 
         $paletProductsHeaders = [
-            'palet_id',
             'code_document',
             'old_barcode_product',
             'new_barcode_product',
