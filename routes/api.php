@@ -510,7 +510,7 @@ Route::middleware('auth.multiple:Admin,Spv,Team leader,Crew,Developer')->group(f
    //inbound-collab
    Route::resource('product_scans', ProductScanController::class);
    Route::get('product_scan_search ', [ProductScanController::class, 'product_scan_search']);
-   // Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
+   Route::post('move_to_staging ', [ProductScanController::class, 'move_to_staging']);
    Route::post('addProductById/{id}', [NewProductController::class, 'addProductById']);
 });
 
