@@ -12,6 +12,7 @@ use App\Models\StagingApprove;
 use App\Models\StagingProduct;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\ResponseResource;
+use App\Models\ProductInput;
 use Illuminate\Support\Facades\Validator;
 
 class ProductScanController extends Controller
@@ -222,15 +223,15 @@ class ProductScanController extends Controller
                 return new ResponseResource(false, "The new barcode already exists", $inputData);
             }
 
-            $this->deleteProductScan($request->input('new_name_product'));
+            // $this->deleteProductScan($request->input('new_name_product'));
             if ($inputData['new_tag_product'] !== null) {
                 $newProduct = New_product::create($inputData);
             } else {
-                $newProduct = StagingProduct::create($inputData);
+                $newProduct = ProductInput::create($inputData);
             }
             DB::commit();
 
-            return new ResponseResource(true, "Produk Berhasil ditambah ke staging", $newProduct);
+            return new ResponseResource(true, "Produk Berhasil ditambah ke product input", $newProduct);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json(['error' => $e->getMessage()], 500);
